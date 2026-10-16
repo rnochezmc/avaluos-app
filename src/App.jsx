@@ -9,11 +9,19 @@ import AvaluoFormModal from './components/AvaluoFormModal';
 import OfficialReportPrintView from './components/OfficialReportPrintView';
 import MobileBottomNav from './components/MobileBottomNav';
 import { initialAvaluos } from './data/mockAvaluos';
+import { 
+  subscribeToAvaluos, 
+  saveAvaluoToCloud, 
+  deleteAvaluoFromCloud, 
+  seedInitialAvaluosIfEmpty 
+} from './firebase';
 import { SearchX, Plus, Sparkles } from 'lucide-react';
 
 const STORAGE_KEY = 'cverde_avaluos_db_v1';
 
 export default function App() {
+  const [cloudStatus, setCloudStatus] = useState('conectando'); // 'conectado' | 'offline' | 'conectando'
+
   // Load persistent data from localStorage or fallback to initial mock
   const [avaluos, setAvaluos] = useState(() => {
     try {
@@ -28,7 +36,7 @@ export default function App() {
     return initialAvaluos;
   });
 
-  // Save to localStorage on changes
+  // Save to localStorage as immediate offline cache
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(avaluos));
@@ -36,6 +44,35 @@ export default function App() {
       console.error('Error saving data to localStorage', e);
     }
   }, [avaluos]);
+
+  // Sincronización en tiempo real con Firebase Firestore
+  useEffect(() => {
+    let unsubscribe;
+    try {
+      unsubscribe = subscribeToAvaluos(
+        (cloudList) => {
+          setCloudStatus('conectado');
+          if (Array.isArray(cloudList) && cloudList.length > 0) {
+            setAvaluos(cloudList);
+          } else {
+            // Si la colección de Firestore en la nube está vacía, inicializarla
+            seedInitialAvaluosIfEmpty(initialAvaluos);
+          }
+        },
+        (err) => {
+          console.warn('Modo offline / local activo:', err);
+          setCloudStatus('offline');
+        }
+      );
+    } catch (e) {
+      console.warn('Error al conectar a Firebase:', e);
+      setCloudStatus('offline');
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
@@ -122,7 +159,8 @@ export default function App() {
   }, [avaluos, searchTerm, activeFilter, propertyTypeFilter, bankFilter, sortBy]);
 
   // Handlers
-  const handleSaveAvaluo = (savedItem) => {
+  const handleSaveAvaluo = async (savedItem) => {
+    // 1. Actualización optimista local
     setAvaluos((prev) => {
       const existsIndex = prev.findIndex((a) => a.id === savedItem.id);
       if (existsIndex >= 0) {
@@ -135,15 +173,27 @@ export default function App() {
     });
     setEditingAvaluo(null);
     setIsCreatingNew(false);
+
+    // 2. Persistir en Firebase Cloud Firestore
+    try {
+      await saveAvaluoToCloud(savedItem);
+    } catch (err) {
+      console.error('Error guardando en Firebase:', err);
+    }
   };
 
-  const handleDeleteAvaluo = (id) => {
+  const handleDeleteAvaluo = async (id) => {
     const target = avaluos.find((a) => a.id === id);
     if (!target) return;
     const confirmed = window.confirm(`¿Está seguro de eliminar el expediente ${target.codigo} (${target.propietarioPrincipal})? Esta acción no se puede deshacer.`);
     if (confirmed) {
       setAvaluos((prev) => prev.filter((a) => a.id !== id));
       if (viewingAvaluo?.id === id) setViewingAvaluo(null);
+      try {
+        await deleteAvaluoFromCloud(id);
+      } catch (err) {
+        console.error('Error eliminando de Firebase:', err);
+      }
     }
   };
 
@@ -159,11 +209,18 @@ export default function App() {
   };
 
   // Import JSON backup
-  const handleImportData = (importedList) => {
-    const confirmed = window.confirm(`Se encontraron ${importedList.length} expedientes en el archivo. ¿Desea importarlos a su base de datos local?`);
+  const handleImportData = async (importedList) => {
+    const confirmed = window.confirm(`Se encontraron ${importedList.length} expedientes en el archivo. ¿Desea importarlos a su base de datos local y sincronizarlos con Firebase?`);
     if (confirmed) {
       setAvaluos(importedList);
-      alert('¡Base de datos restaurada con éxito!');
+      for (const item of importedList) {
+        try {
+          await saveAvaluoToCloud(item);
+        } catch (e) {
+          console.error('Error sincronizando item importado a Firebase:', e);
+        }
+      }
+      alert('¡Base de datos restaurada y sincronizada en la nube con éxito!');
     }
   };
 
@@ -191,6 +248,7 @@ export default function App() {
         onExportData={handleExportData}
         onImportData={handleImportData}
         avaluosCount={avaluos.length}
+        cloudStatus={cloudStatus}
       />
 
       <main className="main-wrapper">
