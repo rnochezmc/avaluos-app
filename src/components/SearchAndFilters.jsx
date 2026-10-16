@@ -1,0 +1,157 @@
+import React from 'react';
+import { Search, X, LayoutGrid, Table, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+
+export default function SearchAndFilters({
+  searchTerm,
+  setSearchTerm,
+  activeFilter,
+  setActiveFilter,
+  propertyTypeFilter,
+  setPropertyTypeFilter,
+  bankFilter,
+  setBankFilter,
+  sortBy,
+  setSortBy,
+  viewMode,
+  setViewMode,
+  totalResults
+}) {
+  const searchInputRef = React.useRef(null);
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    searchInputRef.current?.focus();
+  };
+
+  return (
+    <div className="search-section">
+      {/* Main Omnisearch Bar Row */}
+      <div className="search-bar-row">
+        <div className="search-input-box">
+          <Search size={18} className="search-icon-inside" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            className="search-input"
+            placeholder="Buscar por Código (ej. LR-2026-001), Propietario, Finca/Folio/Libro, Banco o Dirección..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              className="search-clear-btn"
+              onClick={clearSearch}
+              title="Borrar búsqueda"
+              aria-label="Borrar búsqueda"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* View Mode Toggle: Grid vs Table */}
+        <div className="view-toggle-group">
+          <button
+            type="button"
+            className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+            onClick={() => setViewMode('grid')}
+            title="Vista de Tarjetas Fotográficas"
+          >
+            <LayoutGrid size={16} />
+            <span className="desktop-only">Tarjetas</span>
+          </button>
+          <button
+            type="button"
+            className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+            onClick={() => setViewMode('table')}
+            title="Vista de Tabla / Resumen"
+          >
+            <Table size={16} />
+            <span className="desktop-only">Tabla</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Filter Pills Row */}
+      <div className="filter-pills-row">
+        <button
+          type="button"
+          className={`filter-pill ${activeFilter === 'todos' ? 'active' : ''}`}
+          onClick={() => setActiveFilter('todos')}
+        >
+          Todos ({totalResults})
+        </button>
+        <button
+          type="button"
+          className={`filter-pill ${activeFilter === 'completado' ? 'active' : ''}`}
+          onClick={() => setActiveFilter('completado')}
+        >
+          ✓ Completados
+        </button>
+        <button
+          type="button"
+          className={`filter-pill ${activeFilter === 'proceso' ? 'active' : ''}`}
+          onClick={() => setActiveFilter('proceso')}
+        >
+          ⏳ En Proceso
+        </button>
+        <button
+          type="button"
+          className={`filter-pill ${activeFilter === 'borrador' ? 'active' : ''}`}
+          onClick={() => setActiveFilter('borrador')}
+        >
+          📝 Borradores
+        </button>
+
+        {/* Property Type Dropdown */}
+        <div style={{ marginLeft: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <select
+            className="form-select"
+            style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem', borderRadius: 'var(--radius-full)' }}
+            value={propertyTypeFilter}
+            onChange={(e) => setPropertyTypeFilter(e.target.value)}
+          >
+            <option value="todos">Todos los Tipos</option>
+            <option value="Comercial">Comercial</option>
+            <option value="Residencial">Residencial</option>
+            <option value="Industrial">Industrial</option>
+          </select>
+        </div>
+
+        {/* Bank Filter Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <select
+            className="form-select"
+            style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem', borderRadius: 'var(--radius-full)' }}
+            value={bankFilter}
+            onChange={(e) => setBankFilter(e.target.value)}
+          >
+            <option value="todos">Todos los Bancos</option>
+            <option value="BANCO G&T CONTINENTAL">Banco G&T Continental</option>
+            <option value="BANCO INDUSTRIAL">Banco Industrial</option>
+            <option value="BANCO AGROMERCANTIL (BAM)">Banco Agromercantil (BAM)</option>
+          </select>
+        </div>
+
+        {/* Sort Select */}
+        <div className="sort-select-box">
+          <ArrowUpDown size={14} />
+          <label htmlFor="sort-select" className="desktop-only" style={{ fontSize: '0.78rem' }}>Ordenar:</label>
+          <select
+            id="sort-select"
+            className="sort-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="recientes">Más recientes</option>
+            <option value="codigo-desc">Código (Desc)</option>
+            <option value="codigo-asc">Código (Asc)</option>
+            <option value="valor-desc">Mayor Valor (Q)</option>
+            <option value="valor-asc">Menor Valor (Q)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+}
