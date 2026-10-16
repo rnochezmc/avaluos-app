@@ -240,14 +240,21 @@ export default function App() {
     }
   };
 
+  // Exponer métodos de respaldo en window para soporte técnico/desarrollador sin saturar la interfaz del usuario
+  useEffect(() => {
+    window.__exportarBD = handleExportData;
+    window.__restaurarBD = handleImportData;
+    return () => {
+      delete window.__exportarBD;
+      delete window.__restaurarBD;
+    };
+  }, [avaluos]);
+
   return (
     <div className="app-container">
       {/* Top Navbar with Cverde Branding */}
       <Navbar
         onNewAvaluo={() => setIsCreatingNew(true)}
-        onExportData={handleExportData}
-        onImportData={handleImportData}
-        avaluosCount={avaluos.length}
         cloudStatus={cloudStatus}
       />
 

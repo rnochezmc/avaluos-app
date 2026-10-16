@@ -1,29 +1,7 @@
 import React from 'react';
-import { Building2, Plus, Download, Upload, ShieldCheck } from 'lucide-react';
+import { Building2, Plus } from 'lucide-react';
 
-export default function Navbar({ onNewAvaluo, onExportData, onImportData, avaluosCount, cloudStatus = 'conectado' }) {
-  const fileInputRef = React.useRef(null);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const parsed = JSON.parse(event.target.result);
-          if (Array.isArray(parsed)) {
-            onImportData(parsed);
-          } else {
-            alert('El archivo no contiene un formato de expedientes válido.');
-          }
-        } catch (err) {
-          alert('Error al leer el archivo JSON: ' + err.message);
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
+export default function Navbar({ onNewAvaluo, cloudStatus = 'conectado' }) {
   return (
     <header className="top-navbar">
       <div className="navbar-content">
@@ -64,36 +42,6 @@ export default function Navbar({ onNewAvaluo, onExportData, onImportData, avaluo
             }} />
             <span className="desktop-only">{cloudStatus === 'conectado' ? 'Firebase Nube' : 'Conectando'}</span>
           </div>
-
-          {/* Quick Backup Buttons */}
-          <button 
-            type="button" 
-            className="card-action-btn" 
-            onClick={onExportData}
-            title="Exportar respaldo de datos en JSON"
-            style={{ padding: '0.45rem 0.75rem', fontSize: '0.78rem' }}
-          >
-            <Download size={15} />
-            <span className="desktop-only">Exportar BD</span>
-          </button>
-
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept=".json" 
-            style={{ display: 'none' }} 
-          />
-          <button 
-            type="button" 
-            className="card-action-btn" 
-            onClick={() => fileInputRef.current?.click()}
-            title="Importar respaldo de datos"
-            style={{ padding: '0.45rem 0.75rem', fontSize: '0.78rem' }}
-          >
-            <Upload size={15} />
-            <span className="desktop-only">Restaurar BD</span>
-          </button>
 
           <div className="user-badge" title="Valuador Autorizado Activo">
             <div className="user-avatar">HR</div>
