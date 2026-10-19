@@ -37,11 +37,12 @@ export default function Navbar({
 
   const getRoleDisplayName = () => {
     if (currentUser?.rol === 'admin') return 'Lic. Haroldo Ruiz (Dueño / Autorizador)';
-    if (currentUser?.rol === 'soporte') return 'Ing. Ramiro Nóchez (Soporte Técnico)';
+    if (currentUser?.rol === 'soporte') return 'Ramiro Nóchez (Soporte Técnico)';
     if (currentUser?.rol === 'valuador') return 'Ing. Auxiliar (Valuador Técnico)';
     if (currentUser?.rol === 'lector') return 'Usuario de Consulta';
-    return currentUser?.nombre || 'Usuario';
+    return (currentUser?.nombre || 'Usuario');
   };
+
 
   const getRoleBadge = () => {
     if (currentUser?.rol === 'admin') return 'Aprobador Oficial';

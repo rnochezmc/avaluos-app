@@ -154,7 +154,7 @@ export async function seedInitialUsuariosIfEmpty() {
         {
           id: 'rnochezmc_gmail_com',
           email: 'rnochezmc@gmail.com',
-          nombre: 'Ing. Ramiro Nóchez',
+          nombre: 'Ramiro Nóchez',
           rol: 'soporte',
           titulo: 'Soporte Técnico y Sistemas',
           activo: true,
@@ -174,9 +174,14 @@ export async function seedInitialUsuariosIfEmpty() {
       for (const u of defaultUsers) {
         await saveUsuarioToCloud(u);
       }
+    } else {
+      // Asegurar que el registro de Ramiro no tenga "Ing." en Firestore
+      const docRef = doc(db, USUARIOS_COLLECTION, 'rnochezmc_gmail_com');
+      await setDoc(docRef, { nombre: 'Ramiro Nóchez' }, { merge: true });
     }
   } catch (err) {
     console.warn('Error inicializando usuarios base:', err);
   }
 }
+
 

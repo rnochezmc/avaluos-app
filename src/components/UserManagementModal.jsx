@@ -38,8 +38,9 @@ export default function UserManagementModal({
 
   const handleEdit = (u) => {
     setEditingUserId(u.id);
+    const cleanNombre = u.email === 'rnochezmc@gmail.com' ? (u.nombre || '').replace(/^Ing\.\s*/i, '') : (u.nombre || '');
     setFormUser({
-      nombre: u.nombre || '',
+      nombre: cleanNombre,
       email: u.email || '',
       rol: u.rol || 'valuador',
       titulo: u.titulo || '',
@@ -47,6 +48,7 @@ export default function UserManagementModal({
     });
     setShowAddForm(true);
   };
+
 
   const handleDelete = async (u) => {
     if (u.email === 'rnochezmc@gmail.com' || u.email === 'cverdeavaluos@gmail.com') {
@@ -448,7 +450,9 @@ export default function UserManagementModal({
                   return (
                     <tr key={u.id || u.email} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '0.75rem 1rem' }}>
-                        <div style={{ fontWeight: 600, color: '#0d2847' }}>{u.nombre || 'Sin nombre'}</div>
+                        <div style={{ fontWeight: 600, color: '#0d2847' }}>
+                          {u.email === 'rnochezmc@gmail.com' ? (u.nombre || 'Ramiro Nóchez').replace(/^Ing\.\s*/i, '') : (u.nombre || 'Sin nombre')}
+                        </div>
                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{u.titulo || 'Personal Técnico'}</div>
                       </td>
                       <td style={{ padding: '0.75rem 1rem', color: '#334155' }}>

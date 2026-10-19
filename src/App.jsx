@@ -135,7 +135,7 @@ export default function App() {
         // Cuentas administradoras maestras del sistema
         if (email === 'rnochezmc@gmail.com') {
           assignedRole = 'soporte';
-          assignedNombre = firebaseUser.displayName || 'Ramiro Nóchez';
+          assignedNombre = (firebaseUser.displayName || 'Ramiro Nóchez').replace(/^Ing\.\s*/i, '');
           assignedTitulo = 'Soporte Técnico y Sistemas';
           isActivo = true;
         } else if (email === 'cverdeavaluos@gmail.com') {
