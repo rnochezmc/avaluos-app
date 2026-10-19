@@ -8,24 +8,50 @@ import AvaluoDetailModal from './components/AvaluoDetailModal';
 import AvaluoFormModal from './components/AvaluoFormModal';
 import OfficialReportPrintView from './components/OfficialReportPrintView';
 import MobileBottomNav from './components/MobileBottomNav';
+import LoginScreen from './components/LoginScreen';
+import UserManagementModal from './components/UserManagementModal';
 import { initialAvaluos } from './data/mockAvaluos';
 import { 
   subscribeToAvaluos, 
   saveAvaluoToCloud, 
   deleteAvaluoFromCloud, 
-  seedInitialAvaluosIfEmpty 
+  seedInitialAvaluosIfEmpty,
+  auth,
+  signOut,
+  onAuthStateChanged,
+  subscribeToUsuarios,
+  seedInitialUsuariosIfEmpty
 } from './firebase';
-import { SearchX, Plus, Sparkles } from 'lucide-react';
+import { SearchX, Plus, Sparkles, ShieldAlert, LogOut } from 'lucide-react';
 
-const STORAGE_KEY = 'cverde_avaluos_db_v1';
+const STORAGE_KEY = 'lexrosam_avaluos_db_v2';
+const LEGACY_STORAGE_KEY = 'cverde_avaluos_db_v1';
+const AUTH_USER_KEY = 'lexrosam_auth_user';
 
 export default function App() {
   const [cloudStatus, setCloudStatus] = useState('conectando'); // 'conectado' | 'offline' | 'conectando'
+  
+  // Auth state
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem(AUTH_USER_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Error loading auth user', e);
+    }
+    return null;
+  });
+
+  const [usuarios, setUsuarios] = useState([]);
+  const [showUserManagement, setShowUserManagement] = useState(false);
+  const [currentRole, setCurrentRole] = useState(() => {
+    return currentUser?.rol === 'valuador' ? 'ingreso' : 'autorizador';
+  });
 
   // Load persistent data from localStorage or fallback to initial mock
   const [avaluos, setAvaluos] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -74,6 +100,86 @@ export default function App() {
     };
   }, []);
 
+  // Sincronización en tiempo real de colaboradores y roles en Firestore
+  useEffect(() => {
+    seedInitialUsuariosIfEmpty();
+    let unsubUsers;
+    try {
+      unsubUsers = subscribeToUsuarios((userList) => {
+        setUsuarios(userList);
+      });
+    } catch (err) {
+      console.warn('Error al suscribirse a usuarios:', err);
+    }
+    return () => {
+      if (unsubUsers) unsubUsers();
+    };
+  }, []);
+
+  // Escuchar estado de autenticación de Google Firebase
+  useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const email = (firebaseUser.email || '').toLowerCase().trim();
+        const match = usuarios.find(u => u.email?.toLowerCase().trim() === email);
+
+        let assignedRole = 'valuador';
+        let assignedNombre = firebaseUser.displayName || 'Colaborador';
+        let assignedTitulo = 'Valuador Técnico de Ingreso';
+        let isActivo = true;
+
+        if (email === 'rnochezmc@gmail.com') {
+          assignedRole = 'soporte';
+          assignedNombre = firebaseUser.displayName || 'Ing. Ramiro Nóchez';
+          assignedTitulo = 'Soporte Técnico y Sistemas';
+        } else if (email === 'cverdeavaluos@gmail.com') {
+          assignedRole = 'admin';
+          assignedNombre = firebaseUser.displayName || 'Lic. Haroldo Ruiz';
+          assignedTitulo = 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026';
+        } else if (match) {
+          assignedRole = match.rol || 'valuador';
+          assignedNombre = match.nombre || firebaseUser.displayName || 'Colaborador';
+          assignedTitulo = match.titulo || 'Personal Técnico';
+          isActivo = match.activo !== false;
+        }
+
+        const userObj = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          nombre: assignedNombre,
+          rol: assignedRole,
+          titulo: assignedTitulo,
+          photoURL: firebaseUser.photoURL,
+          activo: isActivo
+        };
+
+        setCurrentUser(userObj);
+        setCurrentRole(assignedRole === 'valuador' ? 'ingreso' : 'autorizador');
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userObj));
+      }
+    });
+
+    return () => {
+      if (unsubAuth) unsubAuth();
+    };
+  }, [usuarios]);
+
+  const handleSimulateLogin = (profile) => {
+    setCurrentUser(profile);
+    setCurrentRole(profile.rol === 'valuador' ? 'ingreso' : 'autorizador');
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn('Sign out local', e);
+    }
+    setCurrentUser(null);
+    localStorage.removeItem(AUTH_USER_KEY);
+  };
+
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('todos');
@@ -102,9 +208,20 @@ export default function App() {
 
     return avaluos
       .filter((item) => {
-        // Status filter
-        if (activeFilter !== 'todos' && item.estado !== activeFilter) {
-          return false;
+        // Status filter matching new workflow
+        if (activeFilter !== 'todos') {
+          if (activeFilter === 'autorizado' && item.estado !== 'autorizado' && item.estado !== 'completado') {
+            return false;
+          }
+          if (activeFilter === 'en_revision' && item.estado !== 'en_revision' && item.estado !== 'proceso') {
+            return false;
+          }
+          if (activeFilter === 'devuelto' && item.estado !== 'devuelto') {
+            return false;
+          }
+          if (activeFilter === 'borrador' && item.estado !== 'borrador' && item.estado) {
+            return false;
+          }
         }
 
         // Property type filter
@@ -182,6 +299,43 @@ export default function App() {
     }
   };
 
+  // Cambio de estado de autorización
+  const handleStatusChange = async (id, newStatus, comments) => {
+    let updatedItem = null;
+
+    setAvaluos((prev) => {
+      return prev.map((item) => {
+        if (item.id === id) {
+          const next = {
+            ...item,
+            estado: newStatus,
+            observacionesAutorizador: comments !== undefined ? comments : item.observacionesAutorizador,
+            fechaActualizacion: new Date().toISOString().slice(0, 10)
+          };
+          if (newStatus === 'autorizado') {
+            next.fechaAutorizacion = new Date().toISOString().slice(0, 10);
+            next.autorizadoPor = 'Lic. Haroldo Ruiz (Reg. 2572-R-2026)';
+          }
+          updatedItem = next;
+          return next;
+        }
+        return item;
+      });
+    });
+
+    if (viewingAvaluo?.id === id && updatedItem) {
+      setViewingAvaluo(updatedItem);
+    }
+
+    if (updatedItem) {
+      try {
+        await saveAvaluoToCloud(updatedItem);
+      } catch (err) {
+        console.error('Error actualizando estado en Firebase:', err);
+      }
+    }
+  };
+
   const handleDeleteAvaluo = async (id) => {
     const target = avaluos.find((a) => a.id === id);
     if (!target) return;
@@ -202,7 +356,7 @@ export default function App() {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(avaluos, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `cverde_avaluos_respaldo_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute('download', `lexrosam_avaluos_respaldo_${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -240,7 +394,7 @@ export default function App() {
     }
   };
 
-  // Exponer métodos de respaldo en window para soporte técnico/desarrollador sin saturar la interfaz del usuario
+  // Métodos de respaldo para soporte
   useEffect(() => {
     window.__exportarBD = handleExportData;
     window.__restaurarBD = handleImportData;
@@ -250,12 +404,81 @@ export default function App() {
     };
   }, [avaluos]);
 
+  // Pantalla de Inicio de Sesión si no hay usuario autenticado
+  if (!currentUser) {
+    return (
+      <LoginScreen
+        onLoginSuccess={(fbUser) => {
+          // Handled by onAuthStateChanged
+        }}
+        onSimulateLogin={handleSimulateLogin}
+      />
+    );
+  }
+
+  // Pantalla de usuario no autorizado o inactivo
+  if (currentUser && currentUser.activo === false) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'radial-gradient(circle at 50% 20%, #1e3a5f 0%, #0d2847 45%, #07172b 100%)',
+        padding: '1.5rem',
+        fontFamily: 'Inter, system-ui, sans-serif'
+      }}>
+        <div style={{
+          maxWidth: '440px',
+          width: '100%',
+          background: '#ffffff',
+          borderRadius: '16px',
+          padding: '2.5rem 2rem',
+          textAlign: 'center',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
+        }}>
+          <ShieldAlert size={52} color="#f59e0b" style={{ margin: '0 auto 1rem auto' }} />
+          <h2 style={{ color: '#0d2847', fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.5rem' }}>
+            Acceso Pendiente de Activación
+          </h2>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.5, margin: '0.75rem 0 1.5rem' }}>
+            Tu cuenta <strong>{currentUser.email}</strong> está registrada pero requiere que el <strong>Lic. Haroldo Ruiz</strong> active tus permisos en el panel de colaboradores de LEX ROSAM S.A.
+          </p>
+          <button
+            onClick={handleSignOut}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              background: '#f8fafc',
+              color: '#334155',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            <LogOut size={16} /> Cerrar Sesión / Cambiar Cuenta
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
-      {/* Top Navbar with Cverde Branding */}
+      {/* Top Navbar with Lex Rosam Branding & Role Selector */}
       <Navbar
         onNewAvaluo={() => setIsCreatingNew(true)}
         cloudStatus={cloudStatus}
+        currentRole={currentRole}
+        onRoleChange={setCurrentRole}
+        currentUser={currentUser}
+        onSignOut={handleSignOut}
+        onOpenUserManagement={() => setShowUserManagement(true)}
       />
 
       <main className="main-wrapper">
@@ -299,6 +522,7 @@ export default function App() {
                 type="button"
                 className="btn-primary"
                 onClick={() => setIsCreatingNew(true)}
+                style={{ background: '#2563eb' }}
               >
                 <Plus size={16} style={{ display: 'inline', marginRight: '4px' }} />
                 Crear Nuevo Avalúo
@@ -333,6 +557,8 @@ export default function App() {
       {viewingAvaluo && (
         <AvaluoDetailModal
           avaluo={viewingAvaluo}
+          currentRole={currentRole}
+          onStatusChange={handleStatusChange}
           onClose={() => setViewingAvaluo(null)}
           onEdit={(item) => {
             setViewingAvaluo(null);
@@ -345,7 +571,7 @@ export default function App() {
         />
       )}
 
-      {/* Official 9-Page Printable Document View (Exact reproduction of PDF) */}
+      {/* Official 9-Page Printable Document View (Exact reproduction of LEX ROSAM PDF) */}
       {printingAvaluo && (
         <OfficialReportPrintView
           avaluo={printingAvaluo}
@@ -362,6 +588,15 @@ export default function App() {
             setEditingAvaluo(null);
           }}
           onSave={handleSaveAvaluo}
+        />
+      )}
+
+      {/* Control de Usuarios y Roles (Haroldo Ruiz & Ramiro Nóchez) */}
+      {showUserManagement && (
+        <UserManagementModal
+          currentUser={currentUser}
+          usuarios={usuarios}
+          onClose={() => setShowUserManagement(false)}
         />
       )}
 

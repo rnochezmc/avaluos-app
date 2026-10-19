@@ -12,10 +12,14 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint }
 
   const getStatusBadge = (status) => {
     switch (status) {
+      case 'autorizado':
       case 'completado':
-        return <span className="aval-badge-status badge-completado">Completado</span>;
+        return <span className="aval-badge-status badge-completado">Autorizado</span>;
+      case 'en_revision':
       case 'proceso':
-        return <span className="aval-badge-status badge-proceso">En Proceso</span>;
+        return <span className="aval-badge-status" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>En Revisión</span>;
+      case 'devuelto':
+        return <span className="aval-badge-status" style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5' }}>Devuelto</span>;
       default:
         return <span className="aval-badge-status badge-borrador">Borrador</span>;
     }

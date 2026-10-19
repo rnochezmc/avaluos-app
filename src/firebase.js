@@ -8,6 +8,13 @@ import {
   deleteDoc, 
   onSnapshot 
 } from 'firebase/firestore';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBkvww64wA8GZtDnWuSY4lBWXfFYpsMdPk",
@@ -21,8 +28,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
+
+export { signInWithPopup, signOut, onAuthStateChanged };
 
 const AVALUOS_COLLECTION = 'avaluos';
+const USUARIOS_COLLECTION = 'usuarios';
 
 /**
  * Escucha cambios en tiempo real en la colección de avalúos.
@@ -79,3 +91,85 @@ export async function seedInitialAvaluosIfEmpty(initialList) {
     console.warn('No se pudo inicializar los datos en Firebase (posible modo offline):', err);
   }
 }
+
+/**
+ * Escucha cambios en tiempo real en la colección de usuarios del sistema.
+ */
+export function subscribeToUsuarios(onData, onError) {
+  const colRef = collection(db, USUARIOS_COLLECTION);
+  return onSnapshot(colRef, (snapshot) => {
+    const list = [];
+    snapshot.forEach((docSnap) => {
+      list.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    onData(list);
+  }, (err) => {
+    console.error('Error listening to Firebase usuarios:', err);
+    if (onError) onError(err);
+  });
+}
+
+/**
+ * Guarda o actualiza un usuario en Firestore.
+ */
+export async function saveUsuarioToCloud(usuario) {
+  if (!usuario || !usuario.email) {
+    throw new Error('El usuario debe tener un correo electrónico válido.');
+  }
+  const cleanId = usuario.id || usuario.email.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
+  const docRef = doc(db, USUARIOS_COLLECTION, cleanId);
+  await setDoc(docRef, {
+    ...usuario,
+    email: usuario.email.toLowerCase().trim(),
+    actualizadoEl: new Date().toISOString()
+  }, { merge: true });
+}
+
+/**
+ * Elimina un usuario de Firestore.
+ */
+export async function deleteUsuarioFromCloud(id) {
+  if (!id) return;
+  const docRef = doc(db, USUARIOS_COLLECTION, String(id));
+  await deleteDoc(docRef);
+}
+
+/**
+ * Inicializa las cuentas maestras de Haroldo Ruiz y Ramiro Nóchez si la colección está vacía.
+ */
+export async function seedInitialUsuariosIfEmpty() {
+  try {
+    const colRef = collection(db, USUARIOS_COLLECTION);
+    const snap = await getDocs(colRef);
+    if (snap.empty) {
+      console.log('Inicializando cuentas maestras en Firestore...');
+      const defaultUsers = [
+        {
+          id: 'rnochezmc_gmail_com',
+          email: 'rnochezmc@gmail.com',
+          nombre: 'Ing. Ramiro Nóchez',
+          rol: 'soporte',
+          titulo: 'Soporte Técnico y Sistemas',
+          activo: true,
+          creadoEl: new Date().toISOString()
+        },
+        {
+          id: 'cverdeavaluos_gmail_com',
+          email: 'cverdeavaluos@gmail.com',
+          nombre: 'Lic. Haroldo Ruiz',
+          rol: 'admin',
+          titulo: 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026',
+          activo: true,
+          creadoEl: new Date().toISOString()
+        }
+      ];
+
+      for (const u of defaultUsers) {
+        await saveUsuarioToCloud(u);
+      }
+    }
+  } catch (err) {
+    console.warn('Error inicializando usuarios base:', err);
+  }
+}
+

@@ -1,5 +1,17 @@
 {
   "firestore": {
     "rules": "firestore.rules"
+  },
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "LEX ROSAM Avalúos",
+        "supportEmail": "rnochezmc@gmail.com",
+        "authorizedRedirectUris": [
+          "https://avaluos-app.vercel.app",
+          "https://cverde-avaluos-gt.firebaseapp.com/__/auth/handler"
+        ]
+      }
+    }
   }
 }

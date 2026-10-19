@@ -1,23 +1,200 @@
-// Mock inicial de expedientes de avalúos basados exactamente en el formato Cverde S.A.
+// Mock inicial de expedientes de avalúos basados exactamente en el formato LEX ROSAM S.A.
 export const initialAvaluos = [
+  {
+    id: "lr-2026-08",
+    codigo: "LR-2026-08",
+    tipoAvaluo: "Comercial",
+    solicitante: "COOPERATIVA DE AHORRO Y CREDITO INTEGRAL PARROQUIAL GUADALUPANA R.L.",
+    fechaSolicitud: "2026-07-13",
+    fechaInspeccion: "17 de julio de 2026 y 23 de julio de 2026",
+    fechaActualizacion: "2026-07-27",
+    bienMostradoPor: "WALTER MANFREDO GOMEZ HIGUEROS",
+    direccion: "Lote en 1ra. Calle número 3-71 zona 2, Tecpán Guatemala, Chimaltenango",
+    coordenadas: "14°45'47.5\"N 90°59'22.2\"W",
+    descripcionGeneral: "Inmueble de tres niveles de uso habitacional y comercial con locales en planta baja y área residencial en niveles superiores.",
+    dpi: "2570 51244 0406",
+    referenciaActualizacion: "Inspección física y certificación de valor 2026",
+    estado: "autorizado",
+    observacionesAutorizador: "Expediente revisado y verificado en campo. Valores técnicos aprobados según tabla de mercado.",
+    
+    // Información Registral con áreas individuales por finca
+    fincas: [
+      { 
+        finca: "5289", 
+        folio: "289", 
+        libro: "71E de Chimaltenango", 
+        propietario: "WALTER MANFREDO GOMEZ HIGUEROS",
+        areaRegistrada: 253.08,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 253.08,
+        areaFisica: 253.08,
+        areaValuada: 145.08
+      },
+      { 
+        finca: "7172", 
+        folio: "172", 
+        libro: "75E de Chimaltenango", 
+        propietario: "WALTER MANFREDO GOMEZ HIGUEROS",
+        areaRegistrada: 108.00,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 108.00,
+        areaFisica: 108.00,
+        areaValuada: 54.00
+      }
+    ],
+    propietarioPrincipal: "WALTER MANFREDO GOMEZ HIGUEROS",
+    areaRegistrada: 361.08,
+    areaDesmembrada: 0.00,
+    areaActualRegistrada: 361.08,
+    areaFisica: 361.08,
+    areaValuada: 199.08,
+    
+    // Aspectos Legales (con textos amplios y detallados)
+    limitaciones: "Servidumbre de paso recíproca con predio colindante para acometida de servicios.",
+    anotaciones: "Ninguna vigente según certificación electrónica del Registro General de la Propiedad.",
+    gravamenes: "Primera hipoteca a favor de Cooperativa Parroquial Guadalupana R.L.",
+    servidumbres: "Servidumbre de paso y drenaje pluvial.",
+    areasComunes: "Acceso pavimentado común municipal.",
+    desmembracion: "Sin desmembraciones pendientes inscritas.",
+    
+    // Valores
+    valorComercialGTQ: 964980,
+    valorBancarioGTQ: 771984,
+    tipoCambio: 7.61893,
+    valorComercialUSD: 126655.58,
+    valorBancarioUSD: 101324.46,
+    
+    // Valuadores Oficiales
+    valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
+    registroPrincipal: "Valuador autorizado 2572-R-2026",
+    valuadorRevisor: "Lic. Luis Felipe Tolaque Tobias",
+    registroRevisor: "Valuador autorizado 193-T-93",
+    
+    // DICABI (Independiente del RGP)
+    dicabiNombre: "WALTER MANFREDO GOMEZ HIGUEROS",
+    dicabiDireccion: "1ra. Calle 3-71 Zona 2, Tecpán",
+    dicabiMatricula: "04-03-1258-1",
+    dicabiArea: "199.08 m²",
+    dicabiObservaciones: "Matrícula fiscal cotejada con el catastro municipal de Tecpán Chimaltenango.",
+    sector: "Zona 2 Urbana Central",
+    usoSuelo: "Comercial / Residencial",
+    nivelSocioeconomico: "Medio",
+    formaTerreno: "Regular / Rectangular",
+    pendiente: "Plana (0.5%)",
+    esquina: "No",
+    accesoCalle: "Calle principal pavimentada con aceras",
+    colindancias: {
+      norte: "18.50 m con calle pública municipal",
+      sur: "18.50 m con Finca 5288",
+      este: "10.76 m con propiedad privada particular",
+      oeste: "10.76 m con lote colindante"
+    },
+    
+    // Servicios con checklist
+    servicios: {
+      drenajeNegras: "Red municipal",
+      drenajePluviales: "Red pluvial municipal",
+      pavimentos: "Adoquín y concreto en buen estado",
+      bordillos: "Concreto",
+      aceras: "Concreto 1.20 m",
+      agua: "Red municipal comunitaria",
+      telefono: "Líneas móviles y fijas",
+      internetCable: "Fibra óptica disponible",
+      energia: "DEOCSA 120/240V",
+      garita: "No aplica (calle pública)",
+      camaras: "No",
+      alumbradoPublico: "Lámparas públicas activas",
+      tipoCalle: "Urbana comercial"
+    },
+    serviciosAdicionales: ["Recolección de basura municipal", "Transporte urbano cercano"],
+    
+    // Construcción
+    construccion: {
+      edadAprox: "4 años",
+      estadoActual: "Bueno",
+      apropiadaSector: "Adecuada a las construcciones de la zona comercial",
+      distribucion: "Nivel 1: Dos locales comerciales con baño. Niveles 2 y 3: Sala, comedor, cocina, 4 dormitorios, lavandería y terraza.",
+      estructura: "Marcos de concreto armado y mampostería reforzada",
+      paredes: "Block de pómez con repello y cernido",
+      techoEntrePiso: "Losa de concreto armado",
+      piso: "Cerámico",
+      puertas: "Metal y madera",
+      ventanas: "Aluminio anodizado y vidrio claro",
+      sanitaria: "Artefactos estándar vitrificados en buen estado",
+      electrica: "Instalación empotrada monofásica",
+      factoresPositivos: "Excelente ubicación sobre calle comercial transitada, estructura sólida.",
+      factoresNegativos: "Ninguno de consideración"
+    },
+    
+    // Desglose matemático con relación de fincas y varas cuadradas
+    desgloseTerreno: { 
+      area: 199.08, 
+      unidad: "m²", 
+      valorUnitario: 1200, 
+      total: 238896,
+      fincaAsociada: "5289 y 7172",
+      varasCuadradas: 284.91
+    },
+    desgloseConstruccion: { 
+      area: 290.43, 
+      unidad: "m²", 
+      valorUnitario: 2500, 
+      total: 726084 
+    },
+    
+    // Fotos
+    fotos: {
+      entorno: "https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=800&q=80",
+      ingreso: "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?auto=format&fit=crop&w=800&q=80",
+      interior: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+      ubicacion: "",
+      croquis: "",
+      dicabi: ""
+    },
+    consultasPdfs: [
+      { name: "Certificacion_Electronica_RGP_Chimaltenango_5289.pdf", size: "340 KB", fecha: "2026-07-27" }
+    ]
+  },
   {
     id: "lr-2026-001",
     codigo: "LR-2026-001",
     tipoAvaluo: "Comercial",
     solicitante: "BANCO G&T CONTINENTAL",
     fechaSolicitud: "2026-07-20",
+    fechaInspeccion: "22 de julio de 2026",
     fechaActualizacion: "2026-07-24",
+    bienMostradoPor: "Arq. Roberto Méndez",
     direccion: "15 Avenida 4-32 Zona 10, Ciudad de Guatemala",
     coordenadas: "14.59821, -90.51423",
     descripcionGeneral: "Inmueble de dos niveles con oficinas corporativas, área de atención al cliente y parqueo frontal para 6 vehículos.",
     dpi: "1892 45871 0101",
     referenciaActualizacion: "Inspección física y certificación de valor 2026",
-    estado: "completado",
+    estado: "en_revision",
+    observacionesAutorizador: "Pendiente de firma del revisor técnico.",
     
-    // Información Registral
     fincas: [
-      { finca: "4521", folio: "21", libro: "85E de Guatemala", propietario: "Inmobiliaria Las Cumbres S.A." },
-      { finca: "4522", folio: "22", libro: "85E de Guatemala", propietario: "Inmobiliaria Las Cumbres S.A." }
+      { 
+        finca: "4521", 
+        folio: "21", 
+        libro: "85E de Guatemala", 
+        propietario: "Inmobiliaria Las Cumbres S.A.",
+        areaRegistrada: 285.25,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 285.25,
+        areaFisica: 286.00,
+        areaValuada: 285.25
+      },
+      { 
+        finca: "4522", 
+        folio: "22", 
+        libro: "85E de Guatemala", 
+        propietario: "Inmobiliaria Las Cumbres S.A.",
+        areaRegistrada: 285.25,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 285.25,
+        areaFisica: 286.00,
+        areaValuada: 285.25
+      }
     ],
     propietarioPrincipal: "Inmobiliaria Las Cumbres S.A.",
     areaRegistrada: 570.50,
@@ -26,32 +203,29 @@ export const initialAvaluos = [
     areaFisica: 572.00,
     areaValuada: 570.50,
     
-    // Aspectos Legales
-    limitaciones: "Servidumbre de paso recíproca con predio colindante.",
+    limitaciones: "Servidumbre de paso recíproca con predio colindante para acceso vehicular.",
     anotaciones: "Ninguna vigente.",
-    gravamenes: "Primera hipoteca a favor de Banco G&T Continental S.A.",
+    gravamenes: "Primera hipoteca a favor de Banco G&T Continental S.A. inscrita en la inscripción número 3.",
     servidumbres: "Servidumbre de paso y drenaje pluvial.",
     areasComunes: "Acceso pavimentado común.",
     desmembracion: "Sin desmembraciones pendientes.",
     
-    // Valores
     valorComercialGTQ: 3850000,
     valorBancarioGTQ: 3080000,
     tipoCambio: 7.62581,
     valorComercialUSD: 504864.40,
     valorBancarioUSD: 403891.52,
     
-    // Valuadores
     valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
     registroPrincipal: "Valuador autorizado 2572-R-2026",
     valuadorRevisor: "Lic. Luis Felipe Tolaque Tobias",
     registroRevisor: "Valuador autorizado 193-T-93",
     
-    // DICABI & Terreno
     dicabiNombre: "Inmobiliaria Las Cumbres S.A.",
     dicabiDireccion: "15 Avenida 4-32 Zona 10",
     dicabiMatricula: "01-10-8452-9",
     dicabiArea: "570.50 m²",
+    dicabiObservaciones: "Matrícula fiscal al día con pago de IUSI.",
     sector: "Zona 10 / Zona Viva",
     usoSuelo: "Comercial / Oficinas",
     nivelSocioeconomico: "Alto",
@@ -66,7 +240,6 @@ export const initialAvaluos = [
       oeste: "22.82 m con Lote 7"
     },
     
-    // Servicios
     servicios: {
       drenajeNegras: "Red municipal",
       drenajePluviales: "Conexión a pozo de absorción",
@@ -82,8 +255,8 @@ export const initialAvaluos = [
       alumbradoPublico: "Lámparas LED municipales",
       tipoCalle: "Avenida urbana comercial"
     },
+    serviciosAdicionales: ["Vigilancia motorizada de zona", "Fibra óptica redundante"],
     
-    // Construcción
     construccion: {
       edadAprox: "6 años",
       estadoActual: "Muy Bueno",
@@ -98,22 +271,35 @@ export const initialAvaluos = [
       sanitaria: "Loza blanca Kohler en perfecto funcionamiento",
       electrica: "Ductería empotrada e iluminación LED",
       factoresPositivos: "Ubicación privilegiada en Zona 10, alta demanda de alquiler, excelente mantenimiento.",
-      factoresNegativos: "Congestionamiento vehicular en horas pico."
+      factoresNegativos: "Tráfico vehicular en horas pico sobre avenida principal."
     },
     
-    // Desglose de Cálculo
-    desgloseTerreno: { area: 570.50, unidad: "m²", valorUnitario: 3500, total: 1996750 },
-    desgloseConstruccion: { area: 480.00, unidad: "m²", valorUnitario: 3860.94, total: 1853250 },
+    desgloseTerreno: { 
+      area: 570.50, 
+      unidad: "m²", 
+      valorUnitario: 3500, 
+      total: 1996750,
+      fincaAsociada: "4521 y 4522",
+      varasCuadradas: 816.47
+    },
+    desgloseConstruccion: { 
+      area: 420.00, 
+      unidad: "m²", 
+      valorUnitario: 4412.50, 
+      total: 1853250 
+    },
     
-    // Fotografías y Anexos
     fotos: {
-      entorno: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-      ingreso: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
+      entorno: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
+      ingreso: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
       interior: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
-      ubicacion: "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80",
-      croquis: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-      dicabi: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80"
-    }
+      ubicacion: "",
+      croquis: "",
+      dicabi: ""
+    },
+    consultasPdfs: [
+      { name: "Certificacion_RGP_Zona10.pdf", size: "480 KB", fecha: "2026-07-24" }
+    ]
   },
   {
     id: "lr-2026-002",
@@ -121,313 +307,264 @@ export const initialAvaluos = [
     tipoAvaluo: "Residencial",
     solicitante: "BANCO INDUSTRIAL",
     fechaSolicitud: "2026-08-05",
-    fechaActualizacion: "2026-08-10",
-    direccion: "Km 18.5 Carretera a Fraijanes, Condominio Las Luces, Casa 45",
-    coordenadas: "14.51230, -90.46890",
-    descripcionGeneral: "Vivienda unifamiliar aislada de dos niveles con jardín posterior, garaje techado para 3 vehículos y pérgola.",
-    dpi: "2450 31245 0101",
-    referenciaActualizacion: "Solicitud de crédito hipotecario para adquisición de vivienda",
-    estado: "proceso",
+    fechaInspeccion: "08 de agosto de 2026",
+    fechaActualizacion: "2026-08-11",
+    bienMostradoPor: "Sra. María Elena Morales",
+    direccion: "Km 18.5 Carretera a El Salvador, Condominio Prados del Encinal, Casa 14",
+    coordenadas: "14.53120, -90.46231",
+    descripcionGeneral: "Vivienda unifamiliar aislada de dos niveles con jardín posterior, pérgola y estacionamiento techado para 3 autos.",
+    dpi: "2341 87654 0108",
+    referenciaActualizacion: "Inspección física y certificación de valor 2026",
+    estado: "devuelto",
+    observacionesAutorizador: "Haroldo Ruiz: Por favor verificar la medida de desmembración en Finca 8912 e ingresar las colindancias exactas del plano.",
     
     fincas: [
-      { finca: "9820", folio: "320", libro: "115E de Guatemala", propietario: "Carlos Fernando Mendoza Morales" }
+      { 
+        finca: "8912", 
+        folio: "112", 
+        libro: "145E de Guatemala", 
+        propietario: "Carlos Enrique Morales Fuentes",
+        areaRegistrada: 400.00,
+        areaDesmembrada: 50.00,
+        areaActualRegistrada: 350.00,
+        areaFisica: 350.00,
+        areaValuada: 350.00
+      }
     ],
-    propietarioPrincipal: "Carlos Fernando Mendoza Morales",
-    areaRegistrada: 420.00,
-    areaDesmembrada: 0.00,
-    areaActualRegistrada: 420.00,
-    areaFisica: 420.00,
-    areaValuada: 420.00,
+    propietarioPrincipal: "Carlos Enrique Morales Fuentes",
+    areaRegistrada: 400.00,
+    areaDesmembrada: 50.00,
+    areaActualRegistrada: 350.00,
+    areaFisica: 350.00,
+    areaValuada: 350.00,
     
-    limitaciones: "Reglamento interno de copropiedad y construcción de Condominio Las Luces.",
-    anotaciones: "Ninguna.",
-    gravamenes: "Libre de gravámenes vigentes.",
-    servidumbres: "Paso vehicular, drenajes y electricidad subterránea.",
-    areasComunes: "Casa club, piscina, canchas de tenis y áreas verdes comunes.",
-    desmembracion: "No.",
+    limitaciones: "Régimen de propiedad horizontal y reglamento interno del condominio.",
+    anotaciones: "Ninguna vigente.",
+    gravamenes: "Libre de gravámenes hipotecarios.",
+    servidumbres: "Servidumbre de paso vehicular, acueducto y vista.",
+    areasComunes: "Casa club, piscina, canchas deportivas y áreas verdes comunes.",
+    desmembracion: "Desmembración inscrita de 50 m² para vía de acceso común.",
     
-    valorComercialGTQ: 2150000,
-    valorBancarioGTQ: 1720000,
+    valorComercialGTQ: 1750000,
+    valorBancarioGTQ: 1400000,
     tipoCambio: 7.62581,
-    valorComercialUSD: 281937.26,
-    valorBancarioUSD: 225549.81,
+    valorComercialUSD: 229483.82,
+    valorBancarioUSD: 183587.05,
     
     valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
     registroPrincipal: "Valuador autorizado 2572-R-2026",
     valuadorRevisor: "Lic. Luis Felipe Tolaque Tobias",
     registroRevisor: "Valuador autorizado 193-T-93",
     
-    dicabiNombre: "Carlos Fernando Mendoza Morales",
-    dicabiDireccion: "Condominio Las Luces, Manzana D, Casa 45",
-    dicabiMatricula: "01-18-9921-3",
-    dicabiArea: "420.00 m²",
-    sector: "Fraijanes / Carretera a El Salvador",
-    usoSuelo: "Residencial Condominio",
+    dicabiNombre: "Carlos Enrique Morales Fuentes",
+    dicabiDireccion: "Condominio Prados del Encinal Casa 14, Fraijanes",
+    dicabiMatricula: "01-14-3321-4",
+    dicabiArea: "350.00 m²",
+    dicabiObservaciones: "Inscrito en catastro de Fraijanes.",
+    sector: "Carretera a El Salvador / Fraijanes",
+    usoSuelo: "Residencial Condominio Cerrado",
     nivelSocioeconomico: "Medio-Alto",
     formaTerreno: "Regular",
-    pendiente: "Suave inclinación descendente (3%)",
-    esquina: "Sí",
-    accesoCalle: "Boulevard interno de concreto con bordillo",
+    pendiente: "Inclinada leve (5%)",
+    esquina: "No",
+    accesoCalle: "Boulevard interno de concreto con adoquín decorativo",
     colindancias: {
-      norte: "28.00 m con Lote 44",
-      sur: "28.00 m con Calle interna",
-      este: "15.00 m con Lote 46",
-      oeste: "15.00 m con Avenida Las Luces"
+      norte: "14.00 m con Lote 13",
+      sur: "14.00 m con Lote 15",
+      este: "25.00 m con calle interior del condominio",
+      oeste: "25.00 m con área de bosque protegido"
     },
     
     servicios: {
-      drenajeNegras: "Planta de tratamiento de condominio",
-      drenajePluviales: "Red interna de drenaje",
-      pavimentos: "Concreto estampado",
-      bordillos: "Concreto",
-      aceras: "Concreto con gramaquín",
-      agua: "Pozo propio del condominio",
-      telefono: "Red subterránea",
-      internetCable: "Claro / Tigo fibra óptica",
-      energia: "EEGSA acometida 240V",
-      garita: "Doble garita de seguridad con tag electrónico",
-      camaras: "Monitoreo 24/7",
+      drenajeNegras: "Planta de tratamiento propia del condominio",
+      drenajePluviales: "Drenajes internos conectados a colector",
+      pavimentos: "Adoquín decorativo de alta resistencia",
+      bordillos: "Concreto prefabricado",
+      aceras: "Concreto lavado 1.20m",
+      agua: "Pozo propio del condominio con servicio continuo",
+      telefono: "Red telefónica instalada",
+      internetCable: "Fibra óptica Claro y Tigo",
+      energia: "EEGSA 120/240V bifásica",
+      garita: "Garita principal con talanquera y lector de tags",
+      camaras: "Circuito cerrado perimetral monitoreado 24/7",
       alumbradoPublico: "Faroles coloniales LED",
-      tipoCalle: "Vía interna de condominio"
+      tipoCalle: "Calle privada de condominio"
     },
+    serviciosAdicionales: ["Garita de seguridad privada 24 horas", "Planta de tratamiento de aguas"],
     
     construccion: {
       edadAprox: "3 años",
       estadoActual: "Excelente",
-      apropiadaSector: "Armoniza perfectamente con las normas de fachada del condominio",
-      distribucion: "Sala principal, comedor, cocina con isla, 4 dormitorios con baño, sala familiar, lavandería.",
-      estructura: "Mampostería reforzada con zapatas y soleras de amarre",
-      paredes: "Block de primera con alisado plástico",
-      techoEntrePiso: "Losa tradicional con teja decorativa impermeable",
+      apropiadaSector: "Armónica con el reglamento arquitectónico del condominio",
+      distribucion: "Nivel 1: Sala con chimenea, comedor, cocina con gabinetes, baño de visitas, dormitorio de servicio con baño, lavandería, pérgola con churrasquera. Nivel 2: Sala familiar, dormitorio principal con walk-in closet y baño con tina, 2 dormitorios secundarios con baño compartido.",
+      estructura: "Concreto armado y muros de carga reforzados",
+      paredes: "Block pómez con acabados lisos alisados y pintura vinílica lavable",
+      techoEntrePiso: "Losa tradicional de concreto con teja decorativa",
       piso: "Piso cerámico imitación madera en dormitorios y porcelanato en áreas sociales",
-      puertas: "Madera de ciprés tratada",
-      ventanas: "PVC blanco con doble vidrio aislante",
-      sanitaria: "Inodoros ecológicos y grifería monocontrol",
-      electrica: "Tablero centralizado con breakers termo-magnéticos",
-      factoresPositivos: "Condominio de alta seguridad, áreas verdes infantiles, clima fresco.",
-      factoresNegativos: "Distancia al centro urbano de la capital."
+      puertas: "Puertas interiores en madera enchapada y principal en madera sólida",
+      ventanas: "Ventanería de PVC blanco con vidrio reflectivo de 5mm",
+      sanitaria: "Sanitarios y grifería importada de bajo consumo",
+      electrica: "Tablero de 16 circuitos con protección y polo a tierra",
+      factoresPositivos: "Condominio de alta plusvalía, doble garita de seguridad, diseño contemporáneo.",
+      factoresNegativos: "Distancia al centro de la ciudad en horas de alto tráfico."
     },
     
-    desgloseTerreno: { area: 420.00, unidad: "m²", valorUnitario: 1800, total: 756000 },
-    desgloseConstruccion: { area: 320.00, unidad: "m²", valorUnitario: 4356.25, total: 1394000 },
+    desgloseTerreno: { 
+      area: 350.00, 
+      unidad: "m²", 
+      valorUnitario: 1400, 
+      total: 490000,
+      fincaAsociada: "8912",
+      varasCuadradas: 500.90
+    },
+    desgloseConstruccion: { 
+      area: 280.00, 
+      unidad: "m²", 
+      valorUnitario: 4500, 
+      total: 1260000 
+    },
     
     fotos: {
-      entorno: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80",
-      ingreso: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-      interior: "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=800&q=80",
-      ubicacion: "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80",
-      croquis: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80",
-      dicabi: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80"
-    }
+      entorno: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
+      ingreso: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
+      interior: "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80",
+      ubicacion: "",
+      croquis: "",
+      dicabi: ""
+    },
+    consultasPdfs: []
   },
   {
     id: "lr-2026-003",
     codigo: "LR-2026-003",
     tipoAvaluo: "Industrial",
-    solicitante: "BANCO AGROMERCANTIL (BAM)",
+    solicitante: "BANCO DE AMÉRICA CENTRAL (BAC)",
     fechaSolicitud: "2026-09-02",
+    fechaInspeccion: "05 de septiembre de 2026",
     fechaActualizacion: "2026-09-08",
-    direccion: "Calzada Roosevelt 34-12 Zona 11, Complejo Industrial Las Rosas, Ofibodega 8",
-    coordenadas: "14.62105, -90.56214",
-    descripcionGeneral: "Ofibodega con área de almacenamiento a doble altura, rampa de carga para contenedores y mezanine de oficinas.",
-    dpi: "1654 99872 0101",
-    referenciaActualizacion: "Línea de crédito comercial y garantía prendaria/hipotecaria",
-    estado: "completado",
+    bienMostradoPor: "Ing. Fernando Estrada",
+    direccion: "Calzada Atanasio Tzul 22-00 Zona 12, Parque Industrial El Trébol, Bodega B-4",
+    coordenadas: "14.58210, -90.53420",
+    descripcionGeneral: "Bodega industrial con estructura de marcos metálicos, piso de alta resistencia, área de andenes de carga y descarga y mezzanina para oficinas.",
+    dpi: "1678 23901 0101",
+    referenciaActualizacion: "Inspección física y certificación de valor 2026",
+    estado: "borrador",
+    observacionesAutorizador: "Borrador en captura técnica.",
     
     fincas: [
-      { finca: "12845", folio: "45", libro: "302E de Guatemala", propietario: "Logística y Distribución Maya S.A." }
+      { 
+        finca: "12450", 
+        folio: "450", 
+        libro: "320E de Guatemala", 
+        propietario: "Logística Industrial del Sur S.A.",
+        areaRegistrada: 1250.00,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 1250.00,
+        areaFisica: 1250.00,
+        areaValuada: 1250.00
+      }
     ],
-    propietarioPrincipal: "Logística y Distribución Maya S.A.",
-    areaRegistrada: 780.00,
+    propietarioPrincipal: "Logística Industrial del Sur S.A.",
+    areaRegistrada: 1250.00,
     areaDesmembrada: 0.00,
-    areaActualRegistrada: 780.00,
-    areaFisica: 780.00,
-    areaValuada: 780.00,
+    areaActualRegistrada: 1250.00,
+    areaFisica: 1250.00,
+    areaValuada: 1250.00,
     
-    limitaciones: "Anotación de servidumbre de paso de transporte pesado.",
-    anotaciones: "Sin demandas ni embargos.",
-    gravamenes: "Hipotecaria a favor de BAM.",
-    servidumbres: "Patio de maniobras compartido.",
-    areasComunes: "Báscula de pesaje y seguridad 24 horas.",
-    desmembracion: "No.",
+    limitaciones: "Servidumbre de paso para maniobra de furgones y camiones pesados.",
+    anotaciones: "Ninguna anotación judicial o embargo.",
+    gravamenes: "Hipotecas bancarias vigentes inscritas a favor del banco solicitante.",
+    servidumbres: "Servidumbre de paso vehicular pesado y líneas de alta tensión.",
+    areasComunes: "Patios de maniobras, planta eléctrica de emergencia general y pozo común.",
+    desmembracion: "No reporta desmembraciones.",
     
-    valorComercialGTQ: 5600000,
-    valorBancarioGTQ: 4480000,
+    valorComercialGTQ: 6200000,
+    valorBancarioGTQ: 4960000,
     tipoCambio: 7.62581,
-    valorComercialUSD: 734348.22,
-    valorBancarioUSD: 587478.58,
+    valorComercialUSD: 813028.39,
+    valorBancarioUSD: 650422.71,
     
     valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
     registroPrincipal: "Valuador autorizado 2572-R-2026",
     valuadorRevisor: "Lic. Luis Felipe Tolaque Tobias",
     registroRevisor: "Valuador autorizado 193-T-93",
     
-    dicabiNombre: "Logística y Distribución Maya S.A.",
-    dicabiDireccion: "Calzada Roosevelt 34-12 Zona 11, Bodega 8",
-    dicabiMatricula: "01-11-2309-1",
-    dicabiArea: "780.00 m²",
-    sector: "Roosevelt / Zona 11 Industrial",
-    usoSuelo: "Industrial Liviano / Almacenamiento",
-    nivelSocioeconomico: "Comercial / Logístico",
-    formaTerreno: "Rectangular",
-    pendiente: "Totalmente plana",
+    dicabiNombre: "Logística Industrial del Sur S.A.",
+    dicabiDireccion: "Calzada Atanasio Tzul 22-00 Zona 12",
+    dicabiMatricula: "01-12-9904-2",
+    dicabiArea: "1250.00 m²",
+    dicabiObservaciones: "Matrícula fiscal industrial.",
+    sector: "Zona 12 Industrial / Atanasio Tzul",
+    usoSuelo: "Industrial / Logístico Pesado",
+    nivelSocioeconomico: "Industrial",
+    formaTerreno: "Regular / Rectangular profundo",
+    pendiente: "Plana (0%)",
     esquina: "No",
-    accesoCalle: "Avenida apta para transporte pesado y cabezales",
+    accesoCalle: "Calzada principal de alto tonelaje para transporte pesado",
     colindancias: {
-      norte: "39.00 m con Bodega 7",
-      sur: "39.00 m con Bodega 9",
-      este: "20.00 m con Patio de maniobras",
-      oeste: "20.00 m con Muro perimetral"
+      norte: "50.00 m con Bodega B-3",
+      sur: "50.00 m con Bodega B-5",
+      este: "25.00 m con patio común de maniobras",
+      oeste: "25.00 m con Calzada Atanasio Tzul"
     },
     
     servicios: {
-      drenajeNegras: "Red municipal",
-      drenajePluviales: "Trinchera de desagüe pluvial",
-      pavimentos: "Concreto de alta resistencia 4000 PSI",
-      bordillos: "Concreto reforzado",
-      aceras: "Peatonal frontal",
-      agua: "Red municipal",
-      telefono: "Líneas de planta telefónica",
-      internetCable: "Fibra simétrica",
-      energia: "Trifásica de alta capacidad con transformador",
-      garita: "Control de acceso de transporte pesado",
-      camaras: "CCTV periférico",
-      alumbradoPublico: "Proyectores industriales",
-      tipoCalle: "Pavimento pesado"
+      drenajeNegras: "Red municipal industrial",
+      drenajePluviales: "Drenaje pluvial con desarenadores",
+      pavimentos: "Pavimento de concreto hidráulico de 20cm",
+      bordillos: "Concreto pesado",
+      aceras: "Concreto reforzado",
+      agua: "Pozo propio del complejo con capacidad de 100 GPM",
+      telefono: "Troncal digital",
+      internetCable: "Fibra óptica dedicada simétrica",
+      energia: "Servicio trifásico industrial 480/277V con transformador propio de 150 kVA",
+      garita: "Garita de control de transporte pesado con báscula",
+      camaras: "Sistema CCTV perimetral con domos PTZ",
+      alumbradoPublico: "Iluminación industrial con reflectores LED",
+      tipoCalle: "Avenida de transporte pesado"
     },
+    serviciosAdicionales: ["Báscula para furgones en garita", "Transformador propio de 150 kVA"],
     
     construccion: {
-      edadAprox: "4 años",
-      estadoActual: "Excelente",
-      apropiadaSector: "Diseño industrial de última generación",
-      distribucion: "Nave de 600m² a 8 metros de cumbrera, mezanine administrativo de 180m², 2 baños con ducha, anden de carga.",
-      estructura: "Pórticos metálicos de alma llena con pernos de alta resistencia",
-      paredes: "Muro perimetral de block hasta 3 metros y lámina termoacústica esmaltada",
-      techoEntrePiso: "Lámina Aluzinc con tragaluces de policarbonato al 15%",
-      piso: "Concreto pulido tratado con endurecedor de cuarzo",
-      puertas: "Persiana metálica enrollable motorizada de 5x5m",
-      ventanas: "Ventanería de aluminio natural en área de oficinas",
-      sanitaria: "Instalaciones para personal de bodega y visitas",
-      electrica: "Iluminación campanas LED industriales",
-      factoresPositivos: "Ubicación logística estratégica sobre Calzada Roosevelt con conexión inmediata a periferia.",
-      factoresNegativos: "Restricción de horario para transporte pesado en la calzada principal."
+      edadAprox: "5 años",
+      estadoActual: "Muy Bueno",
+      apropiadaSector: "Diseño industrial moderno con altura libre de 8.5 metros",
+      distribucion: "Área de almacenaje libre de columnas intermedias (950 m²), área de carga con 2 andenes hidráulicos, oficinas administrativas en mezzanina con baños para personal operativo y administrativo.",
+      estructura: "Marcos rígidos de acero estructural tipo I y costaneras galvanizadas",
+      paredes: "Muros perimetrales de block hasta 3m de altura y cerramiento superior de lámina troquelada prepintada",
+      techoEntrePiso: "Cubierta curva autoportante con láminas traslúcidas de policarbonato y losacero en área de oficinas",
+      piso: "Losa de concreto de 18 cm con endurecedor metálico antipolvo pulido espejo",
+      puertas: "Portones metálicos enrollables motorizados de 5x5 metros en andenes",
+      ventanas: "Perfilería de aluminio anodizado en área administrativa",
+      sanitaria: "Servicios sanitarios completos con duchas y vestidores para operarios",
+      electrica: "Luminarias tipo campana LED de alta bahía e instalación contra incendios",
+      factoresPositivos: "Excelente conectividad logística hacia el puerto y vías principales, altura libre óptima.",
+      factoresNegativos: "Restricción municipal de horarios para circulación de transporte pesado."
     },
     
-    desgloseTerreno: { area: 780.00, unidad: "m²", valorUnitario: 2800, total: 2184000 },
-    desgloseConstruccion: { area: 780.00, unidad: "m²", valorUnitario: 4379.49, total: 3416000 },
+    desgloseTerreno: { 
+      area: 1250.00, 
+      unidad: "m²", 
+      valorUnitario: 2200, 
+      total: 2750000,
+      fincaAsociada: "12450",
+      varasCuadradas: 1788.94
+    },
+    desgloseConstruccion: { 
+      area: 1150.00, 
+      unidad: "m²", 
+      valorUnitario: 3000, 
+      total: 3450000 
+    },
     
     fotos: {
       entorno: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
-      ingreso: "https://images.unsplash.com/photo-1586528116493-a029325540fa?auto=format&fit=crop&w=800&q=80",
+      ingreso: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80",
       interior: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80",
-      ubicacion: "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80",
-      croquis: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-      dicabi: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80"
-    }
-  },
-  {
-    id: "lr-2026-004",
-    codigo: "LR-2026-004",
-    tipoAvaluo: "Residencial",
-    solicitante: "BANCO G&T CONTINENTAL",
-    fechaSolicitud: "2026-10-01",
-    fechaActualizacion: "2026-10-12",
-    direccion: "Avenida Las Américas 18-40 Zona 14, Apartamento 10B, Edificio Torre Bellavista",
-    coordenadas: "14.58210, -90.52110",
-    descripcionGeneral: "Apartamento de lujo en décimo nivel con vista panorámica hacia los volcanes, balcón amplio y 3 parqueos individuales en sótano.",
-    dpi: "1923 88124 0101",
-    referenciaActualizacion: "Avalúo de garantía hipotecaria",
-    estado: "borrador",
-    
-    fincas: [
-      { finca: "18920", folio: "420", libro: "510E de Propiedad Horizontal", propietario: "María René Castillo Asturias" }
-    ],
-    propietarioPrincipal: "María René Castillo Asturias",
-    areaRegistrada: 215.00,
-    areaDesmembrada: 0.00,
-    areaActualRegistrada: 215.00,
-    areaFisica: 215.00,
-    areaValuada: 215.00,
-    
-    limitaciones: "Sujeto a Régimen de Propiedad Horizontal de Torre Bellavista.",
-    anotaciones: "Ninguna.",
-    gravamenes: "En trámite de constitución hipotecaria.",
-    servidumbres: "De paso común, elevadores y ductos técnicos.",
-    areasComunes: "Lobby de triple altura, gimnasio, piscina climatizada, salón social, business center.",
-    desmembracion: "No.",
-    
-    valorComercialGTQ: 2950000,
-    valorBancarioGTQ: 2360000,
-    tipoCambio: 7.62581,
-    valorComercialUSD: 386843.91,
-    valorBancarioUSD: 309475.13,
-    
-    valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
-    registroPrincipal: "Valuador autorizado 2572-R-2026",
-    valuadorRevisor: "Lic. Luis Felipe Tolaque Tobias",
-    registroRevisor: "Valuador autorizado 193-T-93",
-    
-    dicabiNombre: "María René Castillo Asturias",
-    dicabiDireccion: "Avenida Las Américas 18-40 Zona 14, Apto 10B",
-    dicabiMatricula: "01-14-1102-5",
-    dicabiArea: "215.00 m²",
-    sector: "Zona 14 / Las Américas",
-    usoSuelo: "Residencial Vertical de Lujo",
-    nivelSocioeconomico: "Alto / Premium",
-    formaTerreno: "Finca Filial (Propiedad Horizontal)",
-    pendiente: "No aplica",
-    esquina: "Sí (Torre en esquina)",
-    accesoCalle: "Boulevard Las Américas",
-    colindancias: {
-      norte: "Con Apartamento 10A",
-      sur: "Con Balcón exterior hacia Av. Las Américas",
-      este: "Con Pasillo de elevadores",
-      oeste: "Con Fachada lateral poniente"
+      ubicacion: "",
+      croquis: "",
+      dicabi: ""
     },
-    
-    servicios: {
-      drenajeNegras: "Red de bajadas del edificio",
-      drenajePluviales: "Captación pluvial técnica del edificio",
-      pavimentos: "Pavimento urbano de primer orden",
-      bordillos: "Concreto y adoquín decorativo",
-      aceras: "Plaza peatonal arbolada",
-      agua: "Pozo propio y cisterna con tratamiento",
-      telefono: "Red IP centralizada",
-      internetCable: "Fibra hasta el apartamento",
-      energia: "Generador eléctrico de respaldo total (100% de la torre)",
-      garita: "Recepción y concierge 24 horas",
-      camaras: "Sistema integral de videovigilancia biométrica",
-      alumbradoPublico: "Iluminación de bulevar",
-      tipoCalle: "Bulevar de alta categoría"
-    },
-    
-    construccion: {
-      edadAprox: "1 año (Prácticamente nuevo)",
-      estadoActual: "Excelente / Impecable",
-      apropiadaSector: "Máximo estándar de calidad residencial en el país",
-      distribucion: "Vestíbulo de ingreso, sala-comedor integrados, terraza panorámica, cocina italiana equipada, máster suite con walk-in closet y tina, 2 habitaciones secundarias con baño, cuarto de servicio.",
-      estructura: "Concreto postensado y muros sismorresistentes",
-      paredes: "Tablayeso acústico doble con aislamiento de lana de vidrio",
-      techoEntrePiso: "Cielos falsos suspendidos con diseño de iluminación indirecta",
-      piso: "Piso de madera de ingeniería en dormitorios y mármol en áreas sociales",
-      puertas: "Puertas enchapadas en madera natural de piso a cielo (2.70m de altura)",
-      ventanas: "Ventanería alemana termoacústica de piso a cielo",
-      sanitaria: "Artefactos suspendidos con grifería alemana Hansgrohe",
-      electrica: "Domótica integrada para iluminación y cortinas",
-      factoresPositivos: "Exclusividad residencial de Zona 14, amenidades de lujo, plusvalía asegurada.",
-      factoresNegativos: "Cuota de mantenimiento mensual elevada."
-    },
-    
-    desgloseTerreno: { area: 45.00, unidad: "m² (cuota copropiedad)", valorUnitario: 8000, total: 360000 },
-    desgloseConstruccion: { area: 215.00, unidad: "m²", valorUnitario: 12046.51, total: 2590000 },
-    
-    fotos: {
-      entorno: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
-      ingreso: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-      interior: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80",
-      ubicacion: "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80",
-      croquis: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80",
-      dicabi: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80"
-    }
+    consultasPdfs: []
   }
 ];

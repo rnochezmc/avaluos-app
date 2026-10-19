@@ -1,17 +1,26 @@
 /* ==========================================================================
-   CVERDE AVALÚOS - DESIGN SYSTEM & GLOBAL STYLES (VANILLA CSS)
+   LEX ROSAM AVALÚOS - DESIGN SYSTEM & GLOBAL STYLES (VANILLA CSS)
    Tailored for Mobile & Desktop Real Estate Appraisals System
    ========================================================================== */
 
 :root {
-  /* Brand Colors - Cverde Emerald Palette */
-  --cverde-primary: #064e3b;       /* Deep Forest Emerald */
-  --cverde-primary-hover: #04382a;
-  --cverde-accent: #059669;        /* Vibrant Emerald */
-  --cverde-accent-light: #10b981;
-  --cverde-light-bg: #ecfdf5;      /* Soft Mint */
-  --cverde-gold: #d97706;          /* Financial Currency Gold */
-  --cverde-gold-bg: #fef3c7;
+  /* Brand Colors - Lex Rosam Executive Navy & Slate Palette */
+  --lexrosam-navy: #0d2847;        /* Official Lex Rosam Deep Navy */
+  --lexrosam-navy-hover: #07172b;
+  --lexrosam-blue: #1b497d;        /* Deep Royal Accent */
+  --lexrosam-blue-light: #2563eb;  /* High-Contrast Interactive Blue */
+  --lexrosam-light-bg: #f0f4f9;    /* Soft Executive Ice/Slate Background */
+  --lexrosam-gold: #c59b27;        /* Executive Gold / Financial Accent */
+  --lexrosam-gold-bg: #fef9e7;
+
+  /* Backward-compatible aliases */
+  --cverde-primary: #0d2847;       /* Lex Rosam Deep Navy */
+  --cverde-primary-hover: #07172b;
+  --cverde-accent: #1b497d;        /* Royal Blue Accent */
+  --cverde-accent-light: #2563eb;
+  --cverde-light-bg: #f0f4f9;
+  --cverde-gold: #c59b27;
+  --cverde-gold-bg: #fef9e7;
 
   /* Neutral Slate Palette */
   --slate-950: #020617;

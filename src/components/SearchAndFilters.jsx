@@ -84,17 +84,24 @@ export default function SearchAndFilters({
         </button>
         <button
           type="button"
-          className={`filter-pill ${activeFilter === 'completado' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('completado')}
+          className={`filter-pill ${activeFilter === 'autorizado' || activeFilter === 'completado' ? 'active' : ''}`}
+          onClick={() => setActiveFilter('autorizado')}
         >
-          ✓ Completados
+          ✓ Autorizados
         </button>
         <button
           type="button"
-          className={`filter-pill ${activeFilter === 'proceso' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('proceso')}
+          className={`filter-pill ${activeFilter === 'en_revision' || activeFilter === 'proceso' ? 'active' : ''}`}
+          onClick={() => setActiveFilter('en_revision')}
         >
-          ⏳ En Proceso
+          ⏳ En Revisión
+        </button>
+        <button
+          type="button"
+          className={`filter-pill ${activeFilter === 'devuelto' ? 'active' : ''}`}
+          onClick={() => setActiveFilter('devuelto')}
+        >
+          ⚠️ Devueltos
         </button>
         <button
           type="button"
@@ -116,6 +123,7 @@ export default function SearchAndFilters({
             <option value="Comercial">Comercial</option>
             <option value="Residencial">Residencial</option>
             <option value="Industrial">Industrial</option>
+            <option value="Terreno / Rústico">Terreno / Rústico</option>
           </select>
         </div>
 
@@ -127,10 +135,11 @@ export default function SearchAndFilters({
             value={bankFilter}
             onChange={(e) => setBankFilter(e.target.value)}
           >
-            <option value="todos">Todos los Bancos</option>
+            <option value="todos">Todas las Instituciones</option>
             <option value="BANCO G&T CONTINENTAL">Banco G&T Continental</option>
             <option value="BANCO INDUSTRIAL">Banco Industrial</option>
-            <option value="BANCO AGROMERCANTIL (BAM)">Banco Agromercantil (BAM)</option>
+            <option value="BANCO DE AMÉRICA CENTRAL (BAC)">Banco de América Central (BAC)</option>
+            <option value="COOPERATIVA DE AHORRO Y CREDITO INTEGRAL PARROQUIAL GUADALUPANA R.L.">Cooperativa Guadalupana</option>
           </select>
         </div>
 

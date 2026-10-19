@@ -5,5 +5,9 @@ service cloud.firestore {
       // Permitir lectura y escritura de avalúos
       allow read, write: if true;
     }
+    match /usuarios/{document=**} {
+      // Permitir lectura y gestión de usuarios
+      allow read, write: if true;
+    }
   }
 }
