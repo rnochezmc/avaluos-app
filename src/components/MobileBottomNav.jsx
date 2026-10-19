@@ -1,7 +1,14 @@
 import React from 'react';
-import { Home, Search, Plus, BarChart3 } from 'lucide-react';
+import { Home, Search, Plus, BarChart3, User } from 'lucide-react';
 
-export default function MobileBottomNav({ onNewAvaluo, onFocusSearch, onScrollStats, activeView }) {
+export default function MobileBottomNav({ 
+  onNewAvaluo, 
+  onFocusSearch, 
+  onScrollStats, 
+  activeView, 
+  onOpenProfile,
+  currentUser 
+}) {
   return (
     <nav className="mobile-bottom-nav">
       <div className="mobile-nav-items">
@@ -41,7 +48,18 @@ export default function MobileBottomNav({ onNewAvaluo, onFocusSearch, onScrollSt
           <BarChart3 size={18} />
           <span>Métricas</span>
         </button>
+
+        <button
+          type="button"
+          className="mobile-nav-btn"
+          onClick={onOpenProfile}
+          title="Mi Perfil y Cerrar Sesión"
+        >
+          <User size={18} />
+          <span>Cuenta</span>
+        </button>
       </div>
     </nav>
   );
 }
+

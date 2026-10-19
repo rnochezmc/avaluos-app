@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, UserCheck, ShieldCheck, ChevronDown, Check, 
   Users, LogOut, Shield, User, HelpCircle 
@@ -14,6 +14,24 @@ export default function Navbar({
   onOpenUserManagement
 }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  // Cerrar el menú desplegable al hacer clic fuera
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    }
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showUserMenu]);
 
   const canManageUsers = currentUser?.rol === 'admin' || currentUser?.rol === 'soporte';
 
@@ -121,7 +139,7 @@ export default function Navbar({
           )}
 
           {/* User Profile & Account Menu */}
-          <div style={{ position: 'relative' }}>
+          <div ref={menuRef} style={{ position: 'relative' }}>
             <button
               type="button"
               className="user-badge"

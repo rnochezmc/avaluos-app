@@ -36,7 +36,9 @@ export default function App() {
   // Real Google Auth user state (strictly governed by Firebase Auth)
   const [currentUser, setCurrentUser] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
+  const [usuariosLoaded, setUsuariosLoaded] = useState(false);
   const [showUserManagement, setShowUserManagement] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [currentRole, setCurrentRole] = useState('autorizador');
 
   // Load persistent data from localStorage or fallback to initial mock
@@ -98,6 +100,7 @@ export default function App() {
     try {
       unsubUsers = subscribeToUsuarios((userList) => {
         setUsuarios(userList);
+        setUsuariosLoaded(true);
       });
     } catch (err) {
       console.warn('Error al suscribirse a usuarios:', err);
@@ -118,6 +121,11 @@ export default function App() {
       if (firebaseUser) {
         const email = (firebaseUser.email || '').toLowerCase().trim();
         const match = usuarios.find(u => u.email?.toLowerCase().trim() === email);
+
+        // Si no es cuenta principal y usuarios aún no cargan de Firestore, esperar
+        if (email !== 'rnochezmc@gmail.com' && email !== 'cverdeavaluos@gmail.com' && !usuariosLoaded) {
+          return;
+        }
 
         let assignedRole = 'no_autorizado';
         let assignedNombre = firebaseUser.displayName || 'Colaborador';
@@ -167,7 +175,7 @@ export default function App() {
     return () => {
       if (unsubAuth) unsubAuth();
     };
-  }, [usuarios]);
+  }, [usuarios, usuariosLoaded]);
 
   const handleSignOut = async () => {
     try {
@@ -176,8 +184,12 @@ export default function App() {
       console.warn('Error al cerrar sesión:', e);
     }
     setCurrentUser(null);
+    setShowProfileModal(false);
+    setShowUserManagement(false);
     localStorage.removeItem(AUTH_USER_KEY);
+    sessionStorage.clear();
   };
+
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
@@ -629,13 +641,161 @@ export default function App() {
         />
       )}
 
+      {/* Modal de Mi Cuenta y Cerrar Sesión (Optimizada para Móvil y Desktop) */}
+      {showProfileModal && currentUser && (
+        <div 
+          className="modal-overlay" 
+          style={{ 
+            zIndex: 110, 
+            position: 'fixed', 
+            inset: 0, 
+            background: 'rgba(0,0,0,0.6)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            padding: '1rem',
+            backdropFilter: 'blur(3px)'
+          }}
+          onClick={() => setShowProfileModal(false)}
+        >
+          <div 
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '420px',
+              width: '100%',
+              padding: '1.75rem',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+              textAlign: 'center',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              type="button"
+              onClick={() => setShowProfileModal(false)}
+              style={{ position: 'absolute', top: '14px', right: '14px', background: 'none', border: 'none', fontSize: '1.25rem', color: '#64748b', cursor: 'pointer', padding: '4px' }}
+            >
+              ✕
+            </button>
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                background: currentUser?.rol === 'admin' ? '#1e40af' : currentUser?.rol === 'soporte' ? '#6d28d9' : '#059669',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                overflow: 'hidden',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+              }}>
+                {currentUser?.photoURL ? (
+                  <img src={currentUser.photoURL} alt={currentUser.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  (currentUser?.nombre || 'LR').slice(0, 2).toUpperCase()
+                )}
+              </div>
+            </div>
+
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0d2847', margin: '0 0 0.25rem' }}>
+              {currentUser?.nombre}
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.85rem', wordBreak: 'break-all' }}>
+              {currentUser?.email}
+            </p>
+
+            <div style={{
+              display: 'inline-block',
+              padding: '0.35rem 0.85rem',
+              borderRadius: '20px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              background: currentUser?.rol === 'admin' ? '#eff6ff' : currentUser?.rol === 'soporte' ? '#f5f3ff' : '#f0fdf4',
+              color: currentUser?.rol === 'admin' ? '#1e40af' : currentUser?.rol === 'soporte' ? '#6d28d9' : '#15803d',
+              marginBottom: '1.25rem',
+              border: '1px solid rgba(0,0,0,0.06)'
+            }}>
+              {currentUser?.titulo || (currentUser?.rol === 'admin' ? 'Aprobador Oficial LEX ROSAM' : 'Valuador Técnico')}
+            </div>
+
+            {/* Administrar colaboradores si tiene permisos */}
+            {(currentUser?.rol === 'admin' || currentUser?.rol === 'soporte') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowProfileModal(false);
+                  setShowUserManagement(true);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#0d2847',
+                  fontSize: '0.88rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <span>Control de Colaboradores</span>
+              </button>
+            )}
+
+            {/* Botón principal de Cerrar Sesión */}
+            <button
+              type="button"
+              onClick={handleSignOut}
+              style={{
+                width: '100%',
+                padding: '0.85rem',
+                borderRadius: '10px',
+                border: 'none',
+                background: '#dc2626',
+                color: '#ffffff',
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)'
+              }}
+            >
+              <LogOut size={18} />
+              <span>Cerrar Sesión de Google</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Bottom Quick Actions */}
       <MobileBottomNav
-        onNewAvaluo={() => setIsCreatingNew(true)}
+        onNewAvaluo={() => {
+          if (currentRole === 'ingreso' || currentUser?.rol === 'admin' || currentUser?.rol === 'soporte') {
+            setIsCreatingNew(true);
+          } else {
+            alert('Los usuarios con rol de sólo lectura no tienen permisos para crear expedientes.');
+          }
+        }}
         onFocusSearch={focusSearchInput}
         onScrollStats={scrollToStats}
         activeView="list"
+        onOpenProfile={() => setShowProfileModal(true)}
+        currentUser={currentUser}
       />
     </div>
   );
 }
+

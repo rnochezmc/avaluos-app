@@ -17,7 +17,7 @@ export default function LoginScreen({ onLoginSuccess }) {
     } catch (err) {
       console.error('Error al iniciar sesión con Google:', err);
       if (err.code === 'auth/popup-closed-by-user') {
-        setErrorMsg('Ventana de inicio de sesión cerrada antes de completar la autenticación.');
+        setErrorMsg('Ventana de inicio de sesión cerrada. Si estás en celular, usa el enlace de pantalla completa abajo.');
         setLoading(false);
       } else if (err.code === 'auth/popup-blocked') {
         // En navegadores móviles con bloqueo de ventanas emergentes, redirigir
@@ -31,11 +31,29 @@ export default function LoginScreen({ onLoginSuccess }) {
         setErrorMsg('Dominio no autorizado en Firebase Console. Por favor verifica la configuración de autenticación.');
         setLoading(false);
       } else {
-        setErrorMsg('Error al autenticar con Google: ' + (err.message || 'Intenta nuevamente.'));
-        setLoading(false);
+        // En caso de otro error en móviles, intentar redirección directa
+        try {
+          await signInWithRedirect(auth, googleProvider);
+        } catch (redirectErr) {
+          setErrorMsg('Error al autenticar con Google: ' + (err.message || 'Intenta nuevamente.'));
+          setLoading(false);
+        }
       }
     }
   };
+
+  const handleGoogleSignInRedirect = async () => {
+    try {
+      setLoading(true);
+      setErrorMsg('');
+      await signInWithRedirect(auth, googleProvider);
+    } catch (err) {
+      console.error('Error en redirección de Google:', err);
+      setErrorMsg('Error al abrir Google: ' + (err.message || 'Intenta nuevamente.'));
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="login-container" style={{
@@ -182,6 +200,27 @@ export default function LoginScreen({ onLoginSuccess }) {
             </>
           )}
         </button>
+
+        {/* Opción para navegadores móviles con bloqueo de popups o dentro de WhatsApp */}
+        <div style={{ marginTop: '0.85rem' }}>
+          <button
+            type="button"
+            onClick={handleGoogleSignInRedirect}
+            disabled={loading}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#2563eb',
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              padding: '0.25rem 0.5rem',
+              fontWeight: 500
+            }}
+          >
+            ¿En celular o WhatsApp? Toca aquí para ingresar en pantalla completa
+          </button>
+        </div>
 
         <div style={{
           marginTop: '1.75rem',
