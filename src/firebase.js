@@ -20,12 +20,13 @@ import {
 
 const firebaseConfig = {
   apiKey: "AIzaSyBkvww64wA8GZtDnWuSY4lBWXfFYpsMdPk",
-  authDomain: "cverde-avaluos-gt.firebaseapp.com",
+  authDomain: "lexrosam-avaluos.firebaseapp.com",
   projectId: "cverde-avaluos-gt",
   storageBucket: "cverde-avaluos-gt.firebasestorage.app",
   messagingSenderId: "541486764518",
   appId: "1:541486764518:web:5c2e67453d3bd330210627"
 };
+
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

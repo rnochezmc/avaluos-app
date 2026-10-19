@@ -9,8 +9,11 @@
         "supportEmail": "rnochezmc@gmail.com",
         "authorizedRedirectUris": [
           "https://avaluos-app.vercel.app",
+          "https://lexrosam-avaluos.firebaseapp.com/__/auth/handler",
+          "https://lexrosam-avaluos.web.app/__/auth/handler",
           "https://cverde-avaluos-gt.firebaseapp.com/__/auth/handler"
         ]
+
       }
     }
   }
