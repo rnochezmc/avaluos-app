@@ -12,6 +12,8 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged
 } from 'firebase/auth';
@@ -31,7 +33,12 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-export { signInWithPopup, signOut, onAuthStateChanged };
+// Forzar a Google a mostrar siempre el selector de cuentas
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
+export { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged };
 
 const AVALUOS_COLLECTION = 'avaluos';
 const USUARIOS_COLLECTION = 'usuarios';

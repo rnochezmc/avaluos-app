@@ -19,10 +19,11 @@ import {
   auth,
   signOut,
   onAuthStateChanged,
+  getRedirectResult,
   subscribeToUsuarios,
   seedInitialUsuariosIfEmpty
 } from './firebase';
-import { SearchX, Plus, Sparkles, ShieldAlert, LogOut } from 'lucide-react';
+import { SearchX, Plus, Sparkles, ShieldAlert, LogOut, Loader2 } from 'lucide-react';
 
 const STORAGE_KEY = 'lexrosam_avaluos_db_v2';
 const LEGACY_STORAGE_KEY = 'cverde_avaluos_db_v1';
@@ -30,23 +31,13 @@ const AUTH_USER_KEY = 'lexrosam_auth_user';
 
 export default function App() {
   const [cloudStatus, setCloudStatus] = useState('conectando'); // 'conectado' | 'offline' | 'conectando'
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   
-  // Auth state
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem(AUTH_USER_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error('Error loading auth user', e);
-    }
-    return null;
-  });
-
+  // Real Google Auth user state (strictly governed by Firebase Auth)
+  const [currentUser, setCurrentUser] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
   const [showUserManagement, setShowUserManagement] = useState(false);
-  const [currentRole, setCurrentRole] = useState(() => {
-    return currentUser?.rol === 'valuador' ? 'ingreso' : 'autorizador';
-  });
+  const [currentRole, setCurrentRole] = useState('autorizador');
 
   // Load persistent data from localStorage or fallback to initial mock
   const [avaluos, setAvaluos] = useState(() => {
@@ -118,25 +109,34 @@ export default function App() {
 
   // Escuchar estado de autenticación de Google Firebase
   useEffect(() => {
+    // Manejar retorno de inicio de sesión con redirección en navegadores móviles
+    getRedirectResult(auth).catch((err) => {
+      console.warn('Redirect auth result:', err);
+    });
+
     const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         const email = (firebaseUser.email || '').toLowerCase().trim();
         const match = usuarios.find(u => u.email?.toLowerCase().trim() === email);
 
-        let assignedRole = 'valuador';
+        let assignedRole = 'no_autorizado';
         let assignedNombre = firebaseUser.displayName || 'Colaborador';
-        let assignedTitulo = 'Valuador Técnico de Ingreso';
-        let isActivo = true;
+        let assignedTitulo = 'Personal Técnico';
+        let isActivo = false;
 
+        // Cuentas administradoras maestras del sistema
         if (email === 'rnochezmc@gmail.com') {
           assignedRole = 'soporte';
-          assignedNombre = firebaseUser.displayName || 'Ing. Ramiro Nóchez';
+          assignedNombre = firebaseUser.displayName || 'Ramiro Nóchez';
           assignedTitulo = 'Soporte Técnico y Sistemas';
+          isActivo = true;
         } else if (email === 'cverdeavaluos@gmail.com') {
           assignedRole = 'admin';
-          assignedNombre = firebaseUser.displayName || 'Lic. Haroldo Ruiz';
+          assignedNombre = firebaseUser.displayName || 'Haroldo Ruiz';
           assignedTitulo = 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026';
+          isActivo = true;
         } else if (match) {
+          // Usuario registrado por Haroldo o Ramiro en la colección de usuarios
           assignedRole = match.rol || 'valuador';
           assignedNombre = match.nombre || firebaseUser.displayName || 'Colaborador';
           assignedTitulo = match.titulo || 'Personal Técnico';
@@ -155,7 +155,12 @@ export default function App() {
 
         setCurrentUser(userObj);
         setCurrentRole(assignedRole === 'valuador' ? 'ingreso' : 'autorizador');
-        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userObj));
+        setIsAuthLoading(false);
+      } else {
+        // Ninguna cuenta de Google autenticada
+        setCurrentUser(null);
+        localStorage.removeItem(AUTH_USER_KEY);
+        setIsAuthLoading(false);
       }
     });
 
@@ -164,17 +169,11 @@ export default function App() {
     };
   }, [usuarios]);
 
-  const handleSimulateLogin = (profile) => {
-    setCurrentUser(profile);
-    setCurrentRole(profile.rol === 'valuador' ? 'ingreso' : 'autorizador');
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
-  };
-
   const handleSignOut = async () => {
     try {
       await signOut(auth);
     } catch (e) {
-      console.warn('Sign out local', e);
+      console.warn('Error al cerrar sesión:', e);
     }
     setCurrentUser(null);
     localStorage.removeItem(AUTH_USER_KEY);
@@ -404,14 +403,42 @@ export default function App() {
     };
   }, [avaluos]);
 
-  // Pantalla de Inicio de Sesión si no hay usuario autenticado
+  // Pantalla de carga mientras Firebase verifica la sesión de Google
+  if (isAuthLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'radial-gradient(circle at 50% 20%, #1e3a5f 0%, #0d2847 45%, #07172b 100%)',
+        padding: '1.5rem',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        color: '#ffffff'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <img 
+            src="/lex-rosam-logo.png" 
+            alt="LEX ROSAM S.A." 
+            style={{ maxHeight: '90px', objectFit: 'contain', marginBottom: '1.5rem' }} 
+            onError={(e) => { e.target.onerror = null; e.target.src = '/vite.svg'; }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', color: '#93c5fd', fontSize: '0.95rem', fontWeight: 600 }}>
+            <Loader2 size={20} className="spin-animation" style={{ animation: 'spin 1s linear infinite' }} />
+            <span>Verificando credenciales de acceso...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Pantalla de Inicio de Sesión si no hay usuario autenticado en Google
   if (!currentUser) {
     return (
       <LoginScreen
         onLoginSuccess={(fbUser) => {
-          // Handled by onAuthStateChanged
+          // El cambio de estado es administrado de inmediato por onAuthStateChanged
         }}
-        onSimulateLogin={handleSimulateLogin}
       />
     );
   }
@@ -429,7 +456,7 @@ export default function App() {
         fontFamily: 'Inter, system-ui, sans-serif'
       }}>
         <div style={{
-          maxWidth: '440px',
+          maxWidth: '460px',
           width: '100%',
           background: '#ffffff',
           borderRadius: '16px',
@@ -437,12 +464,14 @@ export default function App() {
           textAlign: 'center',
           boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
         }}>
-          <ShieldAlert size={52} color="#f59e0b" style={{ margin: '0 auto 1rem auto' }} />
-          <h2 style={{ color: '#0d2847', fontSize: '1.35rem', fontWeight: 800, margin: '0 0 0.5rem' }}>
-            Acceso Pendiente de Activación
+          <ShieldAlert size={56} color="#dc2626" style={{ margin: '0 auto 1.25rem auto' }} />
+          <h2 style={{ color: '#0d2847', fontSize: '1.4rem', fontWeight: 800, margin: '0 0 0.5rem' }}>
+            Acceso No Autorizado
           </h2>
           <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.5, margin: '0.75rem 0 1.5rem' }}>
-            Tu cuenta <strong>{currentUser.email}</strong> está registrada pero requiere que el <strong>Lic. Haroldo Ruiz</strong> active tus permisos en el panel de colaboradores de LEX ROSAM S.A.
+            La cuenta de Google <strong>{currentUser.email}</strong> no tiene permisos asignados en el sistema de <strong>LEX ROSAM S.A.</strong>
+            <br /><br />
+            Comunícate con <strong>Haroldo Ruiz</strong> para que active tu usuario y te asigne un rol en el panel de colaboradores.
           </p>
           <button
             onClick={handleSignOut}
@@ -452,12 +481,12 @@ export default function App() {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.5rem',
-              padding: '0.75rem',
+              padding: '0.85rem',
               borderRadius: '8px',
               border: '1px solid #cbd5e1',
               background: '#f8fafc',
-              color: '#334155',
-              fontWeight: 600,
+              color: '#0d2847',
+              fontWeight: 700,
               cursor: 'pointer'
             }}
           >
