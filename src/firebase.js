@@ -169,6 +169,15 @@ export async function seedInitialUsuariosIfEmpty() {
           titulo: 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026',
           activo: true,
           creadoEl: new Date().toISOString()
+        },
+        {
+          id: 'aroldoruiz100_gmail_com',
+          email: 'aroldoruiz100@gmail.com',
+          nombre: 'Lic. Haroldo Ruiz',
+          rol: 'admin',
+          titulo: 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026',
+          activo: true,
+          creadoEl: new Date().toISOString()
         }
       ];
 
@@ -179,6 +188,17 @@ export async function seedInitialUsuariosIfEmpty() {
       // Asegurar que el registro de Ramiro no tenga "Ing." en Firestore
       const docRef = doc(db, USUARIOS_COLLECTION, 'rnochezmc_gmail_com');
       await setDoc(docRef, { nombre: 'Ramiro Nóchez' }, { merge: true });
+
+      // Asegurar que la cuenta aroldoruiz100@gmail.com esté activa en Firestore
+      const docRefH = doc(db, USUARIOS_COLLECTION, 'aroldoruiz100_gmail_com');
+      await setDoc(docRefH, {
+        id: 'aroldoruiz100_gmail_com',
+        email: 'aroldoruiz100@gmail.com',
+        nombre: 'Lic. Haroldo Ruiz',
+        rol: 'admin',
+        titulo: 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026',
+        activo: true
+      }, { merge: true });
     }
   } catch (err) {
     console.warn('Error inicializando usuarios base:', err);

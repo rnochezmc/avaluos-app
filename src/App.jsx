@@ -123,7 +123,7 @@ export default function App() {
         const match = usuarios.find(u => u.email?.toLowerCase().trim() === email);
 
         // Si no es cuenta principal y usuarios aún no cargan de Firestore, esperar
-        if (email !== 'rnochezmc@gmail.com' && email !== 'cverdeavaluos@gmail.com' && !usuariosLoaded) {
+        if (email !== 'rnochezmc@gmail.com' && email !== 'cverdeavaluos@gmail.com' && email !== 'aroldoruiz100@gmail.com' && !usuariosLoaded) {
           return;
         }
 
@@ -138,9 +138,9 @@ export default function App() {
           assignedNombre = (firebaseUser.displayName || 'Ramiro Nóchez').replace(/^Ing\.\s*/i, '');
           assignedTitulo = 'Soporte Técnico y Sistemas';
           isActivo = true;
-        } else if (email === 'cverdeavaluos@gmail.com') {
+        } else if (email === 'cverdeavaluos@gmail.com' || email === 'aroldoruiz100@gmail.com') {
           assignedRole = 'admin';
-          assignedNombre = firebaseUser.displayName || 'Haroldo Ruiz';
+          assignedNombre = firebaseUser.displayName || 'Lic. Haroldo Ruiz';
           assignedTitulo = 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026';
           isActivo = true;
         } else if (match) {

@@ -51,7 +51,7 @@ export default function UserManagementModal({
 
 
   const handleDelete = async (u) => {
-    if (u.email === 'rnochezmc@gmail.com' || u.email === 'cverdeavaluos@gmail.com') {
+    if (u.email === 'rnochezmc@gmail.com' || u.email === 'cverdeavaluos@gmail.com' || u.email === 'aroldoruiz100@gmail.com') {
       alert('Esta es una cuenta maestra principal del sistema y no puede ser eliminada.');
       return;
     }
@@ -496,7 +496,7 @@ export default function UserManagementModal({
                           >
                             <Edit2 size={14} />
                           </button>
-                          {u.email !== 'rnochezmc@gmail.com' && u.email !== 'cverdeavaluos@gmail.com' && (
+                          {u.email !== 'rnochezmc@gmail.com' && u.email !== 'cverdeavaluos@gmail.com' && u.email !== 'aroldoruiz100@gmail.com' && (
                             <button
                               onClick={() => handleDelete(u)}
                               title="Eliminar usuario"
