@@ -427,10 +427,10 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
               e.preventDefault();
             }
           }}
-          style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+          style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, minHeight: 0, overflow: 'hidden' }}
         >
           {/* Form Header */}
-          <div className="modal-header" style={{ background: 'linear-gradient(135deg, #07172b 0%, #0d2847 100%)' }}>
+          <div className="modal-header" style={{ background: 'linear-gradient(135deg, #07172b 0%, #0d2847 100%)', flexShrink: 0 }}>
             <div className="modal-header-left">
               <div style={{ background: '#ffffff', borderRadius: '6px', padding: '3px 5px', display: 'flex', alignItems: 'center' }}>
                 <img src="/lex-rosam-logo.png" alt="Lex Rosam" style={{ height: '28px', width: 'auto' }} />
@@ -458,7 +458,7 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
           </div>
 
           {/* Form Step Indicator Tabs */}
-          <div style={{ padding: '0 1.5rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ padding: '0 1.5rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
             <div className="modal-tabs" style={{ marginBottom: 0 }}>
               <button
                 type="button"
@@ -499,7 +499,7 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
           </div>
 
           {/* Form Body Steps */}
-          <div className="modal-body" style={{ padding: '1.5rem', overflowY: 'auto' }}>
+          <div className="modal-body" style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, minHeight: 0 }}>
             
             {/* ==============================================================
                 PASO 1: SOLICITUD, INSPECCIÓN Y DATOS GENERALES
@@ -1607,7 +1607,7 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
           </div>
 
           {/* Form Footer */}
-          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: '#f8fafc', borderTop: '1px solid #e2e8f0', flexShrink: 0 }}>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               {activeStep > 1 && (
                 <button

@@ -135,7 +135,8 @@ export default function AvaluoDetailModal({
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '0.75rem'
+          gap: '0.75rem',
+          flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {avaluo.estado === 'autorizado' && (
@@ -300,7 +301,7 @@ export default function AvaluoDetailModal({
         )}
 
         {/* Modal Tabs Navigation */}
-        <div style={{ padding: '0 1.5rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+        <div style={{ padding: '0 1.5rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
           <div className="modal-tabs" style={{ marginBottom: 0 }}>
             <button
               type="button"
