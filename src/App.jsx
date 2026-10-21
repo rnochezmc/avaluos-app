@@ -24,6 +24,7 @@ import {
   seedInitialUsuariosIfEmpty
 } from './firebase';
 import { SearchX, Plus, Sparkles, ShieldAlert, LogOut, Loader2 } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 const STORAGE_KEY = 'lexrosam_avaluos_db_v3';
 const LEGACY_STORAGE_KEY_V2 = 'lexrosam_avaluos_db_v2';
@@ -847,7 +848,7 @@ export default function App() {
         onOpenProfile={() => setShowProfileModal(true)}
         currentUser={currentUser}
       />
+      <Analytics />
     </div>
   );
 }
-
