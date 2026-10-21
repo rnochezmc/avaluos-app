@@ -25,8 +25,18 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint }
     }
   };
 
-  // Primary image fallback
-  const cardImage = avaluo.fotos?.ingreso || avaluo.fotos?.entorno || avaluo.fotos?.interior || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80';
+  // Primary image fallback (soporta fotos individuales o arreglos de fotos múltiples)
+  const getFirstPhoto = (cat) => {
+    if (!cat) return null;
+    if (Array.isArray(cat)) return cat.find(u => u && typeof u === 'string' && u.trim().length > 0) || null;
+    if (typeof cat === 'string' && cat.trim().length > 0) return cat;
+    return null;
+  };
+
+  const cardImage = getFirstPhoto(avaluo.fotos?.ingreso) || 
+                    getFirstPhoto(avaluo.fotos?.entorno) || 
+                    getFirstPhoto(avaluo.fotos?.interior) || 
+                    'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80';
 
   const firstFinca = avaluo.fincas?.[0] || { finca: 'S/N', folio: '-', libro: '-' };
 

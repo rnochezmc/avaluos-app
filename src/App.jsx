@@ -40,7 +40,9 @@ const enrichWithDefaultPhotos = (avaluoItem) => {
   const mergedFotos = { ...currentFotos };
   
   for (const key of ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi']) {
-    if ((!mergedFotos[key] || typeof mergedFotos[key] !== 'string' || !mergedFotos[key].trim()) && match.fotos[key]) {
+    const curr = mergedFotos[key];
+    const hasPhoto = Array.isArray(curr) ? curr.length > 0 : (typeof curr === 'string' && curr.trim().length > 0);
+    if (!hasPhoto && match.fotos[key]) {
       mergedFotos[key] = match.fotos[key];
       changed = true;
     }
@@ -71,21 +73,17 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const merged = parsed.map(p => enrichWithDefaultPhotos(p));
-
-          // Asegurar que LR-2026-10031 esté presente
-          if (!merged.some(m => m.codigo === 'LR-2026-10031' || m.id === 'lr-2026-10031')) {
-            const v10031 = initialAvaluos.find(i => i.codigo === 'LR-2026-10031');
-            if (v10031) merged.unshift(v10031);
-          }
-
+          // Filtrar LR-2026-10031 para que no persista en cache local
+          const merged = parsed
+            .filter(p => p.codigo !== 'LR-2026-10031' && p.id !== 'lr-2026-10031')
+            .map(p => enrichWithDefaultPhotos(p));
           return merged;
         }
       }
     } catch (e) {
       console.error('Error loading data from localStorage', e);
     }
-    return initialAvaluos;
+    return initialAvaluos.filter(p => p.codigo !== 'LR-2026-10031' && p.id !== 'lr-2026-10031');
   });
 
   // Save to localStorage as immediate offline cache
@@ -104,9 +102,17 @@ export default function App() {
       unsubscribe = subscribeToAvaluos(
         (cloudList) => {
           setCloudStatus('conectado');
-          if (Array.isArray(cloudList) && cloudList.length > 0) {
+          if (Array.isArray(cloudList)) {
+            // Purgar permanentemente LR-2026-10031 de Firebase Firestore si aún persiste
+            const legacy10031 = cloudList.find(m => m.codigo === 'LR-2026-10031' || m.id === 'lr-2026-10031');
+            if (legacy10031) {
+              deleteAvaluoFromCloud(legacy10031.id || 'lr-2026-10031').catch(err => console.warn('Purge 10031 from cloud error:', err));
+            }
+
+            const cleanCloud = cloudList.filter(m => m.codigo !== 'LR-2026-10031' && m.id !== 'lr-2026-10031');
+
             // Sincronizar inteligentemente las fotos si vienen incompletas de Firestore
-            const enrichedCloud = cloudList.map(item => {
+            const enrichedCloud = cleanCloud.map(item => {
               const enriched = enrichWithDefaultPhotos(item);
               if (enriched !== item) {
                 // Guardar en Firestore para reparar permanentemente en la nube
@@ -115,19 +121,7 @@ export default function App() {
               return enriched;
             });
 
-            // Si LR-2026-10031 no está en la nube, agregarlo y subirlo
-            if (!enrichedCloud.some(m => m.codigo === 'LR-2026-10031' || m.id === 'lr-2026-10031')) {
-              const v10031 = initialAvaluos.find(i => i.codigo === 'LR-2026-10031');
-              if (v10031) {
-                enrichedCloud.unshift(v10031);
-                saveAvaluoToCloud(v10031).catch(err => console.warn('Sync 10031 to cloud error', err));
-              }
-            }
-
             setAvaluos(enrichedCloud);
-          } else {
-            // Si la colección de Firestore en la nube está vacía, inicializarla
-            seedInitialAvaluosIfEmpty(initialAvaluos);
           }
         },
         (err) => {
@@ -320,7 +314,7 @@ export default function App() {
       })
       .sort((a, b) => {
         if (sortBy === 'recientes') {
-          return new Date(b.fechaActualizacion || b.fechaSolicitud) - new Date(a.fechaActualizacion || a.fechaSolicitud);
+          return new Date(b.updatedAt || b.fechaActualizacion || b.fechaSolicitud) - new Date(a.updatedAt || a.fechaActualizacion || a.fechaSolicitud);
         }
         if (sortBy === 'codigo-desc') {
           return (b.codigo || '').localeCompare(a.codigo || '');
@@ -373,7 +367,7 @@ export default function App() {
             ...item,
             estado: newStatus,
             observacionesAutorizador: comments !== undefined ? comments : item.observacionesAutorizador,
-            fechaActualizacion: new Date().toISOString().slice(0, 10)
+            updatedAt: new Date().toISOString()
           };
           if (newStatus === 'autorizado') {
             next.fechaAutorizacion = new Date().toISOString().slice(0, 10);
@@ -395,6 +389,37 @@ export default function App() {
         await saveAvaluoToCloud(updatedItem);
       } catch (err) {
         console.error('Error actualizando estado en Firebase:', err);
+      }
+    }
+  };
+
+  // Eliminar un PDF adjunto directamente desde la vista detalle
+  const handleRemovePdfFromAvaluo = async (avaluoId, pdfIndex) => {
+    let updatedItem = null;
+    setAvaluos((prev) => {
+      return prev.map((item) => {
+        if (item.id === avaluoId) {
+          const next = {
+            ...item,
+            consultasPdfs: (item.consultasPdfs || []).filter((_, i) => i !== pdfIndex),
+            updatedAt: new Date().toISOString()
+          };
+          updatedItem = next;
+          return next;
+        }
+        return item;
+      });
+    });
+
+    if (viewingAvaluo?.id === avaluoId && updatedItem) {
+      setViewingAvaluo(updatedItem);
+    }
+
+    if (updatedItem) {
+      try {
+        await saveAvaluoToCloud(updatedItem);
+      } catch (err) {
+        console.error('Error guardando en Firebase tras eliminar PDF:', err);
       }
     }
   };
@@ -661,6 +686,7 @@ export default function App() {
             setViewingAvaluo(null);
             setPrintingAvaluo(item);
           }}
+          onRemovePdf={handleRemovePdfFromAvaluo}
         />
       )}
 

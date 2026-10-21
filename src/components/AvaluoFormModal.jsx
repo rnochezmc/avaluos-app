@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { 
   X, Save, MapPin, Camera, Building, DollarSign, FileText, Plus, 
-  Trash2, Crosshair, FileUp, CheckSquare, Square, Check, AlertCircle 
+  Trash2, Crosshair, FileUp, CheckSquare, Square, Check, AlertCircle, RefreshCw 
 } from 'lucide-react';
+import { SERVICIOS_INFRAESTRUCTURA_LIST, getDefaultServicios } from '../data/serviciosConstants';
+import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
 
 export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
   const isEditing = Boolean(avaluo?.id);
@@ -10,6 +12,8 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
   const [activeStep, setActiveStep] = useState(1);
   const [isLocating, setIsLocating] = useState(false);
   const [nuevoServicio, setNuevoServicio] = useState('');
+  const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+  const [pdfProcessStatus, setPdfProcessStatus] = useState('');
 
   // Form State initialized with defaults or editing values
   const [formData, setFormData] = useState({
@@ -19,7 +23,7 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
     solicitante: avaluo?.solicitante || 'BANCO G&T CONTINENTAL',
     fechaSolicitud: avaluo?.fechaSolicitud || new Date().toISOString().slice(0, 10),
     fechaInspeccion: avaluo ? (avaluo.fechaInspeccion || '') : new Date().toISOString().slice(0, 10),
-    fechaActualizacion: avaluo ? (avaluo.fechaActualizacion || '') : '',
+    fechaActualizacion: avaluo ? (avaluo.fechaInspeccion ? '' : (avaluo.fechaActualizacion || '')) : '',
     bienMostradoPor: avaluo?.bienMostradoPor || '',
     direccion: avaluo?.direccion || '',
     coordenadas: avaluo?.coordenadas || '',
@@ -63,7 +67,7 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
     dicabiDireccion: avaluo?.dicabiDireccion || '',
     dicabiMatricula: avaluo?.dicabiMatricula || '',
     dicabiArea: avaluo?.dicabiArea || '',
-    dicabiObservaciones: avaluo?.dicabiObservaciones || 'Datos cotejados con el padrón fiscal catastral.',
+    dicabiObservaciones: avaluo?.dicabiObservaciones || '',
 
     // Terreno & Sector
     aplicaTerreno: avaluo?.aplicaTerreno !== undefined ? avaluo.aplicaTerreno : (avaluo?.tipoAvaluo !== 'Apartamento / PH' && avaluo?.tipoAvaluo !== 'Apartamento'),
@@ -83,22 +87,8 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
       oeste: ''
     },
 
-    // Servicios e Infraestructura
-    servicios: avaluo?.servicios || {
-      drenajeNegras: 'Red municipal',
-      drenajePluviales: 'Red pluvial',
-      pavimentos: 'Asfalto en buen estado',
-      bordillos: 'Concreto',
-      aceras: 'Concreto 1.20m',
-      agua: 'Red municipal',
-      telefono: 'Sí',
-      internetCable: 'Fibra óptica',
-      energia: 'EEGSA / DEOCSA 120/240V',
-      garita: 'No',
-      camaras: 'No',
-      alumbradoPublico: 'Sí',
-      tipoCalle: 'Urbana'
-    },
+    // Servicios e Infraestructura (31 elementos oficiales)
+    servicios: getDefaultServicios(avaluo?.servicios),
     serviciosAdicionales: avaluo?.serviciosAdicionales || [],
 
     // Construcción
@@ -120,14 +110,59 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
     },
 
     // Cálculos
-    desgloseTerreno: avaluo?.desgloseTerreno || { 
-      area: 0, 
-      unidad: 'm²', 
-      valorUnitario: 0, 
-      total: 0,
-      fincaAsociada: '',
-      varasCuadradas: 0
-    },
+    desgloseTerreno: (() => {
+      if (avaluo?.desgloseTerreno?.items && Array.isArray(avaluo.desgloseTerreno.items) && avaluo.desgloseTerreno.items.length > 0) {
+        const items = avaluo.desgloseTerreno.items.map((it, idx) => {
+          const area = parseFloat(it.area) || 0;
+          const unit = parseFloat(it.valorUnitario) || 0;
+          return {
+            id: it.id || idx + 1,
+            finca: it.finca || '',
+            area,
+            varasCuadradas: it.varasCuadradas != null ? it.varasCuadradas : parseFloat((area * 1.43115).toFixed(2)),
+            unidad: it.unidad || 'm²',
+            valorUnitario: unit,
+            total: it.total != null ? it.total : parseFloat((area * unit).toFixed(2))
+          };
+        });
+        const sumArea = items.reduce((acc, it) => acc + (parseFloat(it.area) || 0), 0);
+        const sumTotal = items.reduce((acc, it) => acc + (parseFloat(it.total) || 0), 0);
+        return {
+          ...avaluo.desgloseTerreno,
+          area: parseFloat(sumArea.toFixed(2)),
+          varasCuadradas: parseFloat((sumArea * 1.43115).toFixed(2)),
+          total: parseFloat(sumTotal.toFixed(2)),
+          items
+        };
+      }
+      const baseFincas = avaluo?.fincas && avaluo.fincas.length > 0
+        ? avaluo.fincas
+        : [{ finca: avaluo?.desgloseTerreno?.fincaAsociada || 'Principal', areaValuada: avaluo?.areaValuada || avaluo?.desgloseTerreno?.area || 0 }];
+      const defaultUnit = parseFloat(avaluo?.desgloseTerreno?.valorUnitario) || 0;
+      const items = baseFincas.map((f, idx) => {
+        const area = parseFloat(f.areaValuada || f.areaRegistrada || (avaluo?.desgloseTerreno?.area ? avaluo.desgloseTerreno.area / baseFincas.length : 0)) || 0;
+        const unit = parseFloat(f.valorUnitarioTerreno != null ? f.valorUnitarioTerreno : defaultUnit) || 0;
+        return {
+          id: idx + 1,
+          finca: f.finca || `Finca ${idx + 1}`,
+          area,
+          varasCuadradas: parseFloat((area * 1.43115).toFixed(2)),
+          unidad: 'm²',
+          valorUnitario: unit,
+          total: parseFloat((area * unit).toFixed(2))
+        };
+      });
+      const sumArea = items.reduce((acc, it) => acc + (parseFloat(it.area) || 0), 0);
+      const sumTotal = items.reduce((acc, it) => acc + (parseFloat(it.total) || 0), 0);
+      return {
+        area: parseFloat(sumArea.toFixed(2)),
+        unidad: 'm²',
+        valorUnitario: items.length === 1 ? items[0].valorUnitario : (sumArea > 0 ? parseFloat((sumTotal / sumArea).toFixed(2)) : defaultUnit),
+        total: parseFloat(sumTotal.toFixed(2)),
+        varasCuadradas: parseFloat((sumArea * 1.43115).toFixed(2)),
+        items
+      };
+    })(),
     desgloseConstruccion: (() => {
       if (avaluo?.desgloseConstruccion?.items && Array.isArray(avaluo.desgloseConstruccion.items) && avaluo.desgloseConstruccion.items.length > 0) {
         return {
@@ -174,15 +209,27 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
     valuadorRevisor: avaluo?.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias',
     registroRevisor: avaluo?.registroRevisor || 'Valuador autorizado 193-T-93',
 
-    // Fotos optimizadas
-    fotos: avaluo?.fotos || {
-      entorno: '',
-      ingreso: '',
-      interior: '',
-      ubicacion: '',
-      croquis: '',
-      dicabi: ''
-    },
+    // Fotos optimizadas (soporta múltiples fotos por categoría)
+    fotos: (() => {
+      const initialFotos = {
+        entorno: [],
+        ingreso: [],
+        interior: [],
+        ubicacion: [],
+        croquis: [],
+        dicabi: []
+      };
+      if (!avaluo?.fotos) return initialFotos;
+      ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi'].forEach(key => {
+        const val = avaluo.fotos[key];
+        if (Array.isArray(val)) {
+          initialFotos[key] = val.filter(u => u && typeof u === 'string' && u.trim().length > 0);
+        } else if (typeof val === 'string' && val.trim().length > 0) {
+          initialFotos[key] = [val];
+        }
+      });
+      return initialFotos;
+    })(),
 
     // Consultas Electrónicas RGP (PDFs adjuntos)
     consultasPdfs: avaluo?.consultasPdfs || []
@@ -275,8 +322,8 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
       areaValuada: parseFloat(totVal.toFixed(6))
     };
 
-    // Auto actualizar área en terreno si está en 0
-    if ((!next.desgloseTerreno.area || next.desgloseTerreno.area === 0) && totVal > 0) {
+    // Auto actualizar área en terreno si está en 0 y aplica terreno
+    if (next.aplicaTerreno !== false && (!next.desgloseTerreno.area || next.desgloseTerreno.area === 0) && totVal > 0) {
       next.desgloseTerreno = {
         ...next.desgloseTerreno,
         area: totVal,
@@ -315,8 +362,9 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
         next.tipoCambio = num;
       }
 
-      // Recompute total commercial & bank values
-      const totalComercial = (next.desgloseTerreno?.total || 0) + (next.desgloseConstruccion?.total || 0);
+      // Recompute total commercial & bank values considering aplicaTerreno
+      const terrenoTotal = next.aplicaTerreno !== false ? (parseFloat(next.desgloseTerreno?.total) || 0) : 0;
+      const totalComercial = parseFloat((terrenoTotal + (next.desgloseConstruccion?.total || 0)).toFixed(2));
       next.valorComercialGTQ = totalComercial;
       next.valorBancarioGTQ = Math.round(totalComercial * 0.8); // 80% standard bank guarantee
       const tc = next.tipoCambio || 7.62581;
@@ -388,7 +436,8 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
       total: parseFloat(sumTotal.toFixed(2))
     };
 
-    const totalComercial = (parseFloat(prev.desgloseTerreno?.total) || 0) + nextDesglose.total;
+    const terrenoTotal = prev.aplicaTerreno !== false ? (parseFloat(prev.desgloseTerreno?.total) || 0) : 0;
+    const totalComercial = parseFloat((terrenoTotal + nextDesglose.total).toFixed(2));
     const tc = parseFloat(prev.tipoCambio) || 7.62581;
     const valBancario = Math.round(totalComercial * 0.8);
 
@@ -400,6 +449,182 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
       valorComercialUSD: parseFloat((totalComercial / tc).toFixed(2)),
       valorBancarioUSD: parseFloat((valBancario / tc).toFixed(2))
     };
+  };
+
+  // Botón y toggle oficial de Haroldo para habilitar o deshabilitar terreno (Régimen PH / Apartamentos)
+  const handleToggleAplicaTerreno = (applies) => {
+    setFormData(prev => {
+      const next = { ...prev, aplicaTerreno: applies };
+      const terrenoTotal = applies ? (parseFloat(next.desgloseTerreno?.total) || 0) : 0;
+      const totalComercial = parseFloat((terrenoTotal + (next.desgloseConstruccion?.total || 0)).toFixed(2));
+      next.valorComercialGTQ = totalComercial;
+      next.valorBancarioGTQ = Math.round(totalComercial * 0.8);
+      const tc = next.tipoCambio || 7.62581;
+      next.valorComercialUSD = parseFloat((totalComercial / tc).toFixed(2));
+      next.valorBancarioUSD = parseFloat((next.valorBancarioGTQ / tc).toFixed(2));
+      return next;
+    });
+  };
+
+  // Manejadores para la matriz dinámica de valoración de terreno por fincas con valor independiente
+  const handleTerrenoItemChange = (id, field, value) => {
+    setFormData(prev => {
+      const items = (prev.desgloseTerreno?.items || []).map(it => {
+        if (it.id === id) {
+          const updated = { ...it };
+          if (field === 'area') {
+            const area = parseFloat(value) || 0;
+            updated.area = value;
+            updated.varasCuadradas = parseFloat((area * 1.43115).toFixed(2));
+            const unit = parseFloat(updated.valorUnitario) || 0;
+            updated.total = parseFloat((area * unit).toFixed(2));
+          } else if (field === 'valorUnitario') {
+            const unit = parseFloat(value) || 0;
+            updated.valorUnitario = value;
+            const area = parseFloat(updated.area) || 0;
+            updated.total = parseFloat((area * unit).toFixed(2));
+          } else {
+            updated[field] = value;
+          }
+          return updated;
+        }
+        return it;
+      });
+
+      const sumArea = items.reduce((acc, it) => acc + (parseFloat(it.area) || 0), 0);
+      const sumTotal = items.reduce((acc, it) => acc + (parseFloat(it.total) || 0), 0);
+      const avgUnit = sumArea > 0 ? parseFloat((sumTotal / sumArea).toFixed(2)) : 0;
+
+      const nextTerreno = {
+        ...prev.desgloseTerreno,
+        items,
+        area: parseFloat(sumArea.toFixed(2)),
+        varasCuadradas: parseFloat((sumArea * 1.43115).toFixed(2)),
+        valorUnitario: avgUnit,
+        total: parseFloat(sumTotal.toFixed(2))
+      };
+
+      const terrenoTotal = prev.aplicaTerreno !== false ? nextTerreno.total : 0;
+      const totalComercial = parseFloat((terrenoTotal + (prev.desgloseConstruccion?.total || 0)).toFixed(2));
+      const tc = parseFloat(prev.tipoCambio) || 7.62581;
+      const valBancario = Math.round(totalComercial * 0.8);
+
+      return {
+        ...prev,
+        desgloseTerreno: nextTerreno,
+        valorComercialGTQ: totalComercial,
+        valorBancarioGTQ: valBancario,
+        valorComercialUSD: parseFloat((totalComercial / tc).toFixed(2)),
+        valorBancarioUSD: parseFloat((valBancario / tc).toFixed(2))
+      };
+    });
+  };
+
+  const handleAddTerrenoItem = () => {
+    setFormData(prev => {
+      const items = [...(prev.desgloseTerreno?.items || [])];
+      const newId = items.length > 0 ? Math.max(...items.map(it => it.id || 0)) + 1 : 1;
+      const defaultUnit = items.length > 0 ? (parseFloat(items[0].valorUnitario) || 0) : 0;
+      items.push({
+        id: newId,
+        finca: `Finca ${newId}`,
+        area: 0,
+        varasCuadradas: 0,
+        unidad: 'm²',
+        valorUnitario: defaultUnit,
+        total: 0
+      });
+      return {
+        ...prev,
+        desgloseTerreno: {
+          ...prev.desgloseTerreno,
+          items
+        }
+      };
+    });
+  };
+
+  const handleRemoveTerrenoItem = (id) => {
+    setFormData(prev => {
+      const items = (prev.desgloseTerreno?.items || []).filter(it => it.id !== id);
+      if (items.length === 0) return prev;
+
+      const sumArea = items.reduce((acc, it) => acc + (parseFloat(it.area) || 0), 0);
+      const sumTotal = items.reduce((acc, it) => acc + (parseFloat(it.total) || 0), 0);
+      const avgUnit = sumArea > 0 ? parseFloat((sumTotal / sumArea).toFixed(2)) : 0;
+
+      const nextTerreno = {
+        ...prev.desgloseTerreno,
+        items,
+        area: parseFloat(sumArea.toFixed(2)),
+        varasCuadradas: parseFloat((sumArea * 1.43115).toFixed(2)),
+        valorUnitario: avgUnit,
+        total: parseFloat(sumTotal.toFixed(2))
+      };
+
+      const terrenoTotal = prev.aplicaTerreno !== false ? nextTerreno.total : 0;
+      const totalComercial = parseFloat((terrenoTotal + (prev.desgloseConstruccion?.total || 0)).toFixed(2));
+      const tc = parseFloat(prev.tipoCambio) || 7.62581;
+      const valBancario = Math.round(totalComercial * 0.8);
+
+      return {
+        ...prev,
+        desgloseTerreno: nextTerreno,
+        valorComercialGTQ: totalComercial,
+        valorBancarioGTQ: valBancario,
+        valorComercialUSD: parseFloat((totalComercial / tc).toFixed(2)),
+        valorBancarioUSD: parseFloat((valBancario / tc).toFixed(2))
+      };
+    });
+  };
+
+  // Sincronizar fincas del Paso 1 (Registral) a la matriz de valoración de terreno con áreas exactas
+  const handleSyncFincasToTerreno = () => {
+    setFormData(prev => {
+      const existingItems = prev.desgloseTerreno?.items || [];
+      const defaultUnit = existingItems.length > 0 ? (parseFloat(existingItems[0].valorUnitario) || 0) : (parseFloat(prev.desgloseTerreno?.valorUnitario) || 0);
+      const nextItems = (prev.fincas || []).map((f, idx) => {
+        const area = parseFloat(f.areaValuada || f.areaRegistrada || 0);
+        const found = existingItems.find(it => (it.finca && f.finca && it.finca.trim() === f.finca.trim()) || it.id === idx + 1);
+        const unit = found ? (parseFloat(found.valorUnitario) || 0) : (parseFloat(f.valorUnitarioTerreno) || defaultUnit);
+        return {
+          id: idx + 1,
+          finca: f.finca || `Finca ${idx + 1}`,
+          area,
+          varasCuadradas: parseFloat((area * 1.43115).toFixed(2)),
+          unidad: 'm²',
+          valorUnitario: unit,
+          total: parseFloat((area * unit).toFixed(2))
+        };
+      });
+
+      const sumArea = nextItems.reduce((acc, it) => acc + (parseFloat(it.area) || 0), 0);
+      const sumTotal = nextItems.reduce((acc, it) => acc + (parseFloat(it.total) || 0), 0);
+      const avgUnit = sumArea > 0 ? parseFloat((sumTotal / sumArea).toFixed(2)) : 0;
+
+      const nextTerreno = {
+        ...prev.desgloseTerreno,
+        items: nextItems,
+        area: parseFloat(sumArea.toFixed(2)),
+        varasCuadradas: parseFloat((sumArea * 1.43115).toFixed(2)),
+        valorUnitario: avgUnit,
+        total: parseFloat(sumTotal.toFixed(2))
+      };
+
+      const terrenoTotal = prev.aplicaTerreno !== false ? nextTerreno.total : 0;
+      const totalComercial = parseFloat((terrenoTotal + (prev.desgloseConstruccion?.total || 0)).toFixed(2));
+      const tc = parseFloat(prev.tipoCambio) || 7.62581;
+      const valBancario = Math.round(totalComercial * 0.8);
+
+      return {
+        ...prev,
+        desgloseTerreno: nextTerreno,
+        valorComercialGTQ: totalComercial,
+        valorBancarioGTQ: valBancario,
+        valorComercialUSD: parseFloat((totalComercial / tc).toFixed(2)),
+        valorBancarioUSD: parseFloat((valBancario / tc).toFixed(2))
+      };
+    });
   };
 
   // Compresión fotográfica optimizada (evita bug de cuotas móviles y Firestore)
@@ -421,88 +646,111 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
   };
 
   const handlePhotoUpload = (category, e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        // Redimensionar fotos a max 800px para garantizar rendimiento móvil y documentos < 300KB
-        const maxDim = 800;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Calidad 0.65 JPEG genera imágenes ligeras (~40KB) extremadamente nítidas para PDF
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.65);
-
-        setFormData(prev => ({
-          ...prev,
-          fotos: {
-            ...prev.fotos,
-            [category]: compressedDataUrl
-          }
-        }));
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemovePhoto = (category) => {
-    setFormData(prev => ({
-      ...prev,
-      fotos: {
-        ...prev.fotos,
-        [category]: ''
-      }
-    }));
-  };
-
-  // Soporte para adjuntar múltiples archivos PDF de Consultas Electrónicas RGP
-  const handlePdfUpload = (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
     files.forEach(file => {
-      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-        alert(`El archivo ${file.name} no es un documento PDF.`);
-        return;
-      }
-
       const reader = new FileReader();
       reader.onload = (event) => {
-        const pdfData = {
-          id: `pdf-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-          name: file.name,
-          size: `${(file.size / 1024).toFixed(1)} KB`,
-          fecha: new Date().toISOString().slice(0, 10),
-          dataUrl: event.target.result
-        };
+        const img = new Image();
+        img.onload = () => {
+          // Redimensionar fotos a max 800px para garantizar rendimiento móvil y documentos < 300KB
+          const maxDim = 800;
+          let width = img.width;
+          let height = img.height;
 
-        setFormData(prev => ({
-          ...prev,
-          consultasPdfs: [...(prev.consultasPdfs || []), pdfData]
-        }));
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Calidad 0.65 JPEG genera imágenes ligeras (~40KB) extremadamente nítidas para PDF
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.65);
+
+          setFormData(prev => {
+            const currentList = Array.isArray(prev.fotos?.[category])
+              ? prev.fotos[category]
+              : (prev.fotos?.[category] ? [prev.fotos[category]] : []);
+            return {
+              ...prev,
+              fotos: {
+                ...prev.fotos,
+                [category]: [...currentList, compressedDataUrl]
+              }
+            };
+          });
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     });
+
+    e.target.value = '';
+  };
+
+  const handleRemovePhoto = (category, index) => {
+    setFormData(prev => {
+      const currentList = Array.isArray(prev.fotos?.[category])
+        ? prev.fotos[category]
+        : (prev.fotos?.[category] ? [prev.fotos[category]] : []);
+      const nextList = currentList.filter((_, idx) => idx !== index);
+      return {
+        ...prev,
+        fotos: {
+          ...prev.fotos,
+          [category]: nextList
+        }
+      };
+    });
+  };
+
+  // Soporte para adjuntar múltiples archivos PDF o Imágenes de Consultas Electrónicas RGP
+  const handlePdfUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setIsProcessingPdf(true);
+    const newItems = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setPdfProcessStatus(`Procesando documento ${i + 1} de ${files.length} (${file.name})...`);
+      try {
+        const pages = await convertPdfOrImageToPageImages(file);
+        newItems.push({
+          id: `rgp-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          name: file.name,
+          size: `${(file.size / 1024).toFixed(1)} KB`,
+          fecha: new Date().toISOString().slice(0, 10),
+          pages: pages
+        });
+      } catch (err) {
+        console.error('Error al procesar archivo:', err);
+        alert(`No se pudo procesar el archivo "${file.name}": ${err.message || 'Error desconocido'}`);
+      }
+    }
+
+    if (newItems.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        consultasPdfs: [...(prev.consultasPdfs || []), ...newItems]
+      }));
+    }
+
+    setIsProcessingPdf(false);
+    setPdfProcessStatus('');
+    if (e.target) e.target.value = '';
   };
 
   const handleRemovePdf = (index) => {
@@ -510,6 +758,29 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
       ...prev,
       consultasPdfs: prev.consultasPdfs.filter((_, i) => i !== index)
     }));
+  };
+
+  const handleRemovePdfPage = (docIndex, pageIndex) => {
+    setFormData(prev => {
+      const docs = [...(prev.consultasPdfs || [])];
+      const targetDoc = docs[docIndex];
+      if (!targetDoc) return prev;
+      const updatedPages = (targetDoc.pages || []).filter((_, pIdx) => pIdx !== pageIndex);
+      if (updatedPages.length === 0) {
+        return {
+          ...prev,
+          consultasPdfs: docs.filter((_, dIdx) => dIdx !== docIndex)
+        };
+      }
+      docs[docIndex] = {
+        ...targetDoc,
+        pages: updatedPages.map((p, idx) => ({ ...p, pageIndex: idx + 1, totalPaginas: updatedPages.length }))
+      };
+      return {
+        ...prev,
+        consultasPdfs: docs
+      };
+    });
   };
 
   // Agregar servicio personalizado a la lista
@@ -1051,7 +1322,7 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
 
                 <div className="form-grid-3">
                   <div className="form-field">
-                    <label className="form-label">Matrícula Fiscal DICABI *</label>
+                    <label className="form-label">Matrícula Fiscal DICABI</label>
                     <input
                       type="text"
                       className="form-input"
@@ -1112,24 +1383,33 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                 ============================================================== */}
             {activeStep === 3 && (
               <div>
-                {/* Checkbox de Terreno / Colindancias */}
-                <div style={{ marginBottom: '1.25rem', padding: '0.85rem 1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', fontWeight: 600, color: '#0f172a', fontSize: '0.9rem' }}>
-                    <input
-                      type="checkbox"
-                      checked={formData.aplicaTerreno !== false}
-                      onChange={(e) => setFormData({ ...formData, aplicaTerreno: e.target.checked })}
-                      style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#2563eb' }}
-                    />
-                    <span>El inmueble cuenta con terreno independiente y colindancias</span>
-                  </label>
+                {/* Checkbox y Botón de Terreno / Colindancias */}
+                <div style={{ marginBottom: '1.25rem', padding: '0.85rem 1rem', background: formData.aplicaTerreno === false ? '#fef2f2' : '#f8fafc', borderRadius: '8px', border: formData.aplicaTerreno === false ? '1.5px solid #ef4444' : '1px solid #cbd5e1' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', fontWeight: 600, color: '#0f172a', fontSize: '0.9rem' }}>
+                      <input
+                        type="checkbox"
+                        checked={formData.aplicaTerreno !== false}
+                        onChange={(e) => handleToggleAplicaTerreno(e.target.checked)}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#2563eb' }}
+                      />
+                      <span>El inmueble cuenta con terreno independiente y colindancias</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleAplicaTerreno(formData.aplicaTerreno === false ? true : false)}
+                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.8rem', borderRadius: '6px', border: '1px solid', borderColor: formData.aplicaTerreno === false ? '#ef4444' : '#64748b', background: '#ffffff', color: formData.aplicaTerreno === false ? '#ef4444' : '#334155', cursor: 'pointer', fontWeight: 700 }}
+                    >
+                      {formData.aplicaTerreno === false ? '✓ Activar Terreno' : '✕ Quitar Terreno (No Aplica)'}
+                    </button>
+                  </div>
                   {formData.aplicaTerreno === false ? (
-                    <div style={{ margin: '0.4rem 0 0 1.75rem', fontSize: '0.78rem', color: '#0369a1', background: '#e0f2fe', padding: '0.4rem 0.6rem', borderRadius: '4px', border: '1px solid #bae6fd' }}>
-                      🏢 <strong>Régimen de Propiedad Horizontal / Apartamento:</strong> Se omitirán las secciones de terreno y colindancias en el informe oficial impreso para evitar espacios en blanco legales.
+                    <div style={{ margin: '0.5rem 0 0 1.75rem', fontSize: '0.8rem', color: '#991b1b', background: '#fee2e2', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #fecaca' }}>
+                      🏢 <strong>Régimen de Propiedad Horizontal / Apartamento:</strong> Se omitirán las secciones de terreno y colindancias en el informe oficial impreso para evitar espacios en blanco legales y no sumará al valor comercial.
                     </div>
                   ) : (
                     <div style={{ margin: '0.35rem 0 0 1.75rem', fontSize: '0.74rem', color: '#64748b' }}>
-                      Desmarcar si es un apartamento o inmueble en condominio vertical para que no deje espacios vacíos en el PDF.
+                      Desmarcar o presionar "Quitar Terreno" si es un apartamento o inmueble en régimen vertical para que no deje espacios vacíos en el PDF.
                     </div>
                   )}
                 </div>
@@ -1204,39 +1484,110 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                 {/* Servicios con Checklist */}
                 <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
                   <CheckSquare size={16} />
-                  <span>Servicios e Infraestructura Urbana (Checklist & Adicionales)</span>
+                  <span>Servicios e Infraestructura (Checklist Oficial — 31 Elementos)</span>
                 </div>
 
                 <div className="form-grid-3">
-                  {[
-                    { key: 'agua', label: 'Servicio de Agua', defaultVal: 'Red municipal' },
-                    { key: 'drenajeNegras', label: 'Drenaje Aguas Negras', defaultVal: 'Red municipal' },
-                    { key: 'drenajePluviales', label: 'Drenaje Pluvial', defaultVal: 'Red pluvial' },
-                    { key: 'energia', label: 'Energía Eléctrica', defaultVal: '120/240V' },
-                    { key: 'alumbradoPublico', label: 'Alumbrado Público', defaultVal: 'Sí' },
-                    { key: 'pavimentos', label: 'Pavimentos', defaultVal: 'Asfalto / Adoquín' },
-                    { key: 'bordillos', label: 'Bordillos', defaultVal: 'Concreto' },
-                    { key: 'aceras', label: 'Aceras', defaultVal: 'Concreto' },
-                    { key: 'telefono', label: 'Telefonía', defaultVal: 'Sí' },
-                    { key: 'internetCable', label: 'Internet y Cable', defaultVal: 'Fibra óptica' },
-                    { key: 'garita', label: 'Garita de Seguridad', defaultVal: 'No' },
-                    { key: 'camaras', label: 'Cámaras de Seguridad', defaultVal: 'No' },
-                    { key: 'tipoCalle', label: 'Tipo de Calle', defaultVal: 'Urbana' }
-                  ].map(srv => (
-                    <div key={srv.key} className="form-field">
-                      <label className="form-label">{srv.label}</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={formData.servicios?.[srv.key] || ''}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          servicios: { ...formData.servicios, [srv.key]: e.target.value }
-                        })}
-                        placeholder={srv.defaultVal}
-                      />
-                    </div>
-                  ))}
+                  {SERVICIOS_INFRAESTRUCTURA_LIST.map(srv => {
+                    const currentVal = formData.servicios?.[srv.key] !== undefined ? formData.servicios[srv.key] : '';
+                    const trimmed = typeof currentVal === 'string' ? currentVal.trim().toLowerCase() : '';
+                    const isSelectedSi = trimmed === 'sí' || trimmed === 'si';
+                    const isSelectedNo = trimmed === 'no';
+                    const hasYesNoButtons = srv.key !== 'tipoCalle';
+
+                    return (
+                      <div key={srv.key} className="form-field">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                          <label className="form-label" style={{ margin: 0, fontSize: '0.78rem', fontWeight: 600, color: '#334155' }}>
+                            {srv.label}
+                          </label>
+
+                          {/* Botones rápidos Sí / No para todos los campos excepto Tipo de calle */}
+                          {hasYesNoButtons ? (
+                            <div style={{ display: 'flex', gap: '3px' }}>
+                              <button
+                                type="button"
+                                style={{
+                                  padding: '1px 7px',
+                                  fontSize: '0.66rem',
+                                  fontWeight: 700,
+                                  borderRadius: '3px',
+                                  border: isSelectedSi ? '1px solid #0d2847' : '1px solid #cbd5e1',
+                                  background: isSelectedSi ? '#0d2847' : '#ffffff',
+                                  color: isSelectedSi ? '#ffffff' : '#475569',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease'
+                                }}
+                                onClick={() => setFormData({
+                                  ...formData,
+                                  servicios: { ...formData.servicios, [srv.key]: 'Sí' }
+                                })}
+                              >
+                                Sí
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  padding: '1px 7px',
+                                  fontSize: '0.66rem',
+                                  fontWeight: 700,
+                                  borderRadius: '3px',
+                                  border: isSelectedNo ? '1px solid #475569' : '1px solid #cbd5e1',
+                                  background: isSelectedNo ? '#475569' : '#ffffff',
+                                  color: isSelectedNo ? '#ffffff' : '#475569',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease'
+                                }}
+                                onClick={() => setFormData({
+                                  ...formData,
+                                  servicios: { ...formData.servicios, [srv.key]: 'No' }
+                                })}
+                              >
+                                No
+                              </button>
+                            </div>
+                          ) : (
+                            /* Atajos rápidos de material para Tipo de calle */
+                            <div style={{ display: 'flex', gap: '3px' }}>
+                              {['Asfalto', 'Adoquín', 'Terracería'].map(tipo => (
+                                <button
+                                  key={tipo}
+                                  type="button"
+                                  style={{
+                                    padding: '1px 5px',
+                                    fontSize: '0.63rem',
+                                    fontWeight: 600,
+                                    borderRadius: '3px',
+                                    border: trimmed === tipo.toLowerCase() ? '1px solid #0d2847' : '1px solid #cbd5e1',
+                                    background: trimmed === tipo.toLowerCase() ? '#0d2847' : '#ffffff',
+                                    color: trimmed === tipo.toLowerCase() ? '#ffffff' : '#64748b',
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={() => setFormData({
+                                    ...formData,
+                                    servicios: { ...formData.servicios, [srv.key]: tipo }
+                                  })}
+                                >
+                                  {tipo}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={currentVal}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            servicios: { ...formData.servicios, [srv.key]: e.target.value }
+                          })}
+                          placeholder={srv.defaultVal}
+                          style={{ fontSize: '0.8rem' }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Agregar servicios adicionales */}
@@ -1519,65 +1870,157 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                   <span>Desglose Matemático de Valoración (Terreno con Fincas y Varas²)</span>
                 </div>
 
-                {/* Terreno con columna de Finca y Varas Cuadradas */}
-                <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', border: '1.5px solid #0d2847', marginBottom: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <div style={{ fontWeight: 700, color: '#0d2847', fontSize: '0.95rem' }}>
-                      VALORACIÓN DEL TERRENO
+                {/* Terreno con columna de Finca, Varas Cuadradas y Valores Independientes */}
+                <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', border: formData.aplicaTerreno === false ? '1.5px solid #ef4444' : '1.5px solid #0d2847', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#0d2847', fontSize: '0.95rem' }}>
+                        VALORACIÓN DEL TERRENO (VALOR INDEPENDIENTE POR FINCA)
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                        Cada finca o porción de terreno cuenta con su propia área y su valor unitario independiente en Q/m²
+                      </div>
                     </div>
-                    <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
-                      Factor Oficial: 1 m² = 1.43115 v²
-                    </span>
-                  </div>
-
-                  <div className="form-grid-4">
-                    <div className="form-field">
-                      <label className="form-label">Finca(s) Asociada(s)</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={formData.desgloseTerreno.fincaAsociada || (formData.fincas.map(f => f.finca).filter(Boolean).join(', '))}
-                        onChange={(e) => handleCalcUpdate('desgloseTerreno', 'fincaAsociada', e.target.value)}
-                        placeholder="Ej: 5289 y 7172"
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label className="form-label">Área Terreno (m²)</label>
-                      <input
-                        type="number"
-                        step="any"
-                        className="form-input"
-                        value={formData.desgloseTerreno.area}
-                        onChange={(e) => handleCalcUpdate('desgloseTerreno', 'area', e.target.value)}
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label className="form-label" style={{ color: '#1e40af', fontWeight: 700 }}>
-                        Equivalente en Varas² (v²)
-                      </label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        style={{ fontWeight: 700, background: '#eff6ff', color: '#1e40af' }}
-                        value={formData.desgloseTerreno.varasCuadradas || parseFloat(((formData.desgloseTerreno.area || 0) * 1.43115).toFixed(2))}
-                        readOnly
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label className="form-label">Valor Unitario (Q / m²)</label>
-                      <input
-                        type="number"
-                        step="any"
-                        className="form-input"
-                        value={formData.desgloseTerreno.valorUnitario}
-                        onChange={(e) => handleCalcUpdate('desgloseTerreno', 'valorUnitario', e.target.value)}
-                      />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleAplicaTerreno(formData.aplicaTerreno === false ? true : false)}
+                        style={{ fontSize: '0.78rem', padding: '0.3rem 0.75rem', borderRadius: '6px', border: '1px solid', borderColor: formData.aplicaTerreno === false ? '#ef4444' : '#64748b', background: '#ffffff', color: formData.aplicaTerreno === false ? '#ef4444' : '#334155', cursor: 'pointer', fontWeight: 700 }}
+                      >
+                        {formData.aplicaTerreno === false ? '✓ Activar Terreno' : '✕ Quitar Terreno (No Aplica)'}
+                      </button>
+                      <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                        Factor Oficial: 1 m² = 1.43115 v²
+                      </span>
                     </div>
                   </div>
 
-                  <div style={{ textAlign: 'right', marginTop: '0.5rem', fontWeight: 700, fontSize: '1rem', color: '#0d2847' }}>
-                    Subtotal Terreno: Q. {Number(formData.desgloseTerreno.total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
-                  </div>
+                  {formData.aplicaTerreno === false ? (
+                    <div style={{ padding: '1rem', background: '#fef2f2', borderRadius: '6px', border: '1px dashed #fca5a5', textAlign: 'center', color: '#991b1b', fontSize: '0.85rem' }}>
+                      🏢 <strong>Terreno Omitido (No Aplica):</strong> Este avalúo no liquida valor de terreno (Régimen de Propiedad Horizontal o No Aplica). La tabla de terreno no se imprimirá en el PDF y su valor es Q. 0.00.
+                    </div>
+                  ) : (
+                    <>
+                      <div className="table-container" style={{ background: '#ffffff', borderRadius: '6px', border: '1px solid #cbd5e1', overflowX: 'auto', marginBottom: '0.75rem' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
+                          <thead>
+                            <tr style={{ background: '#0d2847', color: '#ffffff', textAlign: 'center' }}>
+                              <th style={{ padding: '0.45rem', border: '1px solid #1e3a8a', width: '120px' }}>FINCA</th>
+                              <th style={{ padding: '0.45rem', border: '1px solid #1e3a8a', width: '110px' }}>ÁREA (m²)</th>
+                              <th style={{ padding: '0.45rem', border: '1px solid #1e3a8a', width: '130px' }}>EQUIV. VARAS² (v²)</th>
+                              <th style={{ padding: '0.45rem', border: '1px solid #1e3a8a', width: '60px' }}>UNIDAD</th>
+                              <th style={{ padding: '0.45rem', border: '1px solid #1e3a8a', width: '150px' }}>VALOR UNITARIO (Q/m²)</th>
+                              <th style={{ padding: '0.45rem', border: '1px solid #1e3a8a', width: '130px' }}>SUBTOTAL (Q)</th>
+                              <th style={{ padding: '0.45rem', border: '1px solid #1e3a8a', width: '40px' }}></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(formData.desgloseTerreno?.items || []).map((it, idx) => (
+                              <tr key={it.id || idx} style={{ borderBottom: '1px solid #e2e8f0', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                                <td style={{ padding: '0.35rem 0.5rem', textAlign: 'center' }}>
+                                  <input
+                                    type="text"
+                                    className="form-input"
+                                    style={{ textAlign: 'center', fontWeight: 700, padding: '0.3rem 0.4rem', fontSize: '0.82rem' }}
+                                    value={it.finca || ''}
+                                    onChange={(e) => handleTerrenoItemChange(it.id, 'finca', e.target.value)}
+                                    placeholder={`Finca ${idx + 1}`}
+                                  />
+                                </td>
+                                <td style={{ padding: '0.35rem 0.5rem', textAlign: 'center' }}>
+                                  <input
+                                    type="number"
+                                    step="any"
+                                    className="form-input"
+                                    style={{ textAlign: 'center', padding: '0.3rem 0.4rem', fontSize: '0.82rem' }}
+                                    value={it.area}
+                                    onChange={(e) => handleTerrenoItemChange(it.id, 'area', e.target.value)}
+                                  />
+                                </td>
+                                <td style={{ padding: '0.35rem 0.5rem', textAlign: 'center', fontWeight: 600, color: '#1e40af', background: '#eff6ff' }}>
+                                  {(Number(it.varasCuadradas || (Number(it.area || 0) * 1.43115))).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </td>
+                                <td style={{ padding: '0.35rem 0.5rem', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
+                                  m²
+                                </td>
+                                <td style={{ padding: '0.35rem 0.5rem', textAlign: 'center' }}>
+                                  <input
+                                    type="number"
+                                    step="any"
+                                    className="form-input"
+                                    style={{ textAlign: 'right', fontWeight: 700, padding: '0.3rem 0.4rem', fontSize: '0.82rem', borderColor: '#2563eb' }}
+                                    value={it.valorUnitario}
+                                    onChange={(e) => handleTerrenoItemChange(it.id, 'valorUnitario', e.target.value)}
+                                    placeholder="0.00"
+                                  />
+                                </td>
+                                <td style={{ padding: '0.35rem 0.5rem', textAlign: 'right', fontWeight: 700, color: '#0d2847' }}>
+                                  Q. {Number(it.total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </td>
+                                <td style={{ padding: '0.35rem 0.4rem', textAlign: 'center' }}>
+                                  {(formData.desgloseTerreno?.items || []).length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveTerrenoItem(it.id)}
+                                      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                      title="Eliminar este terreno"
+                                    >
+                                      <Trash2 size={15} />
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr style={{ background: '#f1f5f9', fontWeight: 700, borderTop: '2px solid #cbd5e1' }}>
+                              <td style={{ padding: '0.45rem', textAlign: 'center' }}>TOTAL:</td>
+                              <td style={{ padding: '0.45rem', textAlign: 'center' }}>
+                                {(formData.desgloseTerreno?.items || []).reduce((acc, it) => acc + (parseFloat(it.area) || 0), 0).toFixed(2)} m²
+                              </td>
+                              <td style={{ padding: '0.45rem', textAlign: 'center', color: '#1e40af' }}>
+                                {(formData.desgloseTerreno?.items || []).reduce((acc, it) => acc + (parseFloat(it.varasCuadradas || ((parseFloat(it.area) || 0) * 1.43115)) || 0), 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} v²
+                              </td>
+                              <td style={{ padding: '0.45rem', textAlign: 'center' }}>m²</td>
+                              <td style={{ padding: '0.45rem', textAlign: 'right', color: '#64748b' }}>-</td>
+                              <td style={{ padding: '0.45rem', textAlign: 'right', color: '#0d2847' }}>
+                                Q. {(formData.desgloseTerreno?.items || []).reduce((acc, it) => acc + (parseFloat(it.total) || 0), 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={handleAddTerrenoItem}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', padding: '0.35rem 0.75rem', background: '#ffffff', border: '1px dashed #2563eb', color: '#2563eb', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                          >
+                            <Plus size={14} />
+                            <span>Agregar otra Finca / Fracción de Terreno</span>
+                          </button>
+                          {formData.fincas && formData.fincas.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={handleSyncFincasToTerreno}
+                              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', padding: '0.35rem 0.75rem', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                              title="Cargar automáticamente las fincas del Paso 1 con sus áreas valuadas"
+                            >
+                              <RefreshCw size={13} />
+                              <span>Sincronizar con Fincas Registrales ({formData.fincas.length})</span>
+                            </button>
+                          )}
+                        </div>
+
+                        <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '1rem', color: '#0d2847' }}>
+                          Subtotal Terreno: {formData.aplicaTerreno === false ? 'Q. 0.00 (No Aplica)' : `Q. ${Number(formData.desgloseTerreno.total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Construcción Matricial */}
@@ -1695,28 +2138,50 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                   </div>
                 </div>
 
-                {/* Totales y Moneda Extranjera */}
-                <div className="form-grid-3" style={{ background: '#eff6ff', padding: '1.25rem', borderRadius: '8px', border: '1.5px solid #2563eb' }}>
-                  <div className="form-field">
-                    <label className="form-label" style={{ color: '#0d2847' }}>Tipo de Cambio Banguat</label>
-                    <input
-                      type="number"
-                      step="any"
-                      className="form-input"
-                      value={formData.tipoCambio}
-                      onChange={(e) => handleCalcUpdate('tipoCambio', null, e.target.value)}
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label className="form-label" style={{ color: '#0d2847' }}>Valor Comercial Total (Q)</label>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0d2847' }}>
-                      Q. {Number(formData.valorComercialGTQ || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                {/* Totales Comerciales y Bancarios (80%) */}
+                <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', border: '1.5px solid #cbd5e1' }}>
+                  <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
+                    {/* Tarjeta Comercial 100% */}
+                    <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '6px', border: '1.5px solid #0d2847' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                        1. VALOR COMERCIAL TOTAL (100%)
+                      </div>
+                      <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0d2847', marginTop: '4px' }}>
+                        Q. {Number(formData.valorComercialGTQ || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e40af', marginTop: '2px' }}>
+                        $ {Number(formData.valorComercialUSD || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} USD
+                      </div>
+                    </div>
+
+                    {/* Tarjeta Bancaria 80% - Regla Oficial Haroldo */}
+                    <div style={{ background: '#eff6ff', padding: '1rem', borderRadius: '6px', border: '1.5px solid #2563eb' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>
+                        2. SUMA TOTAL VALOR BANCARIO (80% MÁXIMO)
+                      </div>
+                      <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1e3a8a', marginTop: '4px' }}>
+                        Q. {Number(formData.valorBancarioGTQ || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#2563eb', marginTop: '2px' }}>
+                        $ {Number(formData.valorBancarioUSD || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} USD
+                      </div>
                     </div>
                   </div>
-                  <div className="form-field">
-                    <label className="form-label" style={{ color: '#0d2847' }}>Valor en Dólares (USD)</label>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1e40af' }}>
-                      $ {Number(formData.valorComercialUSD || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <label className="form-label" style={{ color: '#475569', margin: 0, fontSize: '0.85rem' }}>Tipo de Cambio Banguat:</label>
+                      <input
+                        type="number"
+                        step="any"
+                        className="form-input"
+                        style={{ width: '100px', padding: '0.35rem 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}
+                        value={formData.tipoCambio}
+                        onChange={(e) => handleCalcUpdate('tipoCambio', null, e.target.value)}
+                      />
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#64748b', fontStyle: 'italic' }}>
+                      ℹ️ El informe PDF genera automáticamente el cuadro bancario al 80% (unitario y subtotal) para garantía bancaria.
                     </div>
                   </div>
                 </div>
@@ -1730,136 +2195,288 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
               <div>
                 <div className="form-section-title">
                   <Camera size={16} />
-                  <span>Álbum Fotográfico Oficial (Compresión Automática para PDF)</span>
+                  <span>Álbum Fotográfico Oficial (Múltiples Fotos por Sección)</span>
                 </div>
-                <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '1rem' }}>
-                  Tome las fotos directamente con la cámara del celular o selecciónelas de su galería. Se procesan de forma optimizada para impresión y almacenamiento.
+                <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '1.25rem' }}>
+                  Puede cargar una o más fotografías por sección directamente desde su celular o galería. Se comprimen automáticamente para garantizar alta velocidad y documentos ligeros.
                 </p>
 
-                <div className="photos-grid">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2rem' }}>
                   {[
-                    { key: 'entorno', label: '1. Entorno / Calle' },
-                    { key: 'ingreso', label: '2. Ingreso / Fachada' },
-                    { key: 'interior', label: '3. Interior Inmueble' },
-                    { key: 'ubicacion', label: '4. Ubicación Satelital' },
-                    { key: 'croquis', label: '5. Croquis / Plano Catastral' },
-                    { key: 'dicabi', label: '6. Matrícula DICABI' }
-                  ].map(({ key, label }) => {
-                    const hasPhoto = Boolean(formData.fotos[key]);
+                    { key: 'entorno', label: '1. Entorno / Calle', desc: 'Vistas de la calle, accesos y entorno urbano' },
+                    { key: 'ingreso', label: '2. Ingreso / Fachada', desc: 'Fachada principal, portones y accesos peatonales o vehiculares' },
+                    { key: 'interior', label: '3. Interior Inmueble', desc: 'Ambientes interiores: sala, comedor, cocina, dormitorios, baños' },
+                    { key: 'ubicacion', label: '4. Ubicación Satelital', desc: 'Vista aérea o satelital con delimitación del polígono' },
+                    { key: 'croquis', label: '5. Croquis / Plano Catastral', desc: 'Croquis de localización, polígono registral o plano' },
+                    { key: 'dicabi', label: '6. Matrícula DICABI', desc: 'Boleta oficial o constancia de matrícula catastral DICABI' }
+                  ].map(({ key, label, desc }) => {
+                    const photoList = Array.isArray(formData.fotos?.[key])
+                      ? formData.fotos[key]
+                      : (formData.fotos?.[key] ? [formData.fotos[key]] : []);
+
                     return (
-                      <div key={key} className={`photo-slot-card ${hasPhoto ? 'has-photo' : ''}`}>
-                        {hasPhoto ? (
-                          <>
-                            <img src={formData.fotos[key]} alt={label} className="photo-slot-img" />
-                            <div className="photo-slot-footer">
-                              <span className="photo-slot-category">{label}</span>
-                              <button
-                                type="button"
-                                className="btn-remove-photo"
-                                onClick={() => handleRemovePhoto(key)}
-                                title="Eliminar Foto"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
-                            <label className="btn-upload-photo-label" style={{ flex: 1 }}>
-                              <Camera size={26} />
+                      <div key={key} style={{ background: '#ffffff', borderRadius: '8px', border: '1.5px solid #cbd5e1', padding: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#0d2847', display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span>{label}</span>
-                              <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Cargar / Tomar Foto</span>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', background: photoList.length > 0 ? '#e0f2fe' : '#f1f5f9', color: photoList.length > 0 ? '#0369a1' : '#64748b' }}>
+                                {photoList.length} {photoList.length === 1 ? 'foto' : 'fotos'}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+                              {desc}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            {key === 'ubicacion' && (
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formData.coordenadas || formData.direccion || 'Guatemala')}&t=k`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontSize: '0.75rem', color: '#0284c7', background: '#f0f9ff', padding: '0.35rem 0.65rem', borderRadius: '4px', textDecoration: 'none', border: '1px solid #bae6fd', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                title="Abrir Google Maps en modo satélite para capturar la imagen"
+                              >
+                                🗺️ Abrir Google Maps (Satélite)
+                              </a>
+                            )}
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 600, color: '#ffffff', background: '#2563eb', padding: '0.4rem 0.85rem', borderRadius: '4px', cursor: 'pointer' }}>
+                              <Plus size={15} />
+                              <span>Agregar Foto(s)</span>
                               <input
                                 type="file"
+                                multiple
                                 accept="image/*"
                                 capture="environment"
                                 onChange={(e) => handlePhotoUpload(key, e)}
                                 style={{ display: 'none' }}
                               />
                             </label>
-                            {key === 'ubicacion' && (
-                              <div style={{ padding: '0.35rem', background: '#f0f9ff', borderTop: '1px solid #bae6fd', textAlign: 'center' }}>
-                                <a
-                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formData.coordenadas || formData.direccion || 'Guatemala')}&t=k`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  style={{ fontSize: '0.72rem', color: '#0284c7', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                                  title="Abrir Google Maps en modo satélite para tomar captura de pantalla"
-                                >
-                                  🗺️ Ver en Google Maps (Satélite)
-                                </a>
-                              </div>
-                            )}
                           </div>
+                        </div>
+
+                        {photoList.length > 0 ? (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '0.85rem' }}>
+                            {photoList.map((photoUrl, pIdx) => (
+                              <div 
+                                key={pIdx} 
+                                style={{ 
+                                  position: 'relative', 
+                                  borderRadius: '6px', 
+                                  overflow: 'hidden', 
+                                  border: '1.5px solid #0d2847', 
+                                  height: '140px',
+                                  background: '#f8fafc' 
+                                }}
+                              >
+                                <img 
+                                  src={photoUrl} 
+                                  alt={`${label} ${pIdx + 1}`} 
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} 
+                                />
+                                <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'rgba(13, 40, 71, 0.85)', color: '#ffffff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
+                                  #{pIdx + 1}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemovePhoto(key, pIdx)}
+                                  title="Eliminar esta foto"
+                                  style={{ 
+                                    position: 'absolute', 
+                                    top: '6px', 
+                                    right: '6px', 
+                                    background: '#ef4444', 
+                                    color: '#ffffff', 
+                                    border: 'none', 
+                                    borderRadius: '50%', 
+                                    width: '26px', 
+                                    height: '26px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)' 
+                                  }}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: '#f8fafc', border: '1.5px dashed #cbd5e1', borderRadius: '6px', cursor: 'pointer', color: '#64748b' }}>
+                            <Camera size={28} style={{ color: '#94a3b8', marginBottom: '6px' }} />
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Sin fotos en esta sección</span>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>Haga clic para tomar o seleccionar una o más imágenes</span>
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/*"
+                              capture="environment"
+                              onChange={(e) => handlePhotoUpload(key, e)}
+                              style={{ display: 'none' }}
+                            />
+                          </label>
                         )}
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Consultas Electrónicas RGP (PDFs Adjuntos) */}
+                {/* Consultas Electrónicas RGP (PDFs o Imágenes Adjuntos) */}
                 <div className="form-section-title" style={{ marginTop: '2rem' }}>
                   <FileUp size={16} />
-                  <span>Consultas Electrónicas del Registro de la Propiedad (Carga de uno o más PDFs)</span>
+                  <span>Consultas Electrónicas del Registro de la Propiedad (PDFs o Imágenes)</span>
                 </div>
                 <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '0.75rem' }}>
-                  Adjunte las certificaciones o consultas electrónicas en PDF descargadas del Registro General de la Propiedad (RGP).
+                  Adjunte las certificaciones o consultas electrónicas descargadas del Registro General de la Propiedad (RGP). Cada página se procesa para mostrarse visualmente en el reporte oficial PDF.
                 </p>
 
+                {isProcessingPdf && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '0.85rem', background: '#eff6ff', borderRadius: '8px', border: '1.5px solid #93c5fd', color: '#1e40af', fontSize: '0.85rem', fontWeight: 600, marginBottom: '1rem' }}>
+                    <RefreshCw size={18} className="animate-spin" />
+                    <span>{pdfProcessStatus || 'Procesando páginas de certificación a alta resolución...'}</span>
+                  </div>
+                )}
+
                 <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', border: '1.5px dashed #cbd5e1', textAlign: 'center', marginBottom: '1rem' }}>
-                  <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#0d2847', color: '#ffffff', padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                  <label style={{ cursor: isProcessingPdf ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', background: isProcessingPdf ? '#94a3b8' : '#0d2847', color: '#ffffff', padding: '0.55rem 1.25rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, transition: 'background 0.2s' }}>
                     <FileUp size={16} />
-                    <span>Seleccionar Archivos PDF</span>
+                    <span>{isProcessingPdf ? 'Procesando Documentos...' : 'Seleccionar Certificaciones (PDF o Imagen)'}</span>
                     <input
                       type="file"
-                      accept="application/pdf"
+                      accept="application/pdf,image/*"
                       multiple
+                      disabled={isProcessingPdf}
                       onChange={handlePdfUpload}
                       style={{ display: 'none' }}
                     />
                   </label>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.5rem' }}>
-                    Puede seleccionar uno o varios archivos PDF a la vez.
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+                    Soporta archivos PDF multipágina e imágenes escaneadas (JPG, PNG). Puede seleccionar varios a la vez.
                   </div>
                 </div>
 
-                {/* Lista de PDFs Cargados */}
+                {/* Lista de Documentos RGP Cargados con Vista Previa de Páginas */}
                 {formData.consultasPdfs && formData.consultasPdfs.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                     {formData.consultasPdfs.map((pdf, idx) => (
                       <div
                         key={pdf.id || idx}
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '0.6rem 1rem',
                           background: '#ffffff',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '6px'
+                          border: '1.5px solid #e2e8f0',
+                          borderRadius: '8px',
+                          padding: '0.85rem',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FileText size={18} style={{ color: '#ef4444' }} />
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#0f172a' }}>{pdf.name}</div>
-                            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Tamaño: {pdf.size} • Adjuntado el {pdf.fecha}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <FileText size={20} style={{ color: '#ef4444' }} />
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a' }}>{pdf.name}</div>
+                              <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                                Tamaño: {pdf.size} • Adjuntado el {pdf.fecha}
+                                {pdf.pages && pdf.pages.length > 0 && (
+                                  <span style={{ marginLeft: '8px', background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                                    {pdf.pages.length} {pdf.pages.length === 1 ? 'página' : 'páginas'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`¿Está seguro de eliminar el documento "${pdf.name}"?`)) {
+                                handleRemovePdf(idx);
+                              }
+                            }}
+                            style={{
+                              background: '#fee2e2',
+                              color: '#b91c1c',
+                              border: '1.5px solid #fca5a5',
+                              padding: '0.4rem 0.85rem',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}
+                            title="Eliminar certificación completa"
+                          >
+                            <Trash2 size={15} />
+                            <span>Eliminar Documento</span>
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePdf(idx)}
-                          style={{ color: '#ef4444', padding: '4px' }}
-                          title="Eliminar PDF"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+
+                        {/* Mosaico de páginas individuales con botón de eliminación por página */}
+                        {pdf.pages && pdf.pages.length > 0 ? (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.6rem', marginTop: '0.5rem', background: '#f8fafc', padding: '0.6rem', borderRadius: '6px' }}>
+                            {pdf.pages.map((p, pIdx) => (
+                              <div key={pIdx} style={{ position: 'relative', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm(`¿Desea eliminar la página ${p.pageIndex || pIdx + 1} de este documento?`)) {
+                                      handleRemovePdfPage(idx, pIdx);
+                                    }
+                                  }}
+                                  style={{
+                                    position: 'absolute',
+                                    top: '5px',
+                                    right: '5px',
+                                    background: 'rgba(239, 68, 68, 0.95)',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '24px',
+                                    height: '24px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                                    zIndex: 2
+                                  }}
+                                  title="Eliminar solo esta página"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                                <div style={{ height: '140px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                  <img 
+                                    src={p.dataUrl} 
+                                    alt={`Página ${p.pageIndex || pIdx + 1}`} 
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                                  />
+                                </div>
+                                <div style={{ padding: '3px 6px', background: '#e2e8f0', fontSize: '0.68rem', fontWeight: 600, color: '#334155', textAlign: 'center' }}>
+                                  Pág. {p.pageIndex || pIdx + 1} de {p.totalPaginas || pdf.pages.length}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : pdf.dataUrl && pdf.dataUrl.startsWith('data:image/') ? (
+                          <div style={{ maxWidth: '140px', marginTop: '0.5rem', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
+                            <div style={{ height: '140px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <img src={pdf.dataUrl} alt={pdf.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            </div>
+                            <div style={{ padding: '3px 6px', background: '#e2e8f0', fontSize: '0.68rem', fontWeight: 600, color: '#334155', textAlign: 'center' }}>
+                              Pág. 1 de 1
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '0.75rem', color: '#94a3b8', fontSize: '0.8rem' }}>
-                    No hay documentos PDF adjuntos actualmente.
+                  <div style={{ textAlign: 'center', padding: '1rem', color: '#94a3b8', fontSize: '0.82rem', background: '#f8fafc', borderRadius: '6px', border: '1px dashed #e2e8f0' }}>
+                    No hay documentos PDF o certificaciones adjuntas actualmente.
                   </div>
                 )}
               </div>

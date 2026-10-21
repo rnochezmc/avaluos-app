@@ -53,7 +53,7 @@ export function subscribeToAvaluos(onData, onError) {
   return onSnapshot(colRef, (snapshot) => {
     const list = [];
     snapshot.forEach((docSnap) => {
-      list.push(docSnap.data());
+      list.push({ id: docSnap.id, ...docSnap.data() });
     });
     onData(list);
   }, (err) => {
@@ -93,6 +93,12 @@ export async function deleteAvaluoFromCloud(id) {
   if (!id) return;
   const docRef = doc(db, AVALUOS_COLLECTION, String(id));
   await deleteDoc(docRef);
+  if (typeof id === 'string') {
+    const lowerId = id.toLowerCase();
+    if (lowerId !== id) {
+      await deleteDoc(doc(db, AVALUOS_COLLECTION, lowerId)).catch(() => {});
+    }
+  }
 }
 
 /**

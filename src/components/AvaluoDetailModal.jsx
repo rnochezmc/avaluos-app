@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { 
   X, Printer, Edit3, MapPin, Building, Calendar, Sparkles, 
   CheckCircle, FileText, Camera, DollarSign, Scale, ExternalLink,
-  ShieldCheck, AlertTriangle, ArrowRight, CornerDownLeft, Download
+  ShieldCheck, AlertTriangle, ArrowRight, CornerDownLeft, Download, Trash2
 } from 'lucide-react';
+import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 
 export default function AvaluoDetailModal({ 
   avaluo, 
@@ -11,7 +12,8 @@ export default function AvaluoDetailModal({
   onEdit, 
   onPrint, 
   currentRole = 'autorizador',
-  onStatusChange 
+  onStatusChange,
+  onRemovePdf
 }) {
   const [activeTab, setActiveTab] = useState('registral');
   const [isRejecting, setIsRejecting] = useState(false);
@@ -25,6 +27,15 @@ export default function AvaluoDetailModal({
 
   const formatUSD = (val) => {
     return '$ ' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr || dateStr === '-' || dateStr === 'N/A') return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const [y, m, d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
+    }
+    return dateStr;
   };
 
   const handlePrint = () => {
@@ -76,6 +87,27 @@ export default function AvaluoDetailModal({
       areaValuada: avaluo.areaValuada || 0
     }
   ];
+
+  // Desglose de terrenos por finca con valores unitarios independientes
+  const terrainItems = (avaluo.desgloseTerreno?.items && Array.isArray(avaluo.desgloseTerreno.items) && avaluo.desgloseTerreno.items.length > 0)
+    ? avaluo.desgloseTerreno.items
+    : fincas.map((f, i) => {
+        const area = Number(f.areaValuada || (avaluo.desgloseTerreno?.area ? avaluo.desgloseTerreno.area / fincas.length : 0));
+        const unitVal = Number(f.valorUnitarioTerreno != null ? f.valorUnitarioTerreno : (avaluo.desgloseTerreno?.valorUnitario || 0));
+        return {
+          id: i + 1,
+          finca: f.finca || `Finca ${i + 1}`,
+          area: area,
+          varasCuadradas: Number(f.varasCuadradas || (area * 1.43115)),
+          unidad: 'm²',
+          valorUnitario: unitVal,
+          total: Number(f.totalTerreno != null ? f.totalTerreno : (area * unitVal))
+        };
+      });
+
+  const totalTerrenoArea = terrainItems.reduce((acc, it) => acc + (Number(it.area) || 0), 0);
+  const totalTerrenoVaras = terrainItems.reduce((acc, it) => acc + (Number(it.varasCuadradas || ((Number(it.area) || 0) * 1.43115))), 0);
+  const totalTerrenoSubtotal = terrainItems.reduce((acc, it) => acc + (Number(it.total != null ? it.total : ((Number(it.area) || 0) * (Number(it.valorUnitario) || 0)))), 0);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -382,15 +414,15 @@ export default function AvaluoDetailModal({
               <div className="form-grid-3" style={{ marginTop: '0.75rem' }}>
                 <div className="form-field">
                   <label className="form-label">Fecha de Solicitud</label>
-                  <div>{avaluo.fechaSolicitud || 'N/A'}</div>
+                  <div>{formatDateDisplay(avaluo.fechaSolicitud) || 'N/A'}</div>
                 </div>
                 <div className="form-field">
                   <label className="form-label">Fecha de Inspección Física</label>
-                  <div style={{ fontWeight: 600, color: '#0d2847' }}>{avaluo.fechaInspeccion || '-'}</div>
+                  <div style={{ fontWeight: 600, color: '#0d2847' }}>{avaluo.fechaInspeccion ? (formatDateDisplay(avaluo.fechaInspeccion) || '-') : '-'}</div>
                 </div>
                 <div className="form-field">
                   <label className="form-label">Fecha de Actualización</label>
-                  <div>{avaluo.fechaActualizacion || '-'}</div>
+                  <div>{(!avaluo.fechaInspeccion && avaluo.fechaActualizacion) ? (formatDateDisplay(avaluo.fechaActualizacion) || '-') : '-'}</div>
                 </div>
               </div>
 
@@ -529,6 +561,11 @@ export default function AvaluoDetailModal({
           {/* TAB 3: TERRENO & COLINDANCIAS */}
           {activeTab === 'terreno' && (
             <div>
+              {avaluo.aplicaTerreno === false && (
+                <div style={{ marginBottom: '1.25rem', padding: '0.85rem 1rem', background: '#fef2f2', borderRadius: '8px', border: '1.5px solid #ef4444', color: '#991b1b', fontSize: '0.88rem' }}>
+                  🏢 <strong>Terreno Omitido (No Aplica):</strong> Este avalúo fue configurado sin terreno independiente (Régimen de Propiedad Horizontal). Las secciones de terreno y colindancias se omiten en el informe oficial PDF y su valor es Q. 0.00.
+                </div>
+              )}
               <div className="form-section-title">
                 <MapPin size={16} />
                 <span>Valoración de Terreno con Fincas y Varas Cuadradas</span>
@@ -547,24 +584,95 @@ export default function AvaluoDetailModal({
                     </tr>
                   </thead>
                   <tbody>
-                    {fincas.map((f, i) => {
-                      const area = Number(f.areaValuada || (avaluo.desgloseTerreno?.area / fincas.length) || 0);
-                      const varas = parseFloat((area * 1.43115).toFixed(2));
-                      const unit = Number(avaluo.desgloseTerreno?.valorUnitario || 0);
+                    {terrainItems.map((item, i) => {
+                      const area = Number(item.area || 0);
+                      const varas = Number(item.varasCuadradas || (area * 1.43115));
+                      const unit = Number(item.valorUnitario || 0);
+                      const subtotal = item.total != null ? Number(item.total) : (area * unit);
                       return (
                         <tr key={i}>
-                          <td style={{ fontWeight: 700 }}>{f.finca}</td>
+                          <td style={{ fontWeight: 700 }}>{item.finca || `Finca ${i + 1}`}</td>
                           <td>{area.toFixed(2)}</td>
-                          <td style={{ fontWeight: 600, color: '#1e40af' }}>{varas.toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td>
-                          <td>m²</td>
+                          <td style={{ fontWeight: 600, color: '#1e40af' }}>
+                            {varas.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td>{item.unidad || 'm²'}</td>
                           <td>{formatQ(unit)}</td>
-                          <td style={{ fontWeight: 700 }}>{formatQ(area * unit)}</td>
+                          <td style={{ fontWeight: 700 }}>{formatQ(subtotal)}</td>
                         </tr>
                       );
                     })}
+                    {terrainItems.length > 1 && (
+                      <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                        <td>TOTAL:</td>
+                        <td>{totalTerrenoArea.toFixed(2)}</td>
+                        <td style={{ color: '#1e40af' }}>
+                          {totalTerrenoVaras.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td>m²</td>
+                        <td>-</td>
+                        <td style={{ color: '#1e40af' }}>{formatQ(totalTerrenoSubtotal)}</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
+
+              {/* Valoración Bancaria de Terreno (80% Máximo de Garantía) */}
+              {avaluo.aplicaTerreno !== false && (
+                <>
+                  <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
+                    <DollarSign size={16} />
+                    <span>Valoración Bancaria de Terreno (80% Máximo de Garantía)</span>
+                  </div>
+                  <div className="table-container" style={{ marginBottom: '1.5rem' }}>
+                    <table className="data-table">
+                      <thead>
+                        <tr style={{ background: '#1e3a8a', color: '#ffffff' }}>
+                          <th style={{ color: '#ffffff' }}>FINCA</th>
+                          <th style={{ color: '#ffffff' }}>ÁREA (m²)</th>
+                          <th style={{ color: '#ffffff' }}>EQUIV. VARAS² (v²)</th>
+                          <th style={{ color: '#ffffff' }}>UNIDAD</th>
+                          <th style={{ color: '#ffffff' }}>VALOR UNITARIO (80%)</th>
+                          <th style={{ color: '#ffffff' }}>SUBTOTAL (80%)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {terrainItems.map((item, i) => {
+                          const area = Number(item.area || 0);
+                          const varas = Number(item.varasCuadradas || (area * 1.43115));
+                          const unit80 = parseFloat((Number(item.valorUnitario || 0) * 0.8).toFixed(2));
+                          const subtotal80 = parseFloat(((item.total != null ? Number(item.total) : (area * Number(item.valorUnitario || 0))) * 0.8).toFixed(2));
+                          return (
+                            <tr key={i}>
+                              <td style={{ fontWeight: 700 }}>{item.finca || `Finca ${i + 1}`}</td>
+                              <td>{area.toFixed(2)}</td>
+                              <td style={{ fontWeight: 600, color: '#1e40af' }}>
+                                {varas.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td>{item.unidad || 'm²'}</td>
+                              <td>{formatQ(unit80)}</td>
+                              <td style={{ fontWeight: 700 }}>{formatQ(subtotal80)}</td>
+                            </tr>
+                          );
+                        })}
+                        {terrainItems.length > 1 && (
+                          <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                            <td>TOTAL BANCARIO:</td>
+                            <td>{totalTerrenoArea.toFixed(2)}</td>
+                            <td style={{ color: '#1e40af' }}>
+                              {totalTerrenoVaras.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td>m²</td>
+                            <td>-</td>
+                            <td style={{ color: '#1e40af' }}>{formatQ(totalTerrenoSubtotal * 0.8)}</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
 
               {/* Colindancias */}
               <div className="form-section-title">
@@ -610,7 +718,7 @@ export default function AvaluoDetailModal({
                         Dirección:
                       </td>
                       <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        {avaluo.dicabiDireccion || avaluo.direccion || '-'}
+                        {avaluo.dicabiDireccion || '-'}
                       </td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
@@ -618,7 +726,7 @@ export default function AvaluoDetailModal({
                         Matricula:
                       </td>
                       <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        <strong>{avaluo.dicabiMatricula || 'Pendiente'}</strong>
+                        {avaluo.dicabiMatricula ? <strong>{avaluo.dicabiMatricula}</strong> : '-'}
                       </td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
@@ -626,7 +734,7 @@ export default function AvaluoDetailModal({
                         Área:
                       </td>
                       <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        {avaluo.dicabiArea || (avaluo.areaValuada ? `${Number(avaluo.areaValuada).toFixed(2)} m²` : '-')}
+                        {avaluo.dicabiArea || '-'}
                       </td>
                     </tr>
                     <tr>
@@ -634,7 +742,7 @@ export default function AvaluoDetailModal({
                         Observaciones:
                       </td>
                       <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        {avaluo.dicabiObservaciones || 'Finca No inscrita en DICABI.'}
+                        {avaluo.dicabiObservaciones || '-'}
                       </td>
                     </tr>
                   </tbody>
@@ -689,6 +797,53 @@ export default function AvaluoDetailModal({
                 </table>
               </div>
 
+              {/* Desglose Bancario de Construcción al 80% */}
+              <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
+                <DollarSign size={16} />
+                <span>Valoración Bancaria de Construcción (80% Máximo de Garantía)</span>
+              </div>
+              <div className="table-container" style={{ marginBottom: '1.5rem' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr style={{ background: '#1e3a8a', color: '#ffffff' }}>
+                      <th style={{ color: '#ffffff', textAlign: 'left' }}>DESCRIPCIÓN</th>
+                      <th style={{ color: '#ffffff', textAlign: 'center' }}>ÁREA (m²)</th>
+                      <th style={{ color: '#ffffff', textAlign: 'center' }}>UNIDAD</th>
+                      <th style={{ color: '#ffffff', textAlign: 'right' }}>VALOR UNITARIO (80%)</th>
+                      <th style={{ color: '#ffffff', textAlign: 'right' }}>SUBTOTAL (80%)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(avaluo.desgloseConstruccion?.items && avaluo.desgloseConstruccion.items.length > 0 ? avaluo.desgloseConstruccion.items : [{
+                      descripcion: 'Construcción Principal',
+                      area: avaluo.desgloseConstruccion?.area || 0,
+                      unidad: avaluo.desgloseConstruccion?.unidad || 'm²',
+                      valorUnitario: avaluo.desgloseConstruccion?.valorUnitario || 0,
+                      total: avaluo.desgloseConstruccion?.total || 0
+                    }]).map((c, i) => {
+                      const unit80 = parseFloat((Number(c.valorUnitario || 0) * 0.8).toFixed(2));
+                      const subtotal80 = parseFloat(((c.total != null ? Number(c.total) : (Number(c.area || 0) * Number(c.valorUnitario || 0))) * 0.8).toFixed(2));
+                      return (
+                        <tr key={i}>
+                          <td style={{ fontWeight: 600 }}>{c.descripcion || 'Construcción'}</td>
+                          <td style={{ textAlign: 'center' }}>{Number(c.area || 0).toFixed(2)}</td>
+                          <td style={{ textAlign: 'center' }}>{c.unidad || 'm²'}</td>
+                          <td style={{ textAlign: 'right' }}>{formatQ(unit80)}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(subtotal80)}</td>
+                        </tr>
+                      );
+                    })}
+                    <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                      <td>TOTAL CONSTRUCCIÓN BANCARIA:</td>
+                      <td style={{ textAlign: 'center' }}>{Number(avaluo.desgloseConstruccion?.area || 0).toFixed(2)} m²</td>
+                      <td style={{ textAlign: 'center' }}>m²</td>
+                      <td style={{ textAlign: 'right' }}>-</td>
+                      <td style={{ textAlign: 'right', color: '#1e40af' }}>{formatQ(Number(avaluo.desgloseConstruccion?.total || 0) * 0.8)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
               <div className="form-section-title">
                 <Building size={16} />
                 <span>Características Físicas de la Construcción</span>
@@ -711,18 +866,17 @@ export default function AvaluoDetailModal({
 
               <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
                 <FileText size={16} />
-                <span>Servicios e Infraestructura Urbana</span>
+                <span>Servicios e Infraestructura (31 Elementos Oficiales)</span>
               </div>
-              <div className="form-grid-3" style={{ fontSize: '0.85rem' }}>
-                <div><strong>Agua:</strong> {avaluo.servicios?.agua}</div>
-                <div><strong>Drenaje Sanitario:</strong> {avaluo.servicios?.drenajeNegras}</div>
-                <div><strong>Drenaje Pluvial:</strong> {avaluo.servicios?.drenajePluviales}</div>
-                <div><strong>Electricidad:</strong> {avaluo.servicios?.energia}</div>
-                <div><strong>Alumbrado:</strong> {avaluo.servicios?.alumbradoPublico}</div>
-                <div><strong>Pavimento:</strong> {avaluo.servicios?.pavimentos}</div>
-                <div><strong>Bordillos:</strong> {avaluo.servicios?.bordillos}</div>
-                <div><strong>Aceras:</strong> {avaluo.servicios?.aceras}</div>
-                <div><strong>Telefonía / Cable:</strong> {avaluo.servicios?.internetCable}</div>
+              <div className="form-grid-3" style={{ fontSize: '0.82rem', gap: '0.6rem' }}>
+                {SERVICIOS_INFRAESTRUCTURA_LIST.map(srv => (
+                  <div key={srv.key} style={{ background: '#f8fafc', padding: '0.45rem 0.6rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ color: '#64748b', fontSize: '0.73rem', display: 'block', fontWeight: 600 }}>{srv.label}:</span>
+                    <strong style={{ color: '#0d2847', fontSize: '0.82rem' }}>
+                      {avaluo.servicios?.[srv.key] !== undefined && avaluo.servicios?.[srv.key] !== '' ? avaluo.servicios[srv.key] : srv.defaultVal}
+                    </strong>
+                  </div>
+                ))}
               </div>
 
               {avaluo.serviciosAdicionales?.length > 0 && (
@@ -740,76 +894,169 @@ export default function AvaluoDetailModal({
                 <Camera size={16} />
                 <span>Álbum Fotográfico Oficial</span>
               </div>
-              <div className="photos-grid">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1rem' }}>
                 {[
-                  { key: 'entorno', label: '1. Entorno' },
+                  { key: 'entorno', label: '1. Entorno Inmediato' },
                   { key: 'ingreso', label: '2. Ingreso / Fachada' },
-                  { key: 'interior', label: '3. Interior' },
+                  { key: 'interior', label: '3. Interior de Inmueble' },
                   { key: 'ubicacion', label: '4. Ubicación Satelital' },
-                  { key: 'croquis', label: '5. Croquis / Plano' },
-                  { key: 'dicabi', label: '6. Boleta DICABI' }
-                ].map(({ key, label }) => (
-                  <div key={key} className={`photo-slot-card ${avaluo.fotos?.[key] ? 'has-photo' : ''}`}>
-                    {avaluo.fotos?.[key] ? (
-                      <img src={avaluo.fotos[key]} alt={label} className="photo-slot-img" />
-                    ) : (
-                      <div className="pdf-photo-empty" style={{ height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>
-                        Sin foto ({label})
+                  { key: 'croquis', label: '5. Croquis / Plano Catastral' },
+                  { key: 'dicabi', label: '6. Boleta o Matrícula DICABI' }
+                ].map(({ key, label }) => {
+                  const raw = avaluo.fotos?.[key];
+                  const photoList = Array.isArray(raw)
+                    ? raw.filter(u => u && typeof u === 'string' && u.trim().length > 0)
+                    : (typeof raw === 'string' && raw.trim().length > 0 ? [raw] : []);
+
+                  return (
+                    <div key={key} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <Camera size={16} style={{ color: '#0d2847' }} />
+                          <strong style={{ fontSize: '0.9rem', color: '#0d2847' }}>{label}</strong>
+                        </div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: '12px', background: photoList.length > 0 ? '#dcfce7' : '#f1f5f9', color: photoList.length > 0 ? '#166534' : '#64748b' }}>
+                          {photoList.length} {photoList.length === 1 ? 'foto' : 'fotos'}
+                        </span>
                       </div>
-                    )}
-                    <div className="photo-slot-footer">
-                      <span className="photo-slot-category">{label}</span>
+
+                      {photoList.length > 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                          {photoList.map((src, idx) => (
+                            <div key={idx} style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1', background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                              <img
+                                src={src}
+                                alt={`${label} ${idx + 1}`}
+                                style={{ width: '100%', height: '140px', objectFit: key === 'croquis' || key === 'dicabi' ? 'contain' : 'cover', display: 'block', background: '#f8fafc' }}
+                              />
+                              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0.25rem 0.5rem', background: 'rgba(13,40,71,0.85)', color: '#ffffff', fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Foto #{idx + 1}</span>
+                                <a href={src} target="_blank" rel="noreferrer" style={{ color: '#93c5fd', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                  <ExternalLink size={11} /> Ver
+                                </a>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ padding: '0.85rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem', fontStyle: 'italic', background: '#ffffff', borderRadius: '6px', border: '1px dashed #cbd5e1' }}>
+                          Sin registro fotográfico adjunto para esta sección
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              {/* Consultas Electrónicas RGP (PDFs) */}
+              {/* Consultas Electrónicas RGP (PDFs o Imágenes) */}
               <div className="form-section-title" style={{ marginTop: '2rem' }}>
                 <FileText size={16} />
                 <span>Consultas Electrónicas del Registro General de la Propiedad (PDFs Adjuntos)</span>
               </div>
               {avaluo.consultasPdfs && avaluo.consultasPdfs.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   {avaluo.consultasPdfs.map((pdf, idx) => (
                     <div 
                       key={pdf.id || idx}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '0.75rem 1rem',
                         background: '#f8fafc',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '6px'
+                        border: '1.5px solid #cbd5e1',
+                        borderRadius: '8px',
+                        padding: '0.85rem'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FileText size={20} style={{ color: '#ef4444' }} />
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#0d2847' }}>{pdf.name}</div>
-                          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Tamaño: {pdf.size}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FileText size={22} style={{ color: '#ef4444' }} />
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0d2847' }}>{pdf.name}</div>
+                            <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                              Tamaño: {pdf.size} {pdf.fecha ? `• Adjuntado el ${pdf.fecha}` : ''}
+                              {pdf.pages && pdf.pages.length > 0 && (
+                                <span style={{ marginLeft: '8px', background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                                  {pdf.pages.length} {pdf.pages.length === 1 ? 'página' : 'páginas'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          {pdf.dataUrl && (
+                            <a 
+                              href={pdf.dataUrl} 
+                              download={pdf.name}
+                              style={{
+                                background: '#0d2847',
+                                color: '#ffffff',
+                                padding: '0.35rem 0.75rem',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                textDecoration: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <Download size={13} /> Descargar
+                            </a>
+                          )}
+                          {onRemovePdf && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`¿Está seguro de eliminar la certificación "${pdf.name}" de este expediente?`)) {
+                                  onRemovePdf(avaluo.id, idx);
+                                }
+                              }}
+                              style={{
+                                background: '#fee2e2',
+                                color: '#b91c1c',
+                                border: '1px solid #fca5a5',
+                                padding: '0.35rem 0.75rem',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                              title="Eliminar certificación del expediente"
+                            >
+                              <Trash2 size={13} /> Eliminar
+                            </button>
+                          )}
                         </div>
                       </div>
-                      {pdf.dataUrl && (
-                        <a 
-                          href={pdf.dataUrl} 
-                          download={pdf.name}
-                          style={{
-                            background: '#0d2847',
-                            color: '#ffffff',
-                            padding: '0.35rem 0.75rem',
-                            borderRadius: '4px',
-                            fontSize: '0.75rem',
-                            textDecoration: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <Download size={13} /> Descargar
-                        </a>
-                      )}
+
+                      {/* Vista previa de páginas individuales si existen */}
+                      {pdf.pages && pdf.pages.length > 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.6rem', marginTop: '0.5rem', background: '#ffffff', padding: '0.6rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          {pdf.pages.map((p, pIdx) => (
+                            <a 
+                              key={pIdx} 
+                              href={p.dataUrl} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              title="Clic para ver en tamaño completo"
+                              style={{ display: 'flex', flexDirection: 'column', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', textDecoration: 'none' }}
+                            >
+                              <div style={{ height: '140px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <img src={p.dataUrl} alt={`Página ${p.pageIndex || pIdx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                              </div>
+                              <div style={{ padding: '3px 6px', background: '#e2e8f0', fontSize: '0.68rem', fontWeight: 600, color: '#334155', textAlign: 'center' }}>
+                                Pág. {p.pageIndex || pIdx + 1} de {p.totalPaginas || pdf.pages.length}
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      ) : pdf.dataUrl && pdf.dataUrl.startsWith('data:image/') ? (
+                        <div style={{ maxWidth: '140px', marginTop: '0.5rem', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
+                          <a href={pdf.dataUrl} target="_blank" rel="noreferrer">
+                            <img src={pdf.dataUrl} alt={pdf.name} style={{ width: '100%', height: '140px', objectFit: 'contain' }} />
+                          </a>
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                 </div>
