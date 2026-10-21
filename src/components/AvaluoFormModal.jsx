@@ -18,8 +18,8 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
     tipoAvaluo: avaluo?.tipoAvaluo || 'Comercial',
     solicitante: avaluo?.solicitante || 'BANCO G&T CONTINENTAL',
     fechaSolicitud: avaluo?.fechaSolicitud || new Date().toISOString().slice(0, 10),
-    fechaInspeccion: avaluo?.fechaInspeccion || new Date().toISOString().slice(0, 10),
-    fechaActualizacion: avaluo?.fechaActualizacion || new Date().toISOString().slice(0, 10),
+    fechaInspeccion: avaluo ? (avaluo.fechaInspeccion || '') : new Date().toISOString().slice(0, 10),
+    fechaActualizacion: avaluo ? (avaluo.fechaActualizacion || '') : '',
     bienMostradoPor: avaluo?.bienMostradoPor || '',
     direccion: avaluo?.direccion || '',
     coordenadas: avaluo?.coordenadas || '',
@@ -66,6 +66,7 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
     dicabiObservaciones: avaluo?.dicabiObservaciones || 'Datos cotejados con el padrón fiscal catastral.',
 
     // Terreno & Sector
+    aplicaTerreno: avaluo?.aplicaTerreno !== undefined ? avaluo.aplicaTerreno : (avaluo?.tipoAvaluo !== 'Apartamento / PH' && avaluo?.tipoAvaluo !== 'Apartamento'),
     sector: avaluo?.sector || 'Urbano Comercial',
     usoSuelo: avaluo?.usoSuelo || 'Comercial / Residencial',
     nivelSocioeconomico: avaluo?.nivelSocioeconomico || 'Medio-Alto',
@@ -127,12 +128,40 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
       fincaAsociada: '',
       varasCuadradas: 0
     },
-    desgloseConstruccion: avaluo?.desgloseConstruccion || { 
-      area: 0, 
-      unidad: 'm²', 
-      valorUnitario: 0, 
-      total: 0 
-    },
+    desgloseConstruccion: (() => {
+      if (avaluo?.desgloseConstruccion?.items && Array.isArray(avaluo.desgloseConstruccion.items) && avaluo.desgloseConstruccion.items.length > 0) {
+        return {
+          ...avaluo.desgloseConstruccion,
+          items: avaluo.desgloseConstruccion.items.map((it, idx) => ({
+            id: it.id || idx + 1,
+            descripcion: it.descripcion || 'Construcción Principal',
+            area: it.area != null ? it.area : 0,
+            unidad: it.unidad || 'm²',
+            valorUnitario: it.valorUnitario != null ? it.valorUnitario : 0,
+            total: it.total != null ? it.total : ((parseFloat(it.area) || 0) * (parseFloat(it.valorUnitario) || 0))
+          }))
+        };
+      }
+      const initialArea = avaluo?.desgloseConstruccion?.area != null ? avaluo.desgloseConstruccion.area : (avaluo?.areaConstruida || 0);
+      const initialUnit = avaluo?.desgloseConstruccion?.valorUnitario != null ? avaluo.desgloseConstruccion.valorUnitario : 0;
+      const initialTotal = avaluo?.desgloseConstruccion?.total != null ? avaluo.desgloseConstruccion.total : ((parseFloat(initialArea) || 0) * (parseFloat(initialUnit) || 0));
+      return {
+        items: [
+          {
+            id: 1,
+            descripcion: avaluo?.desgloseConstruccion?.descripcion || 'Construcción Principal',
+            area: initialArea,
+            unidad: avaluo?.desgloseConstruccion?.unidad || 'm²',
+            valorUnitario: initialUnit,
+            total: initialTotal
+          }
+        ],
+        area: initialArea,
+        unidad: avaluo?.desgloseConstruccion?.unidad || 'm²',
+        valorUnitario: initialUnit,
+        total: initialTotal
+      };
+    })(),
     tipoCambio: avaluo?.tipoCambio || 7.62581,
     valorComercialGTQ: avaluo?.valorComercialGTQ || 0,
     valorBancarioGTQ: avaluo?.valorBancarioGTQ || 0,
@@ -221,7 +250,7 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
       if (field === 'areaRegistrada' || field === 'areaDesmembrada') {
         const orig = parseFloat(field === 'areaRegistrada' ? value : target.areaRegistrada) || 0;
         const desm = parseFloat(field === 'areaDesmembrada' ? value : target.areaDesmembrada) || 0;
-        target.areaActualRegistrada = parseFloat(Math.max(0, orig - desm).toFixed(2));
+        target.areaActualRegistrada = parseFloat(Math.max(0, orig - desm).toFixed(6));
       }
 
       newFincas[index] = target;
@@ -239,11 +268,11 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
 
     const next = {
       ...state,
-      areaRegistrada: parseFloat(totOrig.toFixed(2)),
-      areaDesmembrada: parseFloat(totDesm.toFixed(2)),
-      areaActualRegistrada: parseFloat(totAct.toFixed(2)),
-      areaFisica: parseFloat(totFis.toFixed(2)),
-      areaValuada: parseFloat(totVal.toFixed(2))
+      areaRegistrada: parseFloat(totOrig.toFixed(6)),
+      areaDesmembrada: parseFloat(totDesm.toFixed(6)),
+      areaActualRegistrada: parseFloat(totAct.toFixed(6)),
+      areaFisica: parseFloat(totFis.toFixed(6)),
+      areaValuada: parseFloat(totVal.toFixed(6))
     };
 
     // Auto actualizar área en terreno si está en 0
@@ -298,7 +327,99 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
     });
   };
 
+  // Manejadores para la matriz dinámica de valoración de construcción
+  const handleAddConstruccionItem = () => {
+    setFormData(prev => {
+      const currentItems = prev.desgloseConstruccion?.items || [];
+      const newItem = {
+        id: Date.now(),
+        descripcion: '',
+        area: '',
+        unidad: 'm²',
+        valorUnitario: '',
+        total: 0
+      };
+      const nextItems = [...currentItems, newItem];
+      return recalculateConstruction(prev, nextItems);
+    });
+  };
+
+  const handleRemoveConstruccionItem = (id) => {
+    setFormData(prev => {
+      const currentItems = prev.desgloseConstruccion?.items || [];
+      if (currentItems.length <= 1) {
+        alert('Debe mantener al menos una fila en la valoración de construcción.');
+        return prev;
+      }
+      const nextItems = currentItems.filter(it => it.id !== id);
+      return recalculateConstruction(prev, nextItems);
+    });
+  };
+
+  const handleUpdateConstruccionItem = (id, field, value) => {
+    setFormData(prev => {
+      const currentItems = prev.desgloseConstruccion?.items || [];
+      const nextItems = currentItems.map(item => {
+        if (item.id === id) {
+          const updated = { ...item, [field]: value };
+          if (field === 'area' || field === 'valorUnitario') {
+            const a = field === 'area' ? (parseFloat(value) || 0) : (parseFloat(item.area) || 0);
+            const u = field === 'valorUnitario' ? (parseFloat(value) || 0) : (parseFloat(item.valorUnitario) || 0);
+            updated.total = parseFloat((a * u).toFixed(2));
+          }
+          return updated;
+        }
+        return item;
+      });
+      return recalculateConstruction(prev, nextItems);
+    });
+  };
+
+  const recalculateConstruction = (prev, items) => {
+    const sumArea = items.reduce((acc, it) => acc + (parseFloat(it.area) || 0), 0);
+    const sumTotal = items.reduce((acc, it) => acc + (parseFloat(it.total) || 0), 0);
+    const avgUnit = sumArea > 0 ? parseFloat((sumTotal / sumArea).toFixed(2)) : 0;
+
+    const nextDesglose = {
+      ...prev.desgloseConstruccion,
+      items,
+      area: parseFloat(sumArea.toFixed(2)),
+      valorUnitario: avgUnit,
+      total: parseFloat(sumTotal.toFixed(2))
+    };
+
+    const totalComercial = (parseFloat(prev.desgloseTerreno?.total) || 0) + nextDesglose.total;
+    const tc = parseFloat(prev.tipoCambio) || 7.62581;
+    const valBancario = Math.round(totalComercial * 0.8);
+
+    return {
+      ...prev,
+      desgloseConstruccion: nextDesglose,
+      valorComercialGTQ: totalComercial,
+      valorBancarioGTQ: valBancario,
+      valorComercialUSD: parseFloat((totalComercial / tc).toFixed(2)),
+      valorBancarioUSD: parseFloat((valBancario / tc).toFixed(2))
+    };
+  };
+
   // Compresión fotográfica optimizada (evita bug de cuotas móviles y Firestore)
+  // Regla de Haroldo: Fecha de Inspección o Fecha de Actualización (mutuamente excluyentes)
+  const handleFechaInspeccionChange = (val) => {
+    setFormData(prev => ({
+      ...prev,
+      fechaInspeccion: val,
+      fechaActualizacion: val.trim() ? '' : prev.fechaActualizacion
+    }));
+  };
+
+  const handleFechaActualizacionChange = (val) => {
+    setFormData(prev => ({
+      ...prev,
+      fechaActualizacion: val,
+      fechaInspeccion: val.trim() ? '' : prev.fechaInspeccion
+    }));
+  };
+
   const handlePhotoUpload = (category, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -528,10 +649,18 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                     <select
                       className="form-select"
                       value={formData.tipoAvaluo}
-                      onChange={(e) => setFormData({ ...formData, tipoAvaluo: e.target.value })}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData(prev => ({
+                          ...prev,
+                          tipoAvaluo: val,
+                          aplicaTerreno: val === 'Apartamento / PH' || val === 'Apartamento' ? false : prev.aplicaTerreno
+                        }));
+                      }}
                     >
                       <option value="Comercial">Comercial</option>
                       <option value="Residencial">Residencial</option>
+                      <option value="Apartamento / PH">Apartamento / PH (Propiedad Horizontal)</option>
                       <option value="Industrial">Industrial</option>
                       <option value="Terreno / Rústico">Terreno / Rústico</option>
                       <option value="Finca Agrícola">Finca Agrícola</option>
@@ -560,23 +689,39 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                     />
                   </div>
                   <div className="form-field">
-                    <label className="form-label">Fecha de Inspección Física (Observación Haroldo)</label>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Fecha de Inspección Física</span>
+                      {formData.fechaInspeccion ? (
+                        <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600 }}>● Activa</span>
+                      ) : null}
+                    </label>
                     <input
                       type="text"
                       className="form-input"
                       value={formData.fechaInspeccion}
-                      onChange={(e) => setFormData({ ...formData, fechaInspeccion: e.target.value })}
+                      onChange={(e) => handleFechaInspeccionChange(e.target.value)}
                       placeholder="Ej: 17 de julio de 2026 y 23 de julio de 2026"
                     />
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '3px' }}>
+                      Si se llena, la fecha de actualización queda en blanco.
+                    </div>
                   </div>
                   <div className="form-field">
-                    <label className="form-label">Fecha de Actualización / Emisión</label>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Fecha de Actualización / Emisión</span>
+                      {formData.fechaActualizacion ? (
+                        <span style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 600 }}>● Activa</span>
+                      ) : null}
+                    </label>
                     <input
                       type="date"
                       className="form-input"
                       value={formData.fechaActualizacion}
-                      onChange={(e) => setFormData({ ...formData, fechaActualizacion: e.target.value })}
+                      onChange={(e) => handleFechaActualizacionChange(e.target.value)}
                     />
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '3px' }}>
+                      Solo para revaluaciones (deja en blanco la fecha de inspección).
+                    </div>
                   </div>
                 </div>
 
@@ -967,69 +1112,94 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                 ============================================================== */}
             {activeStep === 3 && (
               <div>
-                {/* Colindancias */}
-                <div className="form-section-title">
-                  <MapPin size={16} />
-                  <span>Colindancias Registrales del Terreno (Norte, Sur, Este, Oeste)</span>
+                {/* Checkbox de Terreno / Colindancias */}
+                <div style={{ marginBottom: '1.25rem', padding: '0.85rem 1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', fontWeight: 600, color: '#0f172a', fontSize: '0.9rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.aplicaTerreno !== false}
+                      onChange={(e) => setFormData({ ...formData, aplicaTerreno: e.target.checked })}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#2563eb' }}
+                    />
+                    <span>El inmueble cuenta con terreno independiente y colindancias</span>
+                  </label>
+                  {formData.aplicaTerreno === false ? (
+                    <div style={{ margin: '0.4rem 0 0 1.75rem', fontSize: '0.78rem', color: '#0369a1', background: '#e0f2fe', padding: '0.4rem 0.6rem', borderRadius: '4px', border: '1px solid #bae6fd' }}>
+                      🏢 <strong>Régimen de Propiedad Horizontal / Apartamento:</strong> Se omitirán las secciones de terreno y colindancias en el informe oficial impreso para evitar espacios en blanco legales.
+                    </div>
+                  ) : (
+                    <div style={{ margin: '0.35rem 0 0 1.75rem', fontSize: '0.74rem', color: '#64748b' }}>
+                      Desmarcar si es un apartamento o inmueble en condominio vertical para que no deje espacios vacíos en el PDF.
+                    </div>
+                  )}
                 </div>
 
-                <div className="form-grid-2">
-                  <div className="form-field">
-                    <label className="form-label">Norte *</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.colindancias?.norte || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        colindancias: { ...formData.colindancias, norte: e.target.value }
-                      })}
-                      placeholder="Ej: 18.50 m con calle pública municipal"
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label className="form-label">Sur *</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.colindancias?.sur || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        colindancias: { ...formData.colindancias, sur: e.target.value }
-                      })}
-                      placeholder="Ej: 18.50 m con Finca 5288"
-                    />
-                  </div>
-                </div>
+                {formData.aplicaTerreno !== false && (
+                  <>
+                    <div className="form-section-title">
+                      <MapPin size={16} />
+                      <span>Colindancias Registrales del Terreno (Norte, Sur, Este, Oeste)</span>
+                    </div>
 
-                <div className="form-grid-2">
-                  <div className="form-field">
-                    <label className="form-label">Este *</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.colindancias?.este || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        colindancias: { ...formData.colindancias, este: e.target.value }
-                      })}
-                      placeholder="Ej: 10.76 m con propiedad privada particular"
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label className="form-label">Oeste *</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.colindancias?.oeste || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        colindancias: { ...formData.colindancias, oeste: e.target.value }
-                      })}
-                      placeholder="Ej: 10.76 m con lote colindante"
-                    />
-                  </div>
-                </div>
+                    <div className="form-grid-2">
+                      <div className="form-field">
+                        <label className="form-label">Norte</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={formData.colindancias?.norte || ''}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            colindancias: { ...formData.colindancias, norte: e.target.value }
+                          })}
+                          placeholder="Ej: 18.50 m con calle pública municipal"
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label className="form-label">Sur</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={formData.colindancias?.sur || ''}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            colindancias: { ...formData.colindancias, sur: e.target.value }
+                          })}
+                          placeholder="Ej: 18.50 m con Finca 5288"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-grid-2">
+                      <div className="form-field">
+                        <label className="form-label">Este</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={formData.colindancias?.este || ''}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            colindancias: { ...formData.colindancias, este: e.target.value }
+                          })}
+                          placeholder="Ej: 10.76 m con propiedad privada particular"
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label className="form-label">Oeste</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={formData.colindancias?.oeste || ''}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            colindancias: { ...formData.colindancias, oeste: e.target.value }
+                          })}
+                          placeholder="Ej: 10.76 m con lote colindante"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Servicios con Checklist */}
                 <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
@@ -1410,43 +1580,118 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                   </div>
                 </div>
 
-                {/* Construcción */}
+                {/* Construcción Matricial */}
                 <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', border: '1.5px solid #cbd5e1', marginBottom: '1.5rem' }}>
-                  <div style={{ fontWeight: 700, color: '#0d2847', fontSize: '0.95rem', marginBottom: '0.75rem' }}>
-                    VALORACIÓN DE CONSTRUCCIÓN
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#0d2847', fontSize: '0.95rem' }}>
+                        VALORACIÓN DE CONSTRUCCIÓN
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                        Matriz de valoración por niveles, áreas o ambientes constructivos
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handleAddConstruccionItem}
+                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderColor: '#2563eb', color: '#1e40af', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', background: '#eff6ff' }}
+                    >
+                      <Plus size={15} />
+                      <span>Agregar Fila / Renglón</span>
+                    </button>
                   </div>
 
-                  <div className="form-grid-3">
-                    <div className="form-field">
-                      <label className="form-label">Área Construida (m²)</label>
-                      <input
-                        type="number"
-                        step="any"
-                        className="form-input"
-                        value={formData.desgloseConstruccion.area}
-                        onChange={(e) => handleCalcUpdate('desgloseConstruccion', 'area', e.target.value)}
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label className="form-label">Valor Unitario (Q / m²)</label>
-                      <input
-                        type="number"
-                        step="any"
-                        className="form-input"
-                        value={formData.desgloseConstruccion.valorUnitario}
-                        onChange={(e) => handleCalcUpdate('desgloseConstruccion', 'valorUnitario', e.target.value)}
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label className="form-label">Subtotal Construcción (Q)</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        style={{ fontWeight: 700 }}
-                        value={'Q. ' + Number(formData.desgloseConstruccion.total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
-                        readOnly
-                      />
-                    </div>
+                  <div style={{ overflowX: 'auto', background: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', minWidth: '600px' }}>
+                      <thead>
+                        <tr style={{ background: 'linear-gradient(135deg, #07172b 0%, #0d2847 100%)', color: '#ffffff' }}>
+                          <th style={{ padding: '0.65rem 0.75rem', textAlign: 'left', minWidth: '220px' }}>Descripción / Ambiente</th>
+                          <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', width: '130px' }}>Área (m²)</th>
+                          <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', width: '140px' }}>Valor Unitario (Q/m²)</th>
+                          <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', width: '150px' }}>Subtotal (Q)</th>
+                          <th style={{ padding: '0.65rem 0.5rem', textAlign: 'center', width: '45px' }}></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(formData.desgloseConstruccion?.items || []).map((item, idx) => (
+                          <tr key={item.id || idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '0.5rem 0.75rem' }}>
+                              <input
+                                type="text"
+                                className="form-input"
+                                style={{ fontSize: '0.84rem', padding: '0.4rem 0.6rem' }}
+                                value={item.descripcion || ''}
+                                placeholder="Ej: Primer Nivel, Garaje, Bodega, etc."
+                                onChange={(e) => handleUpdateConstruccionItem(item.id, 'descripcion', e.target.value)}
+                              />
+                            </td>
+                            <td style={{ padding: '0.5rem 0.75rem' }}>
+                              <input
+                                type="number"
+                                step="any"
+                                className="form-input"
+                                style={{ fontSize: '0.84rem', padding: '0.4rem 0.6rem', textAlign: 'right' }}
+                                value={item.area === 0 ? '' : item.area}
+                                placeholder="0.00"
+                                onChange={(e) => handleUpdateConstruccionItem(item.id, 'area', e.target.value)}
+                              />
+                            </td>
+                            <td style={{ padding: '0.5rem 0.75rem' }}>
+                              <input
+                                type="number"
+                                step="any"
+                                className="form-input"
+                                style={{ fontSize: '0.84rem', padding: '0.4rem 0.6rem', textAlign: 'right' }}
+                                value={item.valorUnitario === 0 ? '' : item.valorUnitario}
+                                placeholder="0.00"
+                                onChange={(e) => handleUpdateConstruccionItem(item.id, 'valorUnitario', e.target.value)}
+                              />
+                            </td>
+                            <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 700, color: '#0d2847', fontSize: '0.88rem' }}>
+                              Q. {Number(item.total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td style={{ padding: '0.5rem 0.5rem', textAlign: 'center' }}>
+                              {(formData.desgloseConstruccion?.items || []).length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveConstruccionItem(item.id)}
+                                  title="Eliminar esta fila"
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#ef4444',
+                                    cursor: 'pointer',
+                                    padding: '4px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: '4px'
+                                  }}
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr style={{ background: '#f8fafc', fontWeight: 700, borderTop: '2px solid #cbd5e1' }}>
+                          <td style={{ padding: '0.65rem 0.75rem', color: '#0d2847' }}>
+                            TOTAL CONSTRUCCIÓN ({formData.desgloseConstruccion?.items?.length || 1} {(formData.desgloseConstruccion?.items?.length || 1) === 1 ? 'renglón' : 'renglones'})
+                          </td>
+                          <td style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#0d2847' }}>
+                            {Number(formData.desgloseConstruccion?.area || 0).toFixed(2)} m²
+                          </td>
+                          <td style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#64748b' }}>-</td>
+                          <td style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#1e40af', fontSize: '0.95rem' }}>
+                            Q. {Number(formData.desgloseConstruccion?.total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    </table>
                   </div>
                 </div>
 
@@ -1519,18 +1764,33 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                             </div>
                           </>
                         ) : (
-                          <label className="btn-upload-photo-label">
-                            <Camera size={26} />
-                            <span>{label}</span>
-                            <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Cargar / Tomar Foto</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              capture="environment"
-                              onChange={(e) => handlePhotoUpload(key, e)}
-                              style={{ display: 'none' }}
-                            />
-                          </label>
+                          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+                            <label className="btn-upload-photo-label" style={{ flex: 1 }}>
+                              <Camera size={26} />
+                              <span>{label}</span>
+                              <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Cargar / Tomar Foto</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                onChange={(e) => handlePhotoUpload(key, e)}
+                                style={{ display: 'none' }}
+                              />
+                            </label>
+                            {key === 'ubicacion' && (
+                              <div style={{ padding: '0.35rem', background: '#f0f9ff', borderTop: '1px solid #bae6fd', textAlign: 'center' }}>
+                                <a
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formData.coordenadas || formData.direccion || 'Guatemala')}&t=k`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ fontSize: '0.72rem', color: '#0284c7', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                  title="Abrir Google Maps en modo satélite para tomar captura de pantalla"
+                                >
+                                  🗺️ Ver en Google Maps (Satélite)
+                                </a>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     );

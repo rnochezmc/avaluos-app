@@ -386,11 +386,11 @@ export default function AvaluoDetailModal({
                 </div>
                 <div className="form-field">
                   <label className="form-label">Fecha de Inspección Física</label>
-                  <div style={{ fontWeight: 600, color: '#0d2847' }}>{avaluo.fechaInspeccion || avaluo.fechaActualizacion || 'N/A'}</div>
+                  <div style={{ fontWeight: 600, color: '#0d2847' }}>{avaluo.fechaInspeccion || '-'}</div>
                 </div>
                 <div className="form-field">
                   <label className="form-label">Fecha de Actualización</label>
-                  <div>{avaluo.fechaActualizacion || 'N/A'}</div>
+                  <div>{avaluo.fechaActualizacion || '-'}</div>
                 </div>
               </div>
 
@@ -436,12 +436,12 @@ export default function AvaluoDetailModal({
                         <td>{f.folio}</td>
                         <td>{f.libro}</td>
                         <td>{f.propietario || avaluo.propietarioPrincipal}</td>
-                        <td>{Number(f.areaRegistrada || 0).toFixed(2)} m²</td>
+                        <td>{Number(f.areaRegistrada || 0).toFixed(6)} m²</td>
                         <td style={{ color: Number(f.areaDesmembrada) > 0 ? '#b91c1c' : 'inherit' }}>
-                          {Number(f.areaDesmembrada || 0).toFixed(2)} m²
+                          {Number(f.areaDesmembrada || 0).toFixed(6)} m²
                         </td>
-                        <td style={{ fontWeight: 600 }}>{Number(f.areaActualRegistrada || f.areaRegistrada || 0).toFixed(2)} m²</td>
-                        <td style={{ fontWeight: 700, color: '#0d2847' }}>{Number(f.areaValuada || 0).toFixed(2)} m²</td>
+                        <td style={{ fontWeight: 600 }}>{Number(f.areaActualRegistrada || f.areaRegistrada || 0).toFixed(6)} m²</td>
+                        <td style={{ fontWeight: 700, color: '#0d2847' }}>{Number(f.areaValuada || 0).toFixed(6)} m²</td>
                       </tr>
                     ))}
                   </tbody>
@@ -586,15 +586,59 @@ export default function AvaluoDetailModal({
                 </div>
               </div>
 
-              {/* DICABI Independiente */}
+              {/* DICABI Independiente - Formato Oficial Haroldo */}
               <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
                 <Building size={16} />
                 <span>Dirección de Catastro y Avalúo de Bienes Inmuebles (DICABI)</span>
               </div>
-              <div className="form-grid-3">
-                <div><strong>Matrícula:</strong> {avaluo.dicabiMatricula || 'Pendiente'}</div>
-                <div><strong>Titular:</strong> {avaluo.dicabiNombre || avaluo.propietarioPrincipal}</div>
-                <div><strong>Área Catastral:</strong> {avaluo.dicabiArea || `${avaluo.areaValuada} m²`}</div>
+              <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
+                <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.45rem 0.85rem', fontWeight: 700, fontSize: '0.82rem', textAlign: 'center', letterSpacing: '0.04em' }}>
+                  DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI)
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        Nombre:
+                      </td>
+                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                        {avaluo.dicabiNombre || '-'}
+                      </td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        Dirección:
+                      </td>
+                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                        {avaluo.dicabiDireccion || avaluo.direccion || '-'}
+                      </td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        Matricula:
+                      </td>
+                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                        <strong>{avaluo.dicabiMatricula || 'Pendiente'}</strong>
+                      </td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        Área:
+                      </td>
+                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                        {avaluo.dicabiArea || (avaluo.areaValuada ? `${Number(avaluo.areaValuada).toFixed(2)} m²` : '-')}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        Observaciones:
+                      </td>
+                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                        {avaluo.dicabiObservaciones || 'Finca No inscrita en DICABI.'}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -602,9 +646,52 @@ export default function AvaluoDetailModal({
           {/* TAB 4: CONSTRUCCIÓN & SERVICIOS */}
           {activeTab === 'construccion' && (
             <div>
+              {/* Desglose Matricial de Construcción */}
               <div className="form-section-title">
                 <Building size={16} />
-                <span>Características de Construcción</span>
+                <span>Valoración Matricial de Construcción</span>
+              </div>
+              <div className="table-container" style={{ marginBottom: '1.5rem' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr style={{ background: '#0d2847', color: '#ffffff' }}>
+                      <th style={{ color: '#ffffff', textAlign: 'left' }}>DESCRIPCIÓN</th>
+                      <th style={{ color: '#ffffff', textAlign: 'center' }}>ÁREA (m²)</th>
+                      <th style={{ color: '#ffffff', textAlign: 'center' }}>UNIDAD</th>
+                      <th style={{ color: '#ffffff', textAlign: 'right' }}>VALOR UNITARIO</th>
+                      <th style={{ color: '#ffffff', textAlign: 'right' }}>SUBTOTAL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(avaluo.desgloseConstruccion?.items && avaluo.desgloseConstruccion.items.length > 0 ? avaluo.desgloseConstruccion.items : [{
+                      descripcion: 'Construcción Principal',
+                      area: avaluo.desgloseConstruccion?.area || 0,
+                      unidad: avaluo.desgloseConstruccion?.unidad || 'm²',
+                      valorUnitario: avaluo.desgloseConstruccion?.valorUnitario || 0,
+                      total: avaluo.desgloseConstruccion?.total || 0
+                    }]).map((c, i) => (
+                      <tr key={i}>
+                        <td style={{ fontWeight: 600 }}>{c.descripcion || 'Construcción'}</td>
+                        <td style={{ textAlign: 'center' }}>{Number(c.area || 0).toFixed(2)}</td>
+                        <td style={{ textAlign: 'center' }}>{c.unidad || 'm²'}</td>
+                        <td style={{ textAlign: 'right' }}>{formatQ(c.valorUnitario)}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(c.total != null ? c.total : (Number(c.area || 0) * Number(c.valorUnitario || 0)))}</td>
+                      </tr>
+                    ))}
+                    <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                      <td>TOTAL CONSTRUCCIÓN:</td>
+                      <td style={{ textAlign: 'center' }}>{Number(avaluo.desgloseConstruccion?.area || 0).toFixed(2)} m²</td>
+                      <td style={{ textAlign: 'center' }}>m²</td>
+                      <td style={{ textAlign: 'right' }}>-</td>
+                      <td style={{ textAlign: 'right', color: '#1e40af' }}>{formatQ(avaluo.desgloseConstruccion?.total)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="form-section-title">
+                <Building size={16} />
+                <span>Características Físicas de la Construcción</span>
               </div>
               <div className="form-grid-3">
                 <div><strong>Edad Aproximada:</strong> {avaluo.construccion?.edadAprox || '5 años'}</div>

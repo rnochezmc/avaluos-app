@@ -1,6 +1,169 @@
 // Mock inicial de expedientes de avalúos basados exactamente en el formato LEX ROSAM S.A.
 export const initialAvaluos = [
   {
+    id: "lr-2026-10031",
+    codigo: "LR-2026-10031",
+    tipoAvaluo: "Apartamento / PH",
+    solicitante: "BANCO G&T CONTINENTAL",
+    fechaSolicitud: "2026-07-28",
+    fechaInspeccion: "30 de julio de 2026",
+    fechaActualizacion: "",
+    bienMostradoPor: "Lic. Aroldo Oliverio Ruiz Orozco",
+    direccion: "Apartamento No. 1102, ubicado en el Nivel No.11 del Edificio Vantier, 2 parqueos ubicados en el sótano No. 3 y bodega ubicada en el sotano No. uno.",
+    coordenadas: "14.59512, -90.51834",
+    descripcionGeneral: "Apartamento No. 1102 en Nivel 11 de Edificio Vantier, con 2 parqueos en sótano 3 y bodega en sótano 1. Inmueble constituido bajo Régimen de Propiedad Horizontal.",
+    dpi: "1789 54210 0101",
+    referenciaActualizacion: "Inspección física y certificación de valor 2026",
+    estado: "autorizado",
+    observacionesAutorizador: "Expediente revisado y verificado en campo. Régimen de propiedad horizontal y fincas filiales verificadas sin terrenos rústicos independientes.",
+    aplicaTerreno: false,
+    
+    fincas: [
+      { 
+        finca: "10031", 
+        folio: "31", 
+        libro: "250E de Propiedad Horizontal de Guatemala", 
+        propietario: "Inversiones y Desarrollos Inmobiliarios S.A.",
+        areaRegistrada: 104.77,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 104.77,
+        areaFisica: 104.77,
+        areaValuada: 104.77
+      },
+      { 
+        finca: "10032", 
+        folio: "32", 
+        libro: "250E de Propiedad Horizontal de Guatemala", 
+        propietario: "Inversiones y Desarrollos Inmobiliarios S.A.",
+        areaRegistrada: 25.00,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 25.00,
+        areaFisica: 25.00,
+        areaValuada: 25.00
+      },
+      { 
+        finca: "10033", 
+        folio: "33", 
+        libro: "250E de Propiedad Horizontal de Guatemala", 
+        propietario: "Inversiones y Desarrollos Inmobiliarios S.A.",
+        areaRegistrada: 7.00,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 7.00,
+        areaFisica: 7.00,
+        areaValuada: 7.00
+      }
+    ],
+    propietarioPrincipal: "Inversiones y Desarrollos Inmobiliarios S.A.",
+    areaRegistrada: 136.77,
+    areaDesmembrada: 0.00,
+    areaActualRegistrada: 136.77,
+    areaFisica: 136.77,
+    areaValuada: 136.77,
+    
+    limitaciones: "Sometido al régimen de propiedad horizontal y reglamento de copropiedad y administración del Edificio Vantier.",
+    anotaciones: "Ninguna vigente según certificación electrónica del Registro General de la Propiedad.",
+    gravamenes: "Libre de gravámenes hipotecarios.",
+    servidumbres: "Servidumbres inherentes al régimen de propiedad horizontal (ductos, pasillos comunes, elevadores y accesos).",
+    areasComunes: "Lobby con recepción, elevadores de alta velocidad, gimnasio, salón social, terraza lounge y parqueo de visitas.",
+    desmembracion: "Fincas filiales desmembradas de la finca matriz del proyecto.",
+    
+    valorComercialGTQ: 1285085,
+    valorBancarioGTQ: 1028068,
+    tipoCambio: 7.62581,
+    valorComercialUSD: 168517.84,
+    valorBancarioUSD: 134814.27,
+    
+    valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
+    registroPrincipal: "Valuador autorizado 2572-R-2026",
+    valuadorRevisor: "Lic. Luis Felipe Tolaque Tobias",
+    registroRevisor: "Valuador autorizado 193-T-93",
+    
+    dicabiNombre: "",
+    dicabiDireccion: "Apartamento No. 1102, ubicado en el Nivel No.11 del Edificio Vantier, 2 parqueos ubicados en el sótano No. 3 y bodega ubicada en el sotano No. uno.",
+    dicabiMatricula: "Pendiente",
+    dicabiArea: "136.77 m²",
+    dicabiObservaciones: "Finca No inscrita en DICABI.",
+    sector: "Zona Urbana Residencial Vertical",
+    usoSuelo: "Residencial / Apartamentos",
+    nivelSocioeconomico: "Alto",
+    formaTerreno: "",
+    pendiente: "",
+    esquina: "No",
+    accesoCalle: "Avenida pavimentada con garita y lobby de acceso",
+    colindancias: {
+      norte: "",
+      sur: "",
+      este: "",
+      oeste: ""
+    },
+    
+    servicios: {
+      drenajeNegras: "Red municipal",
+      drenajePluviales: "Red pluvial municipal",
+      pavimentos: "Asfalto y concreto",
+      bordillos: "Concreto",
+      aceras: "Concreto 1.50 m",
+      agua: "Red municipal y cisterna propia del edificio",
+      telefono: "Líneas fijas y móviles",
+      internetCable: "Fibra óptica instalada",
+      energia: "EEGSA 120/240V monofásica",
+      garita: "Garita y lobby de control 24/7",
+      camaras: "Circuito cerrado propio en todo el edificio",
+      alumbradoPublico: "Alumbrado LED municipal y propio",
+      tipoCalle: "Avenida urbana principal"
+    },
+    serviciosAdicionales: ["Planta eléctrica de emergencia general", "Elevadores de alta velocidad", "Pozo propio y cisterna"],
+    
+    construccion: {
+      edadAprox: "1 año (A estrenar)",
+      estadoActual: "Excelente",
+      apropiadaSector: "Totalmente adecuada al estándar contemporáneo del sector",
+      distribucion: "Apartamento 1102: Sala, comedor con balcón, cocina integrada con isla, área de lavandería, baño de visitas, dormitorio principal con walk-in closet y baño privado, dormitorio secundario con closet y baño completo. Sótano 3: 2 plazas de parqueo. Sótano 1: Bodega privada.",
+      estructura: "Marcos de concreto armado y losas postensadas",
+      paredes: "Muros de concreto y mampostería con acabados lisos",
+      techoEntrePiso: "Losa postensada de concreto con cielo falso decorativo",
+      piso: "Piso vinílico SPC imitación madera en áreas sociales y porcelanato en baños",
+      puertas: "Puerta principal enchapada con cerradura digital y puertas interiores de madera semisólida",
+      ventanas: "Perfilería europea de aluminio termoacústico con doble vidrio",
+      sanitaria: "Artefactos suspendidos de bajo consumo y grifería de alta gama",
+      electrica: "Instalación empotrada con iluminación LED indirecta",
+      factoresPositivos: "Vista panorámica desde nivel 11, acabados de primera línea, excelentes amenidades.",
+      factoresNegativos: "Cuota de mantenimiento mensual del régimen de copropiedad."
+    },
+    
+    desgloseTerreno: { 
+      area: 0, 
+      unidad: "m²", 
+      valorUnitario: 0, 
+      total: 0,
+      fincaAsociada: "Áreas comunes no privativas",
+      varasCuadradas: 0
+    },
+    desgloseConstruccion: { 
+      items: [
+        { id: 1, descripcion: "Apartamento No. 1102 (Área habitable Nivel 11)", area: 104.77, unidad: "m²", valorUnitario: 10500, total: 1100085 },
+        { id: 2, descripcion: "2 Parqueos ubicados en Sótano No. 3", area: 25.00, unidad: "m²", valorUnitario: 6000, total: 150000 },
+        { id: 3, descripcion: "Bodega ubicada en Sótano No. 1", area: 7.00, unidad: "m²", valorUnitario: 5000, total: 35000 }
+      ],
+      area: 136.77, 
+      unidad: "m²", 
+      valorUnitario: 9396.07, 
+      total: 1285085 
+    },
+    
+    fotos: {
+      entorno: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
+      ingreso: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
+      interior: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80",
+      ubicacion: "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80",
+      croquis: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80",
+      dicabi: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"
+    },
+    consultasPdfs: [
+      { name: "Consulta_Electronica_RGP_Vantier_10031.pdf", size: "385 KB", fecha: "2026-07-30" }
+    ]
+  },
+  {
     id: "lr-2026-08",
     codigo: "LR-2026-08",
     tipoAvaluo: "Comercial",
@@ -136,6 +299,10 @@ export const initialAvaluos = [
       varasCuadradas: 284.91
     },
     desgloseConstruccion: { 
+      items: [
+        { id: 1, descripcion: "Primer Nivel (Vivienda principal)", area: 180.00, unidad: "m²", valorUnitario: 2500, total: 450000 },
+        { id: 2, descripcion: "Segundo Nivel (Dormitorios y terrazas)", area: 110.43, unidad: "m²", valorUnitario: 2500, total: 276084 }
+      ],
       area: 290.43, 
       unidad: "m²", 
       valorUnitario: 2500, 
@@ -147,9 +314,9 @@ export const initialAvaluos = [
       entorno: "https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=800&q=80",
       ingreso: "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?auto=format&fit=crop&w=800&q=80",
       interior: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-      ubicacion: "",
-      croquis: "",
-      dicabi: ""
+      ubicacion: "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80",
+      croquis: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80",
+      dicabi: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"
     },
     consultasPdfs: [
       { name: "Certificacion_Electronica_RGP_Chimaltenango_5289.pdf", size: "340 KB", fecha: "2026-07-27" }
@@ -293,9 +460,9 @@ export const initialAvaluos = [
       entorno: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
       ingreso: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
       interior: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
-      ubicacion: "",
-      croquis: "",
-      dicabi: ""
+      ubicacion: "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80",
+      croquis: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80",
+      dicabi: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"
     },
     consultasPdfs: [
       { name: "Certificacion_RGP_Zona10.pdf", size: "480 KB", fecha: "2026-07-24" }
@@ -428,9 +595,9 @@ export const initialAvaluos = [
       entorno: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
       ingreso: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
       interior: "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80",
-      ubicacion: "",
-      croquis: "",
-      dicabi: ""
+      ubicacion: "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80",
+      croquis: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80",
+      dicabi: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"
     },
     consultasPdfs: []
   },
@@ -561,9 +728,9 @@ export const initialAvaluos = [
       entorno: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
       ingreso: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80",
       interior: "https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80",
-      ubicacion: "",
-      croquis: "",
-      dicabi: ""
+      ubicacion: "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80",
+      croquis: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80",
+      dicabi: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"
     },
     consultasPdfs: []
   }

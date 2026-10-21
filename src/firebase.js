@@ -62,6 +62,18 @@ export function subscribeToAvaluos(onData, onError) {
   });
 }
 
+function removeUndefined(obj) {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(removeUndefined);
+  const clean = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (val !== undefined) {
+      clean[key] = removeUndefined(val);
+    }
+  }
+  return clean;
+}
+
 /**
  * Guarda o actualiza un expediente de avalúo en Firestore.
  */
@@ -69,8 +81,9 @@ export async function saveAvaluoToCloud(avaluo) {
   if (!avaluo || !avaluo.id) {
     throw new Error('El avalúo debe contener un ID válido.');
   }
+  const cleanData = removeUndefined(avaluo);
   const docRef = doc(db, AVALUOS_COLLECTION, String(avaluo.id));
-  await setDoc(docRef, avaluo, { merge: true });
+  await setDoc(docRef, cleanData, { merge: true });
 }
 
 /**

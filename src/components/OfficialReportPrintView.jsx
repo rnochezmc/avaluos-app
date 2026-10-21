@@ -23,6 +23,38 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
     return '$ ' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
+  const [imagesLoaded, setImagesLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!avaluo?.fotos) {
+      setImagesLoaded(true);
+      return;
+    }
+    const urls = Object.values(avaluo.fotos).filter(url => url && typeof url === 'string' && url.trim().length > 0);
+    if (urls.length === 0) {
+      setImagesLoaded(true);
+      return;
+    }
+
+    let count = 0;
+    let cancelled = false;
+    urls.forEach(src => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        if (cancelled) return;
+        count++;
+        if (count >= urls.length) {
+          setImagesLoaded(true);
+        }
+      };
+      img.src = src;
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [avaluo]);
+
   const handlePrint = () => {
     window.print();
   };
@@ -80,6 +112,50 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
     }
   ];
 
+  // Detección de apartamento / propiedad horizontal para omitir terreno y colindancias
+  const isApartamento = Boolean(
+    avaluo.tipoAvaluo === 'Apartamento / PH' ||
+    avaluo.tipoAvaluo === 'Apartamento' ||
+    avaluo.aplicaTerreno === false ||
+    (avaluo.direccion && avaluo.direccion.toLowerCase().includes('apartamento')) ||
+    (avaluo.descripcionGeneral && avaluo.descripcionGeneral.toLowerCase().includes('apartamento'))
+  );
+
+  const hasColindancias = Boolean(
+    !isApartamento &&
+    avaluo.colindancias &&
+    (
+      (avaluo.colindancias.norte && !['S/D', 'N/A', 'No aplica', '-', ''].includes(avaluo.colindancias.norte.trim())) ||
+      (avaluo.colindancias.sur && !['S/D', 'N/A', 'No aplica', '-', ''].includes(avaluo.colindancias.sur.trim())) ||
+      (avaluo.colindancias.este && !['S/D', 'N/A', 'No aplica', '-', ''].includes(avaluo.colindancias.este.trim())) ||
+      (avaluo.colindancias.oeste && !['S/D', 'N/A', 'No aplica', '-', ''].includes(avaluo.colindancias.oeste.trim()))
+    )
+  );
+
+  const hasDetallesTerreno = Boolean(
+    !isApartamento &&
+    (
+      (avaluo.formaTerreno && !['N/A', 'No aplica', '-', ''].includes(avaluo.formaTerreno.trim())) ||
+      (avaluo.pendiente && !['N/A', 'No aplica', '-', ''].includes(avaluo.pendiente.trim())) ||
+      (Number(avaluo.desgloseTerreno?.total || 0) > 0)
+    )
+  );
+
+  const showTerrenoSections = hasColindancias || hasDetallesTerreno;
+
+  // Detección de fotos cargadas
+  const hasAnyPhoto = Boolean(
+    avaluo.fotos && (
+      (avaluo.fotos.entorno && avaluo.fotos.entorno.trim()) ||
+      (avaluo.fotos.ingreso && avaluo.fotos.ingreso.trim()) ||
+      (avaluo.fotos.interior && avaluo.fotos.interior.trim()) ||
+      (avaluo.fotos.ubicacion && avaluo.fotos.ubicacion.trim()) ||
+      (avaluo.fotos.croquis && avaluo.fotos.croquis.trim())
+    )
+  );
+
+  const totalPages = hasAnyPhoto ? 7 : 6;
+
   return (
     <div className="print-modal-overlay">
       {/* Top Floating Control Bar (Hidden when printing) */}
@@ -90,7 +166,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
           </button>
           <div>
             <h3 style={{ fontSize: '1rem', color: '#ffffff', margin: 0, fontWeight: 700 }}>
-              Vista Previa de Impresión Oficial LEX ROSAM (9 Páginas)
+              Vista Previa de Impresión Oficial LEX ROSAM ({totalPages} Páginas)
             </h3>
             <span style={{ fontSize: '0.75rem', color: '#93c5fd' }}>
               Expediente: {avaluo.codigo} — Formato Oficial para Bancos e Instituciones Financieras
@@ -98,9 +174,15 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
           </div>
         </div>
         <div className="print-control-right">
-          <button type="button" className="print-btn-primary" onClick={handlePrint} style={{ background: '#2563eb' }}>
+          <button 
+            type="button" 
+            className="print-btn-primary" 
+            onClick={handlePrint} 
+            style={{ background: '#2563eb', display: 'flex', alignItems: 'center', gap: '8px' }}
+            disabled={!imagesLoaded && hasAnyPhoto}
+          >
             <Printer size={18} />
-            <span>Imprimir / Exportar PDF</span>
+            <span>{!imagesLoaded && hasAnyPhoto ? 'Cargando Fotos para PDF...' : 'Imprimir / Exportar PDF'}</span>
           </button>
           <button type="button" className="modal-close-btn" onClick={onClose} title="Cerrar">
             <X size={20} />
@@ -108,7 +190,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
         </div>
       </div>
 
-      {/* The Printable 9-Page Document Container */}
+      {/* The Printable 7-Page Document Container */}
       <div className="official-document-sheet-container">
         
         {/* ==============================================================
@@ -133,11 +215,11 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
               </div>
               <div className="pdf-data-row" style={{ background: '#f8fafc' }}>
                 <span className="pdf-data-label">Fecha de inspección:</span>
-                <span className="pdf-data-value"><strong>{avaluo.fechaInspeccion || avaluo.fechaActualizacion || 'N/A'}</strong></span>
+                <span className="pdf-data-value"><strong>{avaluo.fechaInspeccion || '-'}</strong></span>
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Fecha de actualización:</span>
-                <span className="pdf-data-value">{avaluo.fechaActualizacion || 'N/A'}</span>
+                <span className="pdf-data-value">{avaluo.fechaActualizacion || '-'}</span>
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Dirección del inmueble:</span>
@@ -224,7 +306,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                   {fincas.map((f, i) => (
                     <tr key={i}>
                       <td style={{ fontWeight: 600 }}>{f.finca}</td>
-                      <td>{Number(f.areaRegistrada || f.areaActualRegistrada || avaluo.areaRegistrada || 0).toFixed(2)} m²</td>
+                      <td>{Number(f.areaRegistrada || f.areaActualRegistrada || avaluo.areaRegistrada || 0).toFixed(6)} m²</td>
                     </tr>
                   ))}
                 </tbody>
@@ -245,7 +327,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                     <tr key={i}>
                       <td style={{ fontWeight: 600 }}>{f.finca}</td>
                       <td style={{ fontWeight: 600, color: company.navyColor }}>
-                        {Number(f.areaValuada || (avaluo.areaValuada / fincas.length) || 0).toFixed(2)} m²
+                        {Number(f.areaValuada || (avaluo.areaValuada / fincas.length) || 0).toFixed(6)} m²
                       </td>
                     </tr>
                   ))}
@@ -287,8 +369,8 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
             </div>
 
             {/* Cuadro de Valores Oficiales */}
-            <div className="pdf-boxed-table" style={{ marginTop: '1.5rem' }}>
-              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.4rem' }}>
+            <div className="pdf-boxed-table" style={{ marginTop: '0.85rem' }}>
+              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.35rem' }}>
                 VALORES
               </div>
               <table className="pdf-inner-table">
@@ -313,20 +395,44 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                 </tbody>
               </table>
 
-              <div style={{ padding: '0.8rem', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                <p>
+              <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', lineHeight: 1.45 }}>
+                <p style={{ margin: 0 }}>
                   <strong>Tipo de cambio {avaluo.tipoCambio || '7.62581'}</strong>, según Banco de Guatemala.
                 </p>
                 {/* CORRECCIÓN FOTO 66: Se eliminó el texto entre paréntesis a petición de Haroldo */}
-                <p style={{ marginTop: '0.5rem', textAlign: 'justify' }}>
-                  A juicio del suscrito valuador con fecha {avaluo.fechaActualizacion || '2026'}, el inmueble descrito tiene un valor comercial 
+                <p style={{ marginTop: '0.35rem', marginBottom: 0, textAlign: 'justify' }}>
+                  A juicio del suscrito valuador con fecha {avaluo.fechaActualizacion || avaluo.fechaInspeccion || '2026'}, el inmueble descrito tiene un valor comercial 
                   de <strong>{formatQ(avaluo.valorComercialGTQ)}</strong> o al cambio en dólares al <strong>{formatUSD(avaluo.valorComercialUSD)}</strong>.
                 </p>
               </div>
             </div>
 
-            {/* Firmas de los Valuadores Autorizados */}
-            <div className="pdf-signatures-container" style={{ marginTop: '3rem' }}>
+            {/* Calificación de Garantía y Consideraciones Generales integradas en la misma hoja para evitar vacíos legales */}
+            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.82rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.25rem', marginTop: '0.85rem', marginBottom: '0.5rem' }}>
+              CALIFICACION DE GARANTIA Y CONSIDERACIONES GENERALES DEL PRESENTE INFORME
+            </div>
+
+            {/* CORRECCIÓN FOTO 67: Se eliminó la cláusula VI destructiva a solicitud de Haroldo */}
+            <ol className="pdf-legal-considerations" style={{ lineHeight: 1.35, fontSize: '0.78rem', textAlign: 'justify', gap: '0.35rem' }}>
+              <li>
+                <strong>I.</strong> El bien valuado puede ser considerado como sujeto de garantía. La institución financiera correspondiente definirá las condiciones de crédito y los riesgos a asumir. Se recomienda revisar los aspectos negativos y riesgos señalados en los anexos.
+              </li>
+              <li>
+                <strong>II.</strong> El presente avalúo se emite como una opinión técnica fundamentada en criterios profesionales y de buena fe, circunscrita a las condiciones específicas detalladas en el informe y al marco de mercado vigente al momento de su elaboración. Se advierte que los valores y conclusiones aquí expresados están sujetos a variaciones futuras derivadas de cambios en las dinámicas del mercado, modificaciones en la situación legal del inmueble o actualizaciones en los registros públicos que puedan incidir en su valoración.
+              </li>
+              <li>
+                <strong>III.</strong> El presente avalúo se emite únicamente con fines informativos y no genera obligación alguna, ni confiere autorización o prohibición respecto de operaciones o transacciones. Las decisiones que se adopten a partir de este documento serán responsabilidad exclusiva del solicitante, del propietario y de las demás partes que intervengan en dichas gestiones.
+              </li>
+              <li>
+                <strong>IV.</strong> Los datos registrales que sustentan este avalúo fueron obtenidos a través de la consulta realizada en la plataforma electrónica del Registro de la Propiedad, y su validez se circunscribe exclusivamente a la fecha consignada en el presente informe. En consecuencia, cualquier verificación o contraste de la información aquí contenida deberá efectuarse directamente en el Registro de la Propiedad, como fuente oficial y competente para certificar la situación jurídica del inmueble.
+              </li>
+              <li>
+                <strong>V.</strong> {company.name} S.A. es una entidad independiente y no mantiene vínculo alguno con las personas físicas o jurídicas que solicitan el presente informe.
+              </li>
+            </ol>
+
+            {/* Firmas de los Valuadores Autorizados cerrando la certificación y consideraciones */}
+            <div className="pdf-signatures-container" style={{ marginTop: '1.25rem' }}>
               <div className="pdf-signature-block">
                 <div className="pdf-signature-line" style={{ borderTop: '1.5px solid #0d2847' }}></div>
                 <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias'}</div>
@@ -345,47 +451,14 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
         </section>
 
         {/* ==============================================================
-            PÁGINA 3: CALIFICACIÓN DE GARANTÍA Y CONSIDERACIONES
+            PÁGINA 3: INFORMACIÓN DE LA PROPIEDAD, RGP, ÁREAS, TERRENO Y REGISTROS
+            (Consolida antigua página 4 y 5 para eliminar espacios en blanco legales)
             ============================================================== */}
         <section className="pdf-sheet-page">
           <PageHeader />
 
           <div className="pdf-sheet-content">
-            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '1.25rem' }}>
-              CALIFICACION DE GARANTIA Y CONSIDERACIONES GENERALES DEL PRESENTE INFORME
-            </div>
-
-            {/* CORRECCIÓN FOTO 67: Se eliminó la cláusula VI destructiva a solicitud de Haroldo */}
-            <ol className="pdf-legal-considerations" style={{ lineHeight: 1.6, textAlign: 'justify' }}>
-              <li style={{ marginBottom: '1rem' }}>
-                <strong>I.</strong> El bien valuado puede ser considerado como sujeto de garantía. La institución financiera correspondiente definirá las condiciones de crédito y los riesgos a asumir. Se recomienda revisar los aspectos negativos y riesgos señalados en los anexos.
-              </li>
-              <li style={{ marginBottom: '1rem' }}>
-                <strong>II.</strong> El presente avalúo se emite como una opinión técnica fundamentada en criterios profesionales y de buena fe, circunscrita a las condiciones específicas detalladas en el informe y al marco de mercado vigente al momento de su elaboración. Se advierte que los valores y conclusiones aquí expresados están sujetos a variaciones futuras derivadas de cambios en las dinámicas del mercado, modificaciones en la situación legal del inmueble o actualizaciones en los registros públicos que puedan incidir en su valoración.
-              </li>
-              <li style={{ marginBottom: '1rem' }}>
-                <strong>III.</strong> El presente avalúo se emite únicamente con fines informativos y no genera obligación alguna, ni confiere autorización o prohibición respecto de operaciones o transacciones. Las decisiones que se adopten a partir de este documento serán responsabilidad exclusiva del solicitante, del propietario y de las demás partes que intervengan en dichas gestiones.
-              </li>
-              <li style={{ marginBottom: '1rem' }}>
-                <strong>IV.</strong> Los datos registrales que sustentan este avalúo fueron obtenidos a través de la consulta realizada en la plataforma electrónica del Registro de la Propiedad, y su validez se circunscribe exclusivamente a la fecha consignada en el presente informe. En consecuencia, cualquier verificación o contraste de la información aquí contenida deberá efectuarse directamente en el Registro de la Propiedad, como fuente oficial y competente para certificar la situación jurídica del inmueble.
-              </li>
-              <li style={{ marginBottom: '1rem' }}>
-                <strong>V.</strong> {company.name} S.A. es una entidad independiente y no mantiene vínculo alguno con las personas físicas o jurídicas que solicitan el presente informe.
-              </li>
-            </ol>
-          </div>
-
-          <PageFooter pageNum={3} />
-        </section>
-
-        {/* ==============================================================
-            PÁGINA 4: INFORMACIÓN DE LA PROPIEDAD, RGP, IUSI Y TABLA DE ÁREAS
-            ============================================================== */}
-        <section className="pdf-sheet-page">
-          <PageHeader />
-
-          <div className="pdf-sheet-content">
-            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '1rem' }}>
+            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.3rem', marginBottom: '0.6rem' }}>
               INFORMACION DE LA PROPIEDAD
             </div>
 
@@ -411,7 +484,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
 
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Fecha de consulta a distancia:</span>
-                <span className="pdf-data-value">{avaluo.fechaActualizacion}</span>
+                <span className="pdf-data-value">{avaluo.fechaActualizacion || '-'}</span>
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Propietario:</span>
@@ -436,11 +509,11 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
             </div>
 
             {/* CORRECCIÓN FOTO 69: Muestra TODAS las fincas con su columna de Desmembradas y resta */}
-            <div className="pdf-section-title-bar" style={{ background: company.navyColor, color: '#ffffff', marginTop: '1.25rem', padding: '0.35rem', fontWeight: 700 }}>
+            <div className="pdf-section-title-bar" style={{ background: company.navyColor, color: '#ffffff', marginTop: '0.75rem', padding: '0.25rem', fontWeight: 700, fontSize: '0.82rem' }}>
               ÁREA
             </div>
 
-            <table className="pdf-inner-table" style={{ border: '1px solid #64748b', marginTop: '0.5rem' }}>
+            <table className="pdf-inner-table" style={{ border: '1px solid #64748b', marginTop: '0.35rem' }}>
               <thead>
                 <tr style={{ background: '#f1f5f9' }}>
                   <th>FINCA</th>
@@ -462,155 +535,172 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                   return (
                     <tr key={i}>
                       <td style={{ fontWeight: 600 }}>{f.finca}</td>
-                      <td>{orig.toFixed(2)} m²</td>
-                      <td style={{ color: desm > 0 ? '#b91c1c' : 'inherit' }}>{desm.toFixed(2)} m²</td>
-                      <td style={{ fontWeight: 600 }}>{act.toFixed(2)} m²</td>
-                      <td>{fis.toFixed(2)} m²</td>
-                      <td style={{ fontWeight: 700, color: company.navyColor }}>{val.toFixed(2)} m²</td>
+                      <td>{orig.toFixed(6)} m²</td>
+                      <td style={{ color: desm > 0 ? '#b91c1c' : 'inherit' }}>{desm.toFixed(6)} m²</td>
+                      <td style={{ fontWeight: 600 }}>{act.toFixed(6)} m²</td>
+                      <td>{fis.toFixed(6)} m²</td>
+                      <td style={{ fontWeight: 700, color: company.navyColor }}>{val.toFixed(6)} m²</td>
                     </tr>
                   );
                 })}
                 {fincas.length > 1 && (
                   <tr style={{ background: '#f8fafc', fontWeight: 700, borderTop: '2px solid #0d2847' }}>
                     <td>TOTAL:</td>
-                    <td>{Number(avaluo.areaRegistrada || 0).toFixed(2)} m²</td>
-                    <td style={{ color: '#b91c1c' }}>{Number(avaluo.areaDesmembrada || 0).toFixed(2)} m²</td>
-                    <td>{Number(avaluo.areaActualRegistrada || 0).toFixed(2)} m²</td>
-                    <td>{Number(avaluo.areaFisica || 0).toFixed(2)} m²</td>
-                    <td style={{ color: company.navyColor }}>{Number(avaluo.areaValuada || 0).toFixed(2)} m²</td>
+                    <td>{Number(avaluo.areaRegistrada || 0).toFixed(6)} m²</td>
+                    <td style={{ color: '#b91c1c' }}>{Number(avaluo.areaDesmembrada || 0).toFixed(6)} m²</td>
+                    <td>{Number(avaluo.areaActualRegistrada || 0).toFixed(6)} m²</td>
+                    <td>{Number(avaluo.areaFisica || 0).toFixed(6)} m²</td>
+                    <td style={{ color: company.navyColor }}>{Number(avaluo.areaValuada || 0).toFixed(6)} m²</td>
                   </tr>
                 )}
               </tbody>
             </table>
 
-            {/* CORRECCIÓN FOTO 70: Textos largos en Aspectos Legales */}
-            <div className="pdf-section-title-bar" style={{ background: company.navyColor, color: '#ffffff', marginTop: '1.25rem', padding: '0.35rem', fontWeight: 700 }}>
+            {/* ASPECTOS LEGALES */}
+            <div className="pdf-section-title-bar" style={{ background: company.navyColor, color: '#ffffff', marginTop: '0.65rem', padding: '0.25rem', fontWeight: 700, fontSize: '0.82rem' }}>
               ASPECTOS LEGALES
             </div>
-            <div className="pdf-boxed-table" style={{ marginTop: '0.5rem' }}>
+            <div className="pdf-boxed-table" style={{ marginTop: '0.35rem' }}>
               <div className="pdf-data-row">
-                <span className="pdf-data-label">Limitaciones o servidumbres:</span>
+                <span className="pdf-data-label" style={{ width: '160px', fontWeight: 600 }}>Limitaciones / serv.:</span>
                 <span className="pdf-data-value">{avaluo.limitaciones || avaluo.servidumbres || 'Sin servidumbres'}</span>
               </div>
               <div className="pdf-data-row">
-                <span className="pdf-data-label">Anotación:</span>
+                <span className="pdf-data-label" style={{ width: '160px', fontWeight: 600 }}>Anotación:</span>
                 <span className="pdf-data-value">{avaluo.anotaciones || 'Ninguna vigente'}</span>
               </div>
               <div className="pdf-data-row">
-                <span className="pdf-data-label">Gravámenes:</span>
+                <span className="pdf-data-label" style={{ width: '160px', fontWeight: 600 }}>Gravámenes:</span>
                 <span className="pdf-data-value">{avaluo.gravamenes || 'Libre de gravámenes'}</span>
               </div>
             </div>
-          </div>
 
-          <PageFooter pageNum={4} />
-        </section>
-
-        {/* ==============================================================
-            PÁGINA 5: DICABI, DETALLES DEL TERRENO Y COLINDANCIAS
-            ============================================================== */}
-        <section className="pdf-sheet-page">
-          <PageHeader />
-
-          <div className="pdf-sheet-content">
-            {/* CORRECCIÓN FOTO 71: Sección DICABI independiente del RGP */}
-            <div className="pdf-boxed-table">
-              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.4rem' }}>
+            {/* DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI) - ANCHO COMPLETO OFICIAL (FOTO HAROLDO) */}
+            <div className="pdf-boxed-table" style={{ marginTop: '0.75rem', border: '1px solid #1e293b' }}>
+              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.4rem', textAlign: 'center', fontSize: '0.82rem', letterSpacing: '0.04em' }}>
                 DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI)
               </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Nombre:</span>
-                <span className="pdf-data-value"><strong>{avaluo.dicabiNombre || avaluo.propietarioPrincipal}</strong></span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Dirección:</span>
-                <span className="pdf-data-value">{avaluo.dicabiDireccion || avaluo.direccion}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Matricula:</span>
-                <span className="pdf-data-value"><strong>{avaluo.dicabiMatricula || 'Pendiente'}</strong></span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Área:</span>
-                <span className="pdf-data-value">{avaluo.dicabiArea || `${avaluo.areaValuada || 0} m²`}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Observaciones:</span>
-                <span className="pdf-data-value">{avaluo.dicabiObservaciones || 'Datos cotejados con el padrón fiscal catastral.'}</span>
-              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                    <td style={{ width: '135px', padding: '0.35rem 0.6rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                      Nombre:
+                    </td>
+                    <td style={{ padding: '0.35rem 0.6rem', color: '#0f172a' }}>
+                      {avaluo.dicabiNombre || ''}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                    <td style={{ width: '135px', padding: '0.35rem 0.6rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                      Dirección:
+                    </td>
+                    <td style={{ padding: '0.35rem 0.6rem', color: '#0f172a', lineHeight: 1.35 }}>
+                      {avaluo.dicabiDireccion || avaluo.direccion || ''}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                    <td style={{ width: '135px', padding: '0.35rem 0.6rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                      Matricula:
+                    </td>
+                    <td style={{ padding: '0.35rem 0.6rem', color: '#0f172a' }}>
+                      <strong>{avaluo.dicabiMatricula || 'Pendiente'}</strong>
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                    <td style={{ width: '135px', padding: '0.35rem 0.6rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                      Área:
+                    </td>
+                    <td style={{ padding: '0.35rem 0.6rem', color: '#0f172a' }}>
+                      {avaluo.dicabiArea || (avaluo.areaValuada ? `${Number(avaluo.areaValuada || 0).toFixed(2)} m²` : '')}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ width: '135px', padding: '0.35rem 0.6rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                      Observaciones:
+                    </td>
+                    <td style={{ padding: '0.35rem 0.6rem', color: '#0f172a', lineHeight: 1.35 }}>
+                      {avaluo.dicabiObservaciones || 'Finca No inscrita en DICABI.'}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <div className="pdf-boxed-table" style={{ marginTop: '1.25rem' }}>
-              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.4rem' }}>
-                DETALLES DEL TERRENO
-              </div>
-              
-              <div style={{ padding: '0.4rem 0.6rem', fontWeight: 700, fontSize: '0.82rem', background: '#f1f5f9' }}>
-                SECTOR
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Uso:</span>
-                <span className="pdf-data-value">{avaluo.usoSuelo || 'Comercial'}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Nivel socio económico:</span>
-                <span className="pdf-data-value">{avaluo.nivelSocioeconomico || 'Medio-Alto'}</span>
-              </div>
+            {/* TERRENO Y COLINDANCIAS: Solo se muestran si aplican; en apartamentos se omiten para evitar hojas en blanco */}
+            {showTerrenoSections && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.75rem' }}>
+                <div className="pdf-boxed-table">
+                  <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.3rem', fontSize: '0.8rem' }}>
+                    DETALLES DEL TERRENO
+                  </div>
+                  <div style={{ padding: '0.2rem 0.5rem', fontWeight: 700, fontSize: '0.75rem', background: '#f1f5f9' }}>
+                    SECTOR
+                  </div>
+                  <div className="pdf-data-row" style={{ padding: '0.2rem 0.4rem', fontSize: '0.78rem' }}>
+                    <span className="pdf-data-label" style={{ width: '120px' }}>Uso:</span>
+                    <span className="pdf-data-value">{avaluo.usoSuelo || 'Comercial'}</span>
+                  </div>
+                  <div className="pdf-data-row" style={{ padding: '0.2rem 0.4rem', fontSize: '0.78rem' }}>
+                    <span className="pdf-data-label" style={{ width: '120px' }}>Nivel socio económico:</span>
+                    <span className="pdf-data-value">{avaluo.nivelSocioeconomico || 'Medio-Alto'}</span>
+                  </div>
 
-              <div style={{ padding: '0.4rem 0.6rem', fontWeight: 700, fontSize: '0.82rem', background: '#f1f5f9' }}>
-                CARACTERÍSTICAS
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Forma:</span>
-                <span className="pdf-data-value">{avaluo.formaTerreno || 'Regular'}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Pendiente:</span>
-                <span className="pdf-data-value">{avaluo.pendiente || 'Plana'}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Ubicación de esquina:</span>
-                <span className="pdf-data-value">{avaluo.esquina || 'No'}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Desde la calle:</span>
-                <span className="pdf-data-value">{avaluo.accesoCalle || 'Acceso directo'}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Notas importantes:</span>
-                <span className="pdf-data-value">Terreno firme, no inundable, sin fallas geológicas aparentes.</span>
-              </div>
-            </div>
+                  <div style={{ padding: '0.2rem 0.5rem', fontWeight: 700, fontSize: '0.75rem', background: '#f1f5f9' }}>
+                    CARACTERÍSTICAS
+                  </div>
+                  <div className="pdf-data-row" style={{ padding: '0.2rem 0.4rem', fontSize: '0.78rem' }}>
+                    <span className="pdf-data-label" style={{ width: '120px' }}>Forma:</span>
+                    <span className="pdf-data-value">{avaluo.formaTerreno || 'Regular'}</span>
+                  </div>
+                  <div className="pdf-data-row" style={{ padding: '0.2rem 0.4rem', fontSize: '0.78rem' }}>
+                    <span className="pdf-data-label" style={{ width: '120px' }}>Pendiente:</span>
+                    <span className="pdf-data-value">{avaluo.pendiente || 'Plana'}</span>
+                  </div>
+                  <div className="pdf-data-row" style={{ padding: '0.2rem 0.4rem', fontSize: '0.78rem' }}>
+                    <span className="pdf-data-label" style={{ width: '120px' }}>Esquina:</span>
+                    <span className="pdf-data-value">{avaluo.esquina || 'No'}</span>
+                  </div>
+                  <div className="pdf-data-row" style={{ padding: '0.2rem 0.4rem', fontSize: '0.78rem' }}>
+                    <span className="pdf-data-label" style={{ width: '120px' }}>Desde la calle:</span>
+                    <span className="pdf-data-value">{avaluo.accesoCalle || 'Acceso directo'}</span>
+                  </div>
+                </div>
 
-            {/* CORRECCIÓN FOTO 73: Colindancias Norte, Sur, Este, Oeste */}
-            <div className="pdf-section-title-bar" style={{ background: company.navyColor, color: '#ffffff', marginTop: '1.25rem', padding: '0.35rem', fontWeight: 700 }}>
-              COLINDANCIAS
-            </div>
-            <div className="pdf-boxed-table" style={{ marginTop: '0.4rem' }}>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Norte:</span>
-                <span className="pdf-data-value">{avaluo.colindancias?.norte || 'S/D'}</span>
+                <div className="pdf-boxed-table">
+                  <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.3rem', fontSize: '0.8rem' }}>
+                    COLINDANCIAS
+                  </div>
+                  <div className="pdf-data-row" style={{ padding: '0.2rem 0.4rem', fontSize: '0.78rem' }}>
+                    <span className="pdf-data-label" style={{ width: '70px', fontWeight: 700 }}>Norte:</span>
+                    <span className="pdf-data-value">{avaluo.colindancias?.norte || 'S/D'}</span>
+                  </div>
+                  <div className="pdf-data-row" style={{ padding: '0.2rem 0.4rem', fontSize: '0.78rem' }}>
+                    <span className="pdf-data-label" style={{ width: '70px', fontWeight: 700 }}>Sur:</span>
+                    <span className="pdf-data-value">{avaluo.colindancias?.sur || 'S/D'}</span>
+                  </div>
+                  <div className="pdf-data-row" style={{ padding: '0.2rem 0.4rem', fontSize: '0.78rem' }}>
+                    <span className="pdf-data-label" style={{ width: '70px', fontWeight: 700 }}>Este:</span>
+                    <span className="pdf-data-value">{avaluo.colindancias?.este || 'S/D'}</span>
+                  </div>
+                  <div className="pdf-data-row" style={{ padding: '0.2rem 0.4rem', fontSize: '0.78rem' }}>
+                    <span className="pdf-data-label" style={{ width: '70px', fontWeight: 700 }}>Oeste:</span>
+                    <span className="pdf-data-value">{avaluo.colindancias?.oeste || 'S/D'}</span>
+                  </div>
+                </div>
               </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Sur:</span>
-                <span className="pdf-data-value">{avaluo.colindancias?.sur || 'S/D'}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Este:</span>
-                <span className="pdf-data-value">{avaluo.colindancias?.este || 'S/D'}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Oeste:</span>
-                <span className="pdf-data-value">{avaluo.colindancias?.oeste || 'S/D'}</span>
-              </div>
+            )}
+
+            {/* Línea de Cierre Legal de la Hoja */}
+            <div style={{ marginTop: '0.85rem', padding: '0.35rem', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '0.72rem', color: '#64748b', letterSpacing: '0.04em' }}>
+              <strong>*** FIN DE LA INFORMACIÓN REGISTRAL Y CATASTRAL ***</strong>
             </div>
           </div>
 
-          <PageFooter pageNum={5} />
+          <PageFooter pageNum={3} />
         </section>
 
         {/* ==============================================================
-            PÁGINA 6: SERVICIOS Y CARACTERÍSTICAS DE CONSTRUCCIÓN
+            PÁGINA 4: SERVICIOS Y CARACTERÍSTICAS DE CONSTRUCCIÓN
             ============================================================== */}
         <section className="pdf-sheet-page">
           <PageHeader />
@@ -745,11 +835,11 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
             </div>
           </div>
 
-          <PageFooter pageNum={6} />
+          <PageFooter pageNum={4} />
         </section>
 
         {/* ==============================================================
-            PÁGINA 7: DICTAMEN DE GARANTÍA Y TABLAS DE VALORACIÓN AZULES
+            PÁGINA 5: DICTAMEN DE GARANTÍA Y TABLAS DE VALORACIÓN AZULES
             ============================================================== */}
         <section className="pdf-sheet-page">
           <PageHeader />
@@ -816,9 +906,10 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
               <table className="pdf-blue-table">
                 <thead>
                   <tr style={{ background: '#0d2847', color: '#ffffff' }}>
-                    <th colSpan={4} style={{ textAlign: 'center', fontSize: '0.9rem', padding: '0.4rem' }}>CONSTRUCCION</th>
+                    <th colSpan={5} style={{ textAlign: 'center', fontSize: '0.9rem', padding: '0.4rem' }}>CONSTRUCCION</th>
                   </tr>
                   <tr style={{ background: '#1e3a8a', color: '#ffffff' }}>
+                    <th style={{ textAlign: 'left', paddingLeft: '8px' }}>DESCRIPCIÓN</th>
                     <th>AREA (m²)</th>
                     <th>UNIDAD</th>
                     <th>VALOR</th>
@@ -826,18 +917,34 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
+                  {(avaluo.desgloseConstruccion?.items && avaluo.desgloseConstruccion.items.length > 0 ? avaluo.desgloseConstruccion.items : [{
+                    descripcion: 'Construcción Principal',
+                    area: avaluo.desgloseConstruccion?.area || 0,
+                    unidad: avaluo.desgloseConstruccion?.unidad || 'm²',
+                    valorUnitario: avaluo.desgloseConstruccion?.valorUnitario || 0,
+                    total: avaluo.desgloseConstruccion?.total || 0
+                  }]).map((item, i) => (
+                    <tr key={i}>
+                      <td style={{ textAlign: 'left', paddingLeft: '8px', fontWeight: 600 }}>{item.descripcion || 'Construcción'}</td>
+                      <td style={{ textAlign: 'center' }}>{Number(item.area || 0).toFixed(2)}</td>
+                      <td style={{ textAlign: 'center' }}>{item.unidad || 'm²'}</td>
+                      <td style={{ textAlign: 'right' }}>{formatQ(item.valorUnitario)}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(item.total != null ? item.total : (Number(item.area || 0) * Number(item.valorUnitario || 0)))}</td>
+                    </tr>
+                  ))}
+                  <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                    <td style={{ textAlign: 'left', paddingLeft: '8px' }}>TOTAL CONSTRUCCIÓN:</td>
                     <td style={{ textAlign: 'center' }}>{Number(avaluo.desgloseConstruccion?.area || 0).toFixed(2)}</td>
-                    <td style={{ textAlign: 'center' }}>{avaluo.desgloseConstruccion?.unidad || 'm²'}</td>
-                    <td style={{ textAlign: 'right' }}>{formatQ(avaluo.desgloseConstruccion?.valorUnitario)}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(avaluo.desgloseConstruccion?.total)}</td>
+                    <td style={{ textAlign: 'center' }}>m²</td>
+                    <td style={{ textAlign: 'right' }}>-</td>
+                    <td style={{ textAlign: 'right', color: company.navyColor }}>{formatQ(avaluo.desgloseConstruccion?.total)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
             {/* Resumen Total al Pie de la Valuación */}
-            <div style={{ marginTop: '2rem', padding: '1rem', background: '#f8fafc', border: '1.5px solid #0d2847', borderRadius: '4px', textAlign: 'right' }}>
+            <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#f8fafc', border: '1.5px solid #0d2847', borderRadius: '4px', textAlign: 'right' }}>
               <div style={{ fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 SUMA TOTAL VALOR COMERCIAL:
               </div>
@@ -848,86 +955,112 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                 Equivalente en Dólares: <strong style={{ color: company.accentColor }}>{formatUSD(avaluo.valorComercialUSD)}</strong> (T/C: {avaluo.tipoCambio})
               </div>
             </div>
+
+            {/* Cláusula de cierre de valoración para evitar alteraciones o adiciones */}
+            <div style={{ marginTop: '1.25rem', padding: '0.45rem', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '0.74rem', color: '#64748b', letterSpacing: '0.04em' }}>
+              <strong>*** ÚLTIMA LÍNEA DE CÁLCULO DE VALORACIÓN — FIN DEL CUADRO DE LIQUIDACIÓN ***</strong>
+            </div>
           </div>
 
-          <PageFooter pageNum={7} />
+          <PageFooter pageNum={5} />
         </section>
 
         {/* ==============================================================
-            PÁGINA 8: FOTOGRAFÍAS (ENTORNO, INGRESO, INTERIOR, UBICACIÓN, CROQUIS)
+            PÁGINA 6: FOTOGRAFÍAS (ENTORNO, INGRESO, INTERIOR, UBICACIÓN, CROQUIS)
             ============================================================== */}
-        <section className="pdf-sheet-page">
-          <PageHeader />
+        {/* ==============================================================
+            PÁGINA DE FOTOGRAFÍAS (ENTORNO, INGRESO, INTERIOR, UBICACIÓN, CROQUIS)
+            Solo se imprime si el avalúo cuenta con registro fotográfico para evitar páginas en blanco
+            ============================================================== */}
+        {hasAnyPhoto && (
+          <section className="pdf-sheet-page">
+            <PageHeader />
 
-          <div className="pdf-sheet-content">
-            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '1.25rem' }}>
-              FOTOGRAFÍAS
+            <div className="pdf-sheet-content">
+              <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '1.25rem' }}>
+                FOTOGRAFÍAS
+              </div>
+
+              {/* Visualización robusta de fotos con carga síncrona para PDF */}
+              <div className="pdf-photos-layout">
+                <div className="pdf-photo-box">
+                  <div className="pdf-photo-num">1. Entorno</div>
+                  <div className="pdf-photo-frame">
+                    {avaluo.fotos?.entorno ? (
+                      <img src={avaluo.fotos.entorno} alt="1. Entorno" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="eager" decoding="sync" />
+                    ) : (
+                      <div className="pdf-photo-empty" style={{ background: '#f8fafc', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — SIN REGISTRO ]</span>
+                        <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Seguridad Contractual LEX ROSAM</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pdf-photo-box">
+                  <div className="pdf-photo-num">2. Ingreso</div>
+                  <div className="pdf-photo-frame">
+                    {avaluo.fotos?.ingreso ? (
+                      <img src={avaluo.fotos.ingreso} alt="2. Ingreso" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="eager" decoding="sync" />
+                    ) : (
+                      <div className="pdf-photo-empty" style={{ background: '#f8fafc', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — SIN REGISTRO ]</span>
+                        <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Seguridad Contractual LEX ROSAM</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pdf-photo-box">
+                  <div className="pdf-photo-num">3. Interior de inmueble</div>
+                  <div className="pdf-photo-frame">
+                    {avaluo.fotos?.interior ? (
+                      <img src={avaluo.fotos.interior} alt="3. Interior de inmueble" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="eager" decoding="sync" />
+                    ) : (
+                      <div className="pdf-photo-empty" style={{ background: '#f8fafc', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — SIN REGISTRO ]</span>
+                        <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Seguridad Contractual LEX ROSAM</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pdf-photo-box">
+                  <div className="pdf-photo-num">4. Ubicación Satelital</div>
+                  <div className="pdf-photo-frame">
+                    {avaluo.fotos?.ubicacion ? (
+                      <img src={avaluo.fotos.ubicacion} alt="4. Ubicación satelital" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="eager" decoding="sync" />
+                    ) : (
+                      <div className="pdf-photo-empty" style={{ background: '#f8fafc', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — SIN REGISTRO ]</span>
+                        <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Seguridad Contractual LEX ROSAM</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pdf-photo-box" style={{ gridColumn: 'span 2' }}>
+                  <div className="pdf-photo-num">5. Croquis / Plano Catastral</div>
+                  <div className="pdf-photo-frame" style={{ height: '180px' }}>
+                    {avaluo.fotos?.croquis ? (
+                      <img src={avaluo.fotos.croquis} alt="5. Croquis" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} loading="eager" decoding="sync" />
+                    ) : (
+                      <div className="pdf-photo-empty" style={{ background: '#f8fafc', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — SIN REGISTRO ]</span>
+                        <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Seguridad Contractual LEX ROSAM</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* CORRECCIÓN FOTO 78: Visualización robusta de fotos cargadas desde celular */}
-            <div className="pdf-photos-layout">
-              <div className="pdf-photo-box">
-                <div className="pdf-photo-num">1. Entorno</div>
-                <div className="pdf-photo-frame">
-                  {avaluo.fotos?.entorno ? (
-                    <img src={avaluo.fotos.entorno} alt="1. Entorno" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div className="pdf-photo-empty">Espacio para Foto de Entorno</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="pdf-photo-box">
-                <div className="pdf-photo-num">2. Ingreso</div>
-                <div className="pdf-photo-frame">
-                  {avaluo.fotos?.ingreso ? (
-                    <img src={avaluo.fotos.ingreso} alt="2. Ingreso" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div className="pdf-photo-empty">Espacio para Foto de Ingreso</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="pdf-photo-box">
-                <div className="pdf-photo-num">3. Interior de inmueble</div>
-                <div className="pdf-photo-frame">
-                  {avaluo.fotos?.interior ? (
-                    <img src={avaluo.fotos.interior} alt="3. Interior de inmueble" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div className="pdf-photo-empty">Espacio para Foto de Interior</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="pdf-photo-box">
-                <div className="pdf-photo-num">4. UBICACIÓN DE INMUEBLE</div>
-                <div className="pdf-photo-frame">
-                  {avaluo.fotos?.ubicacion ? (
-                    <img src={avaluo.fotos.ubicacion} alt="4. Ubicación de inmueble" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div className="pdf-photo-empty">Espacio para Ubicación Satelital</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="pdf-photo-box" style={{ gridColumn: 'span 2' }}>
-                <div className="pdf-photo-num">5. CROQUIS</div>
-                <div className="pdf-photo-frame" style={{ height: '180px' }}>
-                  {avaluo.fotos?.croquis ? (
-                    <img src={avaluo.fotos.croquis} alt="5. Croquis" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                  ) : (
-                    <div className="pdf-photo-empty">Espacio para Croquis / Plano Catastral</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <PageFooter pageNum={8} />
-        </section>
+            <PageFooter pageNum={6} />
+          </section>
+        )}
 
         {/* ==============================================================
-            PÁGINA 9: MATRICULA DICABI Y CONSULTAS ELECTRÓNICAS (PDFS RGP)
+            PÁGINA FINAL: MATRICULA DICABI Y CONSULTAS ELECTRÓNICAS (PDFS RGP)
             ============================================================== */}
         <section className="pdf-sheet-page">
           <PageHeader />
@@ -937,12 +1070,13 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
               MATRICULA DICABI
             </div>
 
-            <div className="pdf-photo-frame" style={{ height: '260px', marginBottom: '1.5rem' }}>
+            <div className="pdf-photo-frame" style={{ height: '220px', marginBottom: '1.5rem' }}>
               {avaluo.fotos?.dicabi ? (
-                <img src={avaluo.fotos.dicabi} alt="Matrícula DICABI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <img src={avaluo.fotos.dicabi} alt="Matrícula DICABI" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} loading="eager" decoding="sync" />
               ) : (
-                <div className="pdf-photo-empty">
-                  Documento Escaneado / Boleta Matrícula DICABI ({avaluo.dicabiMatricula || 'Pendiente'})
+                <div className="pdf-photo-empty" style={{ background: '#f8fafc', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — DOCUMENTO DICABI NO ADJUNTO ]</span>
+                  <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '4px' }}>Matrícula: {avaluo.dicabiMatricula || 'Pendiente'} • Seguridad Contractual LEX ROSAM</span>
                 </div>
               )}
             </div>
@@ -1001,18 +1135,14 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                 ))}
               </div>
             ) : (
-              <div className="pdf-photo-frame" style={{ height: '240px' }}>
-                <div className="pdf-photo-empty" style={{ textAlign: 'center', padding: '1rem' }}>
-                  Captura / Certificación Electrónica del Registro General de la Propiedad (RGP)
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.4rem' }}>
-                    (Adjunte uno o más archivos PDF en el Paso 5 del formulario para visualizarlos aquí)
-                  </div>
-                </div>
+              <div className="pdf-photo-frame" style={{ height: '140px', background: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — SIN CERTIFICACIONES RGP ADJUNTAS ]</span>
+                <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '4px' }}>Inmueble amparado bajo antecedentes registrales verificados en cuerpo del dictamen</span>
               </div>
             )}
           </div>
 
-          <PageFooter pageNum={9} />
+          <PageFooter pageNum={hasAnyPhoto ? 7 : 6} />
         </section>
 
       </div>

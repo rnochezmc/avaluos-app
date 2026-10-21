@@ -25,9 +25,32 @@ import {
 } from './firebase';
 import { SearchX, Plus, Sparkles, ShieldAlert, LogOut, Loader2 } from 'lucide-react';
 
-const STORAGE_KEY = 'lexrosam_avaluos_db_v2';
+const STORAGE_KEY = 'lexrosam_avaluos_db_v3';
+const LEGACY_STORAGE_KEY_V2 = 'lexrosam_avaluos_db_v2';
 const LEGACY_STORAGE_KEY = 'cverde_avaluos_db_v1';
 const AUTH_USER_KEY = 'lexrosam_auth_user';
+
+// Función para enriquecer registros asegurando que cuenten con su álbum fotográfico completo
+const enrichWithDefaultPhotos = (avaluoItem) => {
+  const match = initialAvaluos.find(init => init.id === avaluoItem.id || init.codigo === avaluoItem.codigo);
+  if (!match || !match.fotos) return avaluoItem;
+  
+  const currentFotos = avaluoItem.fotos || {};
+  let changed = false;
+  const mergedFotos = { ...currentFotos };
+  
+  for (const key of ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi']) {
+    if ((!mergedFotos[key] || typeof mergedFotos[key] !== 'string' || !mergedFotos[key].trim()) && match.fotos[key]) {
+      mergedFotos[key] = match.fotos[key];
+      changed = true;
+    }
+  }
+  
+  if (changed) {
+    return { ...avaluoItem, fotos: mergedFotos };
+  }
+  return avaluoItem;
+};
 
 export default function App() {
   const [cloudStatus, setCloudStatus] = useState('conectando'); // 'conectado' | 'offline' | 'conectando'
@@ -41,13 +64,23 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [currentRole, setCurrentRole] = useState('autorizador');
 
-  // Load persistent data from localStorage or fallback to initial mock
+  // Load persistent data from localStorage or fallback to initial mock with smart photo sync
   const [avaluos, setAvaluos] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY_V2) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const merged = parsed.map(p => enrichWithDefaultPhotos(p));
+
+          // Asegurar que LR-2026-10031 esté presente
+          if (!merged.some(m => m.codigo === 'LR-2026-10031' || m.id === 'lr-2026-10031')) {
+            const v10031 = initialAvaluos.find(i => i.codigo === 'LR-2026-10031');
+            if (v10031) merged.unshift(v10031);
+          }
+
+          return merged;
+        }
       }
     } catch (e) {
       console.error('Error loading data from localStorage', e);
@@ -72,7 +105,26 @@ export default function App() {
         (cloudList) => {
           setCloudStatus('conectado');
           if (Array.isArray(cloudList) && cloudList.length > 0) {
-            setAvaluos(cloudList);
+            // Sincronizar inteligentemente las fotos si vienen incompletas de Firestore
+            const enrichedCloud = cloudList.map(item => {
+              const enriched = enrichWithDefaultPhotos(item);
+              if (enriched !== item) {
+                // Guardar en Firestore para reparar permanentemente en la nube
+                saveAvaluoToCloud(enriched).catch(err => console.warn('Sync foto cloud error', err));
+              }
+              return enriched;
+            });
+
+            // Si LR-2026-10031 no está en la nube, agregarlo y subirlo
+            if (!enrichedCloud.some(m => m.codigo === 'LR-2026-10031' || m.id === 'lr-2026-10031')) {
+              const v10031 = initialAvaluos.find(i => i.codigo === 'LR-2026-10031');
+              if (v10031) {
+                enrichedCloud.unshift(v10031);
+                saveAvaluoToCloud(v10031).catch(err => console.warn('Sync 10031 to cloud error', err));
+              }
+            }
+
+            setAvaluos(enrichedCloud);
           } else {
             // Si la colección de Firestore en la nube está vacía, inicializarla
             seedInitialAvaluosIfEmpty(initialAvaluos);
