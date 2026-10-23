@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Navbar from './components/Navbar';
 import StatsOverview from './components/StatsOverview';
 import SearchAndFilters from './components/SearchAndFilters';
@@ -23,6 +23,11 @@ import {
   subscribeToUsuarios,
   seedInitialUsuariosIfEmpty
 } from './firebase';
+import { 
+  saveAvaluoToLocalDb, 
+  getAllAvaluosFromLocalDb, 
+  deleteAvaluoFromLocalDb 
+} from './utils/localDb';
 import { SearchX, Plus, Sparkles, ShieldAlert, LogOut, Loader2 } from 'lucide-react';
 
 const STORAGE_KEY = 'lexrosam_avaluos_db_v3';
@@ -86,14 +91,35 @@ export default function App() {
     return initialAvaluos.filter(p => p.codigo !== 'LR-2026-10031' && p.id !== 'lr-2026-10031');
   });
 
-  // Save to localStorage as immediate offline cache
+  // Save to localStorage as immediate offline cache and backup to IndexedDB
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(avaluos));
     } catch (e) {
-      console.error('Error saving data to localStorage', e);
+      console.warn('LocalStorage excedido (normal al adjuntar PDFs grandes), respaldando en IndexedDB');
     }
   }, [avaluos]);
+
+  // Carga inicial y respaldo desde IndexedDB local (soporta almacenamiento ilimitado de PDFs)
+  useEffect(() => {
+    getAllAvaluosFromLocalDb().then((localList) => {
+      if (Array.isArray(localList) && localList.length > 0) {
+        setAvaluos((prev) => {
+          return prev.map((item) => {
+            const local = localList.find(l => l.id === item.id);
+            if (local && Array.isArray(local.consultasPdfs) && local.consultasPdfs.length > 0) {
+              const localHasPages = local.consultasPdfs.some(d => Array.isArray(d.pages) && d.pages.length > 0);
+              const curHasPages = Array.isArray(item.consultasPdfs) && item.consultasPdfs.some(d => Array.isArray(d.pages) && d.pages.length > 0);
+              if (localHasPages && !curHasPages) {
+                return { ...item, consultasPdfs: local.consultasPdfs };
+              }
+            }
+            return item;
+          });
+        });
+      }
+    }).catch(e => console.warn('Error reading from localDb on mount:', e));
+  }, []);
 
   // Sincronización en tiempo real con Firebase Firestore
   useEffect(() => {
@@ -115,13 +141,62 @@ export default function App() {
             const enrichedCloud = cleanCloud.map(item => {
               const enriched = enrichWithDefaultPhotos(item);
               if (enriched !== item) {
-                // Guardar en Firestore para reparar permanentemente en la nube
                 saveAvaluoToCloud(enriched).catch(err => console.warn('Sync foto cloud error', err));
               }
               return enriched;
             });
 
-            setAvaluos(enrichedCloud);
+            // Sincronizar avaluos preservando páginas locales de PDFs con dataUrl
+            setAvaluos((prevList) => {
+              return enrichedCloud.map((cloudItem) => {
+                const prevItem = prevList.find(p => p.id === cloudItem.id);
+                if (!prevItem) return cloudItem;
+
+                if (Array.isArray(prevItem.consultasPdfs) && prevItem.consultasPdfs.length > 0) {
+                  const cloudPdfs = cloudItem.consultasPdfs || [];
+                  const mergedPdfs = cloudPdfs.map((cloudDoc) => {
+                    const prevDoc = prevItem.consultasPdfs.find(d => d.id === cloudDoc.id || d.name === cloudDoc.name);
+                    if (prevDoc && Array.isArray(prevDoc.pages) && prevDoc.pages.some(p => p.dataUrl)) {
+                      const cloudPagesComplete = Array.isArray(cloudDoc.pages) && cloudDoc.pages.length > 0 && cloudDoc.pages.every(p => p.dataUrl);
+                      if (!cloudPagesComplete) {
+                        return { ...cloudDoc, pages: prevDoc.pages };
+                      }
+                    }
+                    return cloudDoc;
+                  });
+                  return {
+                    ...cloudItem,
+                    consultasPdfs: mergedPdfs.length > 0 ? mergedPdfs : prevItem.consultasPdfs
+                  };
+                }
+                return cloudItem;
+              });
+            });
+
+            // Sincronizar viewingAvaluo si está abierto en la Ficha
+            setViewingAvaluo((currentViewing) => {
+              if (!currentViewing) return null;
+              const cloudMatch = enrichedCloud.find(c => c.id === currentViewing.id);
+              if (!cloudMatch) return currentViewing;
+
+              if (Array.isArray(currentViewing.consultasPdfs) && currentViewing.consultasPdfs.length > 0) {
+                const mergedPdfs = (cloudMatch.consultasPdfs || []).map((cloudDoc) => {
+                  const curDoc = currentViewing.consultasPdfs.find(d => d.id === cloudDoc.id || d.name === cloudDoc.name);
+                  if (curDoc && Array.isArray(curDoc.pages) && curDoc.pages.some(p => p.dataUrl)) {
+                    const cloudPagesComplete = Array.isArray(cloudDoc.pages) && cloudDoc.pages.length > 0 && cloudDoc.pages.every(p => p.dataUrl);
+                    if (!cloudPagesComplete) {
+                      return { ...cloudDoc, pages: curDoc.pages };
+                    }
+                  }
+                  return cloudDoc;
+                });
+                return {
+                  ...cloudMatch,
+                  consultasPdfs: mergedPdfs.length > 0 ? mergedPdfs : currentViewing.consultasPdfs
+                };
+              }
+              return cloudMatch;
+            });
           }
         },
         (err) => {
@@ -250,6 +325,7 @@ export default function App() {
   const [editingAvaluo, setEditingAvaluo] = useState(null);
   const [printingAvaluo, setPrintingAvaluo] = useState(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const lastFichaIdRef = useRef(null);
 
   // Normalize string for accent-insensitive search
   const normalize = (str) => {
@@ -335,7 +411,7 @@ export default function App() {
 
   // Handlers
   const handleSaveAvaluo = async (savedItem) => {
-    // 1. Actualización optimista local
+    // 1. Actualización optimista en lista en memoria
     setAvaluos((prev) => {
       const existsIndex = prev.findIndex((a) => a.id === savedItem.id);
       if (existsIndex >= 0) {
@@ -346,10 +422,24 @@ export default function App() {
         return [savedItem, ...prev];
       }
     });
+
+    // 2. Si venía de la Ficha o se estaba visualizando, reabrir/actualizar de inmediato la Ficha
+    if (viewingAvaluo?.id === savedItem.id || lastFichaIdRef.current === savedItem.id) {
+      setViewingAvaluo(savedItem);
+      lastFichaIdRef.current = null;
+    }
+
     setEditingAvaluo(null);
     setIsCreatingNew(false);
 
-    // 2. Persistir en Firebase Cloud Firestore
+    // 3. Persistir en IndexedDB de forma robusta e ilimitada (sin límite de 5MB de localStorage)
+    try {
+      await saveAvaluoToLocalDb(savedItem);
+    } catch (dbErr) {
+      console.warn('Error guardando en IndexedDB:', dbErr);
+    }
+
+    // 4. Persistir en Firebase Cloud Firestore
     try {
       await saveAvaluoToCloud(savedItem);
     } catch (err) {
@@ -387,9 +477,47 @@ export default function App() {
 
     if (updatedItem) {
       try {
+        await saveAvaluoToLocalDb(updatedItem);
+      } catch (e) {}
+      try {
         await saveAvaluoToCloud(updatedItem);
       } catch (err) {
         console.error('Error actualizando estado en Firebase:', err);
+      }
+    }
+  };
+
+  // Adjuntar PDFs o imágenes directamente desde la Ficha
+  const handleUploadPdfToAvaluo = async (avaluoId, newPdfItems) => {
+    if (!avaluoId || !Array.isArray(newPdfItems) || newPdfItems.length === 0) return;
+
+    let updatedItem = null;
+    setAvaluos((prev) => {
+      return prev.map((item) => {
+        if (item.id === avaluoId) {
+          const next = {
+            ...item,
+            consultasPdfs: [...(item.consultasPdfs || []), ...newPdfItems],
+            updatedAt: new Date().toISOString()
+          };
+          updatedItem = next;
+          return next;
+        }
+        return item;
+      });
+    });
+
+    if (updatedItem) {
+      setViewingAvaluo((cur) => (cur?.id === avaluoId ? updatedItem : cur));
+      try {
+        await saveAvaluoToLocalDb(updatedItem);
+      } catch (e) {
+        console.warn('Error al guardar en localDb:', e);
+      }
+      try {
+        await saveAvaluoToCloud(updatedItem);
+      } catch (err) {
+        console.error('Error guardando en Firebase tras adjuntar PDF:', err);
       }
     }
   };
@@ -412,11 +540,11 @@ export default function App() {
       });
     });
 
-    if (viewingAvaluo?.id === avaluoId && updatedItem) {
-      setViewingAvaluo(updatedItem);
-    }
-
     if (updatedItem) {
+      setViewingAvaluo((cur) => (cur?.id === avaluoId ? updatedItem : cur));
+      try {
+        await saveAvaluoToLocalDb(updatedItem);
+      } catch (e) {}
       try {
         await saveAvaluoToCloud(updatedItem);
       } catch (err) {
@@ -432,6 +560,9 @@ export default function App() {
     if (confirmed) {
       setAvaluos((prev) => prev.filter((a) => a.id !== id));
       if (viewingAvaluo?.id === id) setViewingAvaluo(null);
+      try {
+        await deleteAvaluoFromLocalDb(id);
+      } catch (e) {}
       try {
         await deleteAvaluoFromCloud(id);
       } catch (err) {
@@ -680,6 +811,7 @@ export default function App() {
           onStatusChange={handleStatusChange}
           onClose={() => setViewingAvaluo(null)}
           onEdit={(item) => {
+            lastFichaIdRef.current = item.id;
             setViewingAvaluo(null);
             setEditingAvaluo(item);
           }}
@@ -688,6 +820,7 @@ export default function App() {
             setPrintingAvaluo(item);
           }}
           onRemovePdf={handleRemovePdfFromAvaluo}
+          onUploadPdf={handleUploadPdfToAvaluo}
         />
       )}
 
@@ -704,6 +837,11 @@ export default function App() {
         <AvaluoFormModal
           avaluo={editingAvaluo}
           onClose={() => {
+            if (lastFichaIdRef.current) {
+              const previousItem = avaluos.find(a => a.id === lastFichaIdRef.current);
+              if (previousItem) setViewingAvaluo(previousItem);
+              lastFichaIdRef.current = null;
+            }
             setIsCreatingNew(false);
             setEditingAvaluo(null);
           }}

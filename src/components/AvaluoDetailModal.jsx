@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   X, Printer, Edit3, MapPin, Building, Calendar, Sparkles, 
   CheckCircle, FileText, Camera, DollarSign, Scale, ExternalLink,
-  ShieldCheck, AlertTriangle, ArrowRight, CornerDownLeft, Download, Trash2
+  ShieldCheck, AlertTriangle, ArrowRight, CornerDownLeft, Download, Trash2,
+  Upload, Loader
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
+import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
 
 export default function AvaluoDetailModal({ 
   avaluo, 
@@ -13,11 +15,42 @@ export default function AvaluoDetailModal({
   onPrint, 
   currentRole = 'autorizador',
   onStatusChange,
-  onRemovePdf
+  onRemovePdf,
+  onUploadPdf
 }) {
   const [activeTab, setActiveTab] = useState('registral');
   const [isRejecting, setIsRejecting] = useState(false);
   const [rejectionComment, setRejectionComment] = useState('');
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handlePdfUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setIsUploadingPdf(true);
+    try {
+      const newDocs = [];
+      for (const file of files) {
+        const pages = await convertPdfOrImageToPageImages(file);
+        newDocs.push({
+          id: `rgp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          name: file.name,
+          size: `${(file.size / 1024).toFixed(0)} KB`,
+          fecha: new Date().toISOString().slice(0, 10),
+          pages: pages
+        });
+      }
+      if (onUploadPdf) {
+        await onUploadPdf(avaluo.id, newDocs);
+      }
+    } catch (err) {
+      console.error('Error al subir certificación RGP:', err);
+      alert('Error al procesar el archivo: ' + (err.message || 'Error desconocido'));
+    } finally {
+      setIsUploadingPdf(false);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   if (!avaluo) return null;
 
@@ -1005,10 +1038,56 @@ export default function AvaluoDetailModal({
               </div>
 
               {/* Consultas Electrónicas RGP (PDFs o Imágenes) */}
-              <div className="form-section-title" style={{ marginTop: '2rem' }}>
-                <FileText size={16} />
-                <span>Consultas Electrónicas del Registro General de la Propiedad (PDFs Adjuntos)</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginTop: '2rem', marginBottom: '0.85rem' }}>
+                <div className="form-section-title" style={{ margin: 0 }}>
+                  <FileText size={16} />
+                  <span>Consultas Electrónicas del Registro General de la Propiedad (PDFs Adjuntos)</span>
+                </div>
+                {onUploadPdf && (
+                  <div>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handlePdfUpload} 
+                      accept="application/pdf,image/jpeg,image/png,image/webp" 
+                      multiple 
+                      style={{ display: 'none' }} 
+                    />
+                    <button
+                      type="button"
+                      disabled={isUploadingPdf}
+                      onClick={() => fileInputRef.current?.click()}
+                      style={{
+                        background: isUploadingPdf ? '#94a3b8' : '#0d2847',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '0.45rem 0.9rem',
+                        borderRadius: '6px',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: isUploadingPdf ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      {isUploadingPdf ? (
+                        <>
+                          <Loader size={14} className="spin" />
+                          <span>Procesando archivo...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={14} />
+                          <span>+ Adjuntar Certificación RGP (PDF / Imagen)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
+
               {avaluo.consultasPdfs && avaluo.consultasPdfs.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   {avaluo.consultasPdfs.map((pdf, idx) => (
@@ -1117,8 +1196,35 @@ export default function AvaluoDetailModal({
                   ))}
                 </div>
               ) : (
-                <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
-                  No se han adjuntado certificaciones electrónicas en PDF para este expediente.
+                <div style={{ 
+                  color: '#64748b', 
+                  fontSize: '0.85rem', 
+                  padding: '1.25rem', 
+                  background: '#f8fafc', 
+                  border: '1.5px dashed #cbd5e1', 
+                  borderRadius: '8px', 
+                  textAlign: 'center' 
+                }}>
+                  <p style={{ margin: '0 0 0.6rem 0' }}>No se han adjuntado certificaciones electrónicas en PDF para este expediente.</p>
+                  {onUploadPdf && (
+                    <button
+                      type="button"
+                      disabled={isUploadingPdf}
+                      onClick={() => fileInputRef.current?.click()}
+                      style={{
+                        background: '#e0f2fe',
+                        color: '#0369a1',
+                        border: '1px solid #bae6fd',
+                        padding: '0.4rem 0.85rem',
+                        borderRadius: '5px',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Seleccionar archivo PDF o imagen ahora
+                    </button>
+                  )}
                 </div>
               )}
             </div>

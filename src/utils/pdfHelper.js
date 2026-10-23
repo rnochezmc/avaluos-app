@@ -5,12 +5,15 @@ if (typeof window !== 'undefined' && pdfjsLib) {
   pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 }
 
+import { getAvaluoFromLocalDb } from './localDb';
+import { fetchRgpPagesFromCloud } from '../firebase';
+
 /**
  * Convierte un archivo PDF o imagen en un array de imágenes optimizadas (JPEG Data URL) de cada página.
  */
 export async function convertPdfOrImageToPageImages(file) {
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-  const isImage = file.type.startsWith('image/');
+  const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp)$/i.test(file.name);
 
   if (!isPdf && !isImage) {
     throw new Error('Formato no soportado. Debe ser un archivo PDF o una imagen (JPG/PNG).');
@@ -18,7 +21,7 @@ export async function convertPdfOrImageToPageImages(file) {
 
   if (isImage) {
     const dataUrl = await readFileAsDataUrl(file);
-    const optimized = await compressImage(dataUrl, 850, 0.65);
+    const optimized = await compressImage(dataUrl, 800, 0.60);
     return [{
       pageIndex: 1,
       totalPaginas: 1,
@@ -36,9 +39,9 @@ export async function convertPdfOrImageToPageImages(file) {
 
   for (let i = 1; i <= numPages; i++) {
     const page = await pdfDoc.getPage(i);
-    // Escala optimizada a 850px ancho y 0.65 calidad (~45KB por página) para asegurar que el documento se guarde sin exceder el límite de 1MB de Firestore
+    // Escala optimizada a 750px ancho y 0.58 calidad (~25-35KB por página)
     const unscaledViewport = page.getViewport({ scale: 1.0 });
-    const scale = Math.min(1.5, 850 / unscaledViewport.width);
+    const scale = Math.min(1.4, Math.min(750 / unscaledViewport.width, 1050 / unscaledViewport.height));
     const viewport = page.getViewport({ scale });
 
     const canvas = document.createElement('canvas');
@@ -51,7 +54,7 @@ export async function convertPdfOrImageToPageImages(file) {
       viewport: viewport
     }).promise;
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.58);
     pages.push({
       pageIndex: i,
       totalPaginas: numPages,
@@ -65,9 +68,9 @@ export async function convertPdfOrImageToPageImages(file) {
 
 /**
  * Extrae todas las páginas individuales listas para renderizar como imágenes a partir del array consultasPdfs.
- * Si un archivo tiene un PDF en base64 sin procesar, intenta renderizarlo o genera una vista representativa oficial.
+ * Si faltan dataUrls o páginas completas, las hidrata de IndexedDB o subcolecciones de Firebase.
  */
-export async function extractAllRgpPages(consultasPdfs = []) {
+export async function extractAllRgpPages(consultasPdfs = [], avaluoId = null) {
   if (!Array.isArray(consultasPdfs) || consultasPdfs.length === 0) {
     return [];
   }
@@ -80,15 +83,38 @@ export async function extractAllRgpPages(consultasPdfs = []) {
 
     // Caso 1: Ya tiene páginas procesadas (nuevo formato)
     if (Array.isArray(item.pages) && item.pages.length > 0) {
-      item.pages.forEach(p => {
+      let pagesToUse = item.pages;
+      const needsData = pagesToUse.some(p => !p.dataUrl);
+
+      if (needsData && avaluoId) {
+        try {
+          const local = await getAvaluoFromLocalDb(avaluoId);
+          const localDoc = local?.consultasPdfs?.find(d => d.id === item.id || d.name === item.name);
+          if (localDoc?.pages?.some(p => p.dataUrl)) {
+            pagesToUse = localDoc.pages;
+          } else {
+            const cloudPages = await fetchRgpPagesFromCloud(avaluoId);
+            if (cloudPages && cloudPages.length > 0) {
+              const matched = cloudPages.filter(cp => cp.docId === item.id || cp.docName === item.name);
+              if (matched.length > 0) {
+                pagesToUse = matched;
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Error recuperando páginas respaldadas:', e);
+        }
+      }
+
+      pagesToUse.forEach(p => {
         allPages.push({
           id: `${item.id || idx}-p${p.pageIndex || 1}`,
           name: item.name || 'Certificación RGP',
           size: item.size || '',
           fecha: item.fecha || '',
           pageIndex: p.pageIndex || 1,
-          totalPaginas: p.totalPaginas || item.pages.length,
-          dataUrl: p.dataUrl
+          totalPaginas: p.totalPaginas || pagesToUse.length,
+          dataUrl: p.dataUrl || generateOfficialRgpPlaceholder(item.name, item.fecha, item.size)
         });
       });
       continue;

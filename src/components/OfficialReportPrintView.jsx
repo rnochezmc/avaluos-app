@@ -41,7 +41,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
   React.useEffect(() => {
     let active = true;
     if (avaluo?.consultasPdfs && avaluo.consultasPdfs.length > 0) {
-      extractAllRgpPages(avaluo.consultasPdfs).then(pages => {
+      extractAllRgpPages(avaluo.consultasPdfs, avaluo?.id).then(pages => {
         if (active) setRgpPages(pages);
       }).catch(err => {
         console.error('Error al extraer páginas RGP:', err);
@@ -50,7 +50,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
       setRgpPages([]);
     }
     return () => { active = false; };
-  }, [avaluo?.consultasPdfs]);
+  }, [avaluo?.consultasPdfs, avaluo?.id]);
 
   React.useEffect(() => {
     if (!avaluo?.fotos) {

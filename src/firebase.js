@@ -76,14 +76,92 @@ function removeUndefined(obj) {
 
 /**
  * Guarda o actualiza un expediente de avalúo en Firestore.
+ * Si el avalúo contiene certificaciones RGP pesadas que superan el límite de 1MB de Firestore,
+ * almacena las páginas individualmente en la subcolección 'rgpPages' para garantizar que nunca se rechace.
  */
 export async function saveAvaluoToCloud(avaluo) {
   if (!avaluo || !avaluo.id) {
     throw new Error('El avalúo debe contener un ID válido.');
   }
+
   const cleanData = removeUndefined(avaluo);
-  const docRef = doc(db, AVALUOS_COLLECTION, String(avaluo.id));
-  await setDoc(docRef, cleanData, { merge: true });
+  let totalBytes = 0;
+  try {
+    totalBytes = new Blob([JSON.stringify(cleanData)]).size;
+  } catch (e) {
+    totalBytes = 0;
+  }
+
+  // Límite de seguridad de Firestore: 850 KB (el límite duro es 1,048,576 bytes)
+  if (totalBytes > 850000 && Array.isArray(cleanData.consultasPdfs) && cleanData.consultasPdfs.length > 0) {
+    // 1. Guardar cada página individualmente en la subcolección 'rgpPages' (cada una ~40-100KB)
+    for (const docItem of cleanData.consultasPdfs) {
+      if (Array.isArray(docItem.pages)) {
+        for (const page of docItem.pages) {
+          try {
+            const pageDocId = `${docItem.id || 'doc'}_p${page.pageIndex}`;
+            const pageDocRef = doc(db, AVALUOS_COLLECTION, String(avaluo.id), 'rgpPages', pageDocId);
+            await setDoc(pageDocRef, {
+              docId: docItem.id || 'doc',
+              docName: docItem.name || 'Certificación RGP',
+              pageIndex: page.pageIndex,
+              totalPaginas: page.totalPaginas || docItem.pages.length,
+              fileName: page.fileName || docItem.name,
+              dataUrl: page.dataUrl,
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
+          } catch (pErr) {
+            console.warn('Error guardando página en subcolección rgpPages:', pErr);
+          }
+        }
+      }
+    }
+
+    // 2. Guardar el documento principal con los metadatos pero sin los dataUrl pesados de cada página
+    const lightConsultasPdfs = cleanData.consultasPdfs.map(d => ({
+      id: d.id,
+      name: d.name,
+      size: d.size,
+      fecha: d.fecha,
+      totalPaginas: d.pages?.length || d.totalPaginas || 1,
+      hasPagesInCloud: true,
+      pages: (d.pages || []).map(p => ({
+        pageIndex: p.pageIndex,
+        totalPaginas: p.totalPaginas,
+        fileName: p.fileName
+      }))
+    }));
+
+    const lightData = {
+      ...cleanData,
+      consultasPdfs: lightConsultasPdfs
+    };
+
+    const docRef = doc(db, AVALUOS_COLLECTION, String(avaluo.id));
+    await setDoc(docRef, lightData, { merge: true });
+  } else {
+    // Si cabe cómodamente en el documento principal, se guarda íntegro con páginas
+    const docRef = doc(db, AVALUOS_COLLECTION, String(avaluo.id));
+    await setDoc(docRef, cleanData, { merge: true });
+  }
+}
+
+/**
+ * Recupera las páginas individuales de certificaciones RGP desde la subcolección de Firestore
+ */
+export async function fetchRgpPagesFromCloud(avaluoId) {
+  if (!avaluoId) return [];
+  try {
+    const colRef = collection(db, AVALUOS_COLLECTION, String(avaluoId), 'rgpPages');
+    const snap = await getDocs(colRef);
+    if (snap.empty) return [];
+    const pages = [];
+    snap.forEach((d) => pages.push(d.data()));
+    return pages.sort((a, b) => (a.pageIndex || 0) - (b.pageIndex || 0));
+  } catch (err) {
+    console.warn('Error fetching rgpPages from cloud:', err);
+    return [];
+  }
 }
 
 /**
