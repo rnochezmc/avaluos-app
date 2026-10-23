@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, Save, MapPin, Camera, Building, DollarSign, FileText, Plus, 
-  Trash2, Crosshair, FileUp, CheckSquare, Square, Check, AlertCircle, RefreshCw 
+  Trash2, Crosshair, FileUp, CheckSquare, Square, Check, AlertCircle, RefreshCw, Copy 
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST, getDefaultServicios } from '../data/serviciosConstants';
 import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
@@ -35,19 +35,79 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
 
     // Información Registral con múltiples fincas y áreas independientes
     propietarioPrincipal: avaluo?.propietarioPrincipal || '',
-    fincas: avaluo?.fincas && avaluo.fincas.length > 0 ? avaluo.fincas : [
-      { 
-        finca: '', 
-        folio: '', 
-        libro: '', 
-        propietario: '',
-        areaRegistrada: 0,
-        areaDesmembrada: 0,
-        areaActualRegistrada: 0,
-        areaFisica: 0,
-        areaValuada: 0
-      }
-    ],
+    fincas: avaluo?.fincas && avaluo.fincas.length > 0 
+      ? avaluo.fincas.map((f, i) => ({
+          finca: f.finca || '',
+          folio: f.folio || '',
+          libro: f.libro || '',
+          propietario: f.propietario || avaluo?.propietarioPrincipal || '',
+          areaRegistrada: f.areaRegistrada !== undefined ? f.areaRegistrada : 0,
+          areaDesmembrada: f.areaDesmembrada !== undefined ? f.areaDesmembrada : 0,
+          areaActualRegistrada: f.areaActualRegistrada !== undefined ? f.areaActualRegistrada : (f.areaRegistrada || 0),
+          areaFisica: f.areaFisica !== undefined ? f.areaFisica : (f.areaRegistrada || 0),
+          areaValuada: f.areaValuada !== undefined ? f.areaValuada : 0,
+          dicabiNombre: f.dicabiNombre || (i === 0 ? (avaluo?.dicabiNombre || '') : ''),
+          dicabiDireccion: f.dicabiDireccion || (i === 0 ? (avaluo?.dicabiDireccion || '') : ''),
+          dicabiMatricula: f.dicabiMatricula || (i === 0 ? (avaluo?.dicabiMatricula || '') : ''),
+          dicabiArea: f.dicabiArea || (i === 0 ? (avaluo?.dicabiArea || '') : ''),
+          dicabiObservaciones: f.dicabiObservaciones !== undefined ? f.dicabiObservaciones : (i === 0 ? (avaluo?.dicabiObservaciones || '') : ''),
+          colindancias: f.colindancias ? {
+            norte: f.colindancias.norte || '',
+            sur: f.colindancias.sur || '',
+            este: f.colindancias.este || '',
+            oeste: f.colindancias.oeste || '',
+            norteFisica: f.colindancias.norteFisica || '',
+            surFisica: f.colindancias.surFisica || '',
+            esteFisica: f.colindancias.esteFisica || '',
+            oesteFisica: f.colindancias.oesteFisica || ''
+          } : (i === 0 ? {
+            norte: avaluo?.colindancias?.norte || '',
+            sur: avaluo?.colindancias?.sur || '',
+            este: avaluo?.colindancias?.este || '',
+            oeste: avaluo?.colindancias?.oeste || '',
+            norteFisica: avaluo?.colindancias?.norteFisica || '',
+            surFisica: avaluo?.colindancias?.surFisica || '',
+            esteFisica: avaluo?.colindancias?.esteFisica || '',
+            oesteFisica: avaluo?.colindancias?.oesteFisica || ''
+          } : {
+            norte: '',
+            sur: '',
+            este: '',
+            oeste: '',
+            norteFisica: '',
+            surFisica: '',
+            esteFisica: '',
+            oesteFisica: ''
+          })
+        }))
+      : [
+        { 
+          finca: avaluo?.finca || '', 
+          folio: avaluo?.folio || '', 
+          libro: avaluo?.libro || '', 
+          propietario: avaluo?.propietarioPrincipal || '',
+          areaRegistrada: avaluo?.areaRegistrada || 0,
+          areaDesmembrada: avaluo?.areaDesmembrada || 0,
+          areaActualRegistrada: avaluo?.areaActualRegistrada || 0,
+          areaFisica: avaluo?.areaFisica || 0,
+          areaValuada: avaluo?.areaValuada || 0,
+          dicabiNombre: avaluo?.dicabiNombre || '',
+          dicabiDireccion: avaluo?.dicabiDireccion || '',
+          dicabiMatricula: avaluo?.dicabiMatricula || '',
+          dicabiArea: avaluo?.dicabiArea || '',
+          dicabiObservaciones: avaluo?.dicabiObservaciones || '',
+          colindancias: {
+            norte: avaluo?.colindancias?.norte || '',
+            sur: avaluo?.colindancias?.sur || '',
+            este: avaluo?.colindancias?.este || '',
+            oeste: avaluo?.colindancias?.oeste || '',
+            norteFisica: avaluo?.colindancias?.norteFisica || '',
+            surFisica: avaluo?.colindancias?.surFisica || '',
+            esteFisica: avaluo?.colindancias?.esteFisica || '',
+            oesteFisica: avaluo?.colindancias?.oesteFisica || ''
+          }
+        }
+      ],
     areaRegistrada: avaluo?.areaRegistrada || 0,
     areaDesmembrada: avaluo?.areaDesmembrada || 0,
     areaActualRegistrada: avaluo?.areaActualRegistrada || 0,
@@ -84,7 +144,11 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
       norte: '',
       sur: '',
       este: '',
-      oeste: ''
+      oeste: '',
+      norteFisica: '',
+      surFisica: '',
+      esteFisica: '',
+      oesteFisica: ''
     },
 
     // Servicios e Infraestructura (31 elementos oficiales)
@@ -275,7 +339,22 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
           areaDesmembrada: 0,
           areaActualRegistrada: 0,
           areaFisica: 0,
-          areaValuada: 0
+          areaValuada: 0,
+          dicabiNombre: prev.propietarioPrincipal || prev.dicabiNombre || '',
+          dicabiDireccion: prev.dicabiDireccion || prev.direccion || '',
+          dicabiMatricula: '',
+          dicabiArea: '',
+          dicabiObservaciones: 'Finca no inscrita en DICABI.',
+          colindancias: {
+            norte: '',
+            sur: '',
+            este: '',
+            oeste: '',
+            norteFisica: '',
+            surFisica: '',
+            esteFisica: '',
+            oesteFisica: ''
+          }
         }
       ]
     }));
@@ -301,7 +380,18 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
       }
 
       newFincas[index] = target;
-      return recalcularTotalesFincas({ ...prev, fincas: newFincas });
+
+      // Sincronizar campos principales de DICABI con Finca 0 para compatibilidad histórica
+      const extra = {};
+      if (index === 0) {
+        if (field === 'dicabiMatricula') extra.dicabiMatricula = value;
+        if (field === 'dicabiNombre') extra.dicabiNombre = value;
+        if (field === 'dicabiDireccion') extra.dicabiDireccion = value;
+        if (field === 'dicabiArea') extra.dicabiArea = value;
+        if (field === 'dicabiObservaciones') extra.dicabiObservaciones = value;
+      }
+
+      return recalcularTotalesFincas({ ...prev, ...extra, fincas: newFincas });
     });
   };
 
@@ -333,6 +423,73 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
     }
 
     return next;
+  };
+
+  // Manejo de Colindancias por Finca (Registrales y Físicas)
+  const updateFincaColindancia = (fIndex, field, value) => {
+    setFormData(prev => {
+      const newFincas = [...prev.fincas];
+      const target = { ...newFincas[fIndex] };
+      const col = { ...(target.colindancias || (fIndex === 0 ? prev.colindancias : {}) || {}) };
+      col[field] = value;
+      target.colindancias = col;
+      newFincas[fIndex] = target;
+
+      const extra = {};
+      if (fIndex === 0) {
+        extra.colindancias = {
+          ...(prev.colindancias || {}),
+          [field]: value
+        };
+      }
+
+      return {
+        ...prev,
+        ...extra,
+        fincas: newFincas
+      };
+    });
+  };
+
+  const copyRegistralToFisica = (fIndex) => {
+    setFormData(prev => {
+      const newFincas = [...prev.fincas];
+      const target = { ...newFincas[fIndex] };
+      const col = { ...(target.colindancias || (fIndex === 0 ? prev.colindancias : {}) || {}) };
+      col.norteFisica = col.norte || '';
+      col.surFisica = col.sur || '';
+      col.esteFisica = col.este || '';
+      col.oesteFisica = col.oeste || '';
+      target.colindancias = col;
+      newFincas[fIndex] = target;
+
+      const extra = {};
+      if (fIndex === 0) {
+        extra.colindancias = {
+          ...(prev.colindancias || {}),
+          norteFisica: col.norte || '',
+          surFisica: col.sur || '',
+          esteFisica: col.este || '',
+          oesteFisica: col.oeste || ''
+        };
+      }
+
+      return { ...prev, ...extra, fincas: newFincas };
+    });
+  };
+
+  const copyColindanciasToAll = (sourceIndex) => {
+    setFormData(prev => {
+      const sourceCol = prev.fincas[sourceIndex]?.colindancias || (sourceIndex === 0 ? prev.colindancias : {}) || {};
+      const newFincas = prev.fincas.map((f, idx) => {
+        if (idx === sourceIndex) return f;
+        return {
+          ...f,
+          colindancias: { ...sourceCol }
+        };
+      });
+      return { ...prev, fincas: newFincas };
+    });
   };
 
   // Dynamic calculations for values, conversion to Varas Cuadradas and currency exchange
@@ -1314,66 +1471,118 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                   </div>
                 </div>
 
-                {/* DICABI Independiente del RGP */}
-                <div className="form-section-title" style={{ marginTop: '1.5rem' }}>
-                  <Building size={16} />
-                  <span>Dirección de Catastro y Avalúo de Bienes Inmuebles (DICABI) — Datos Independientes</span>
+                {/* DICABI Independiente del RGP - Cuadro(s) según cantidad de fincas */}
+                <div className="form-section-title" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Building size={16} />
+                    <span>Dirección de Catastro y Avalúo de Bienes Inmuebles (DICABI) — {formData.fincas.length} {formData.fincas.length === 1 ? 'Cuadro' : 'Cuadros según fincas'}</span>
+                  </div>
+                  {formData.fincas.length > 1 && (
+                    <button
+                      type="button"
+                      className="btn-text"
+                      style={{ fontSize: '0.75rem', color: '#1e40af', padding: '0.25rem 0.65rem', background: '#eff6ff', borderRadius: '4px', border: '1px solid #bfdbfe', fontWeight: 600, cursor: 'pointer' }}
+                      onClick={() => {
+                        const first = formData.fincas[0] || {};
+                        const baseNombre = first.dicabiNombre || formData.propietarioPrincipal;
+                        const baseDir = first.dicabiDireccion || formData.direccion;
+                        setFormData(prev => ({
+                          ...prev,
+                          fincas: prev.fincas.map((f, idx) => idx === 0 ? f : {
+                            ...f,
+                            dicabiNombre: f.dicabiNombre || baseNombre,
+                            dicabiDireccion: f.dicabiDireccion || baseDir,
+                            dicabiObservaciones: f.dicabiObservaciones || (f.dicabiMatricula ? '' : 'Finca no inscrita en DICABI.')
+                          })
+                        }));
+                      }}
+                      title="Copia el titular catastral y la dirección a todas las fincas"
+                    >
+                      Copiar Titular y Dirección a las demás fincas
+                    </button>
+                  )}
                 </div>
 
-                <div className="form-grid-3">
-                  <div className="form-field">
-                    <label className="form-label">Matrícula Fiscal DICABI</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.dicabiMatricula}
-                      onChange={(e) => setFormData({ ...formData, dicabiMatricula: e.target.value })}
-                      placeholder="Ej: 04-03-1258-1"
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label className="form-label">Nombre del Titular Catastral</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.dicabiNombre}
-                      onChange={(e) => setFormData({ ...formData, dicabiNombre: e.target.value })}
-                      placeholder="Nombre según padrón fiscal DICABI"
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label className="form-label">Área Catastral Registrada</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.dicabiArea}
-                      onChange={(e) => setFormData({ ...formData, dicabiArea: e.target.value })}
-                      placeholder="Ej: 199.08 m²"
-                    />
-                  </div>
-                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.75rem' }}>
+                  {formData.fincas.map((fincaItem, fIndex) => (
+                    <div 
+                      key={fIndex} 
+                      style={{ 
+                        background: '#ffffff', 
+                        border: '1px solid #cbd5e1', 
+                        borderRadius: '8px', 
+                        overflow: 'hidden',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.45rem 0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', fontWeight: 700 }}>
+                        <span>
+                          CUADRO DICABI {formData.fincas.length > 1 ? `— FINCA: ${fincaItem.finca || `No. ${fIndex + 1}`}` : ''}
+                        </span>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 500, color: '#93c5fd' }}>
+                          {fIndex === 0 ? 'Finca Principal' : `Finca Filial ${fIndex + 1}`}
+                        </span>
+                      </div>
 
-                <div className="form-grid-2">
-                  <div className="form-field">
-                    <label className="form-label">Dirección según DICABI / IUSI</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.dicabiDireccion}
-                      onChange={(e) => setFormData({ ...formData, dicabiDireccion: e.target.value })}
-                      placeholder="Dirección catastral municipal"
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label className="form-label">Observaciones Catastrales DICABI</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.dicabiObservaciones}
-                      onChange={(e) => setFormData({ ...formData, dicabiObservaciones: e.target.value })}
-                      placeholder="Datos cotejados con el padrón fiscal catastral."
-                    />
-                  </div>
+                      <div style={{ padding: '0.85rem' }}>
+                        <div className="form-grid-3">
+                          <div className="form-field">
+                            <label className="form-label">Matrícula Fiscal DICABI</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={fincaItem.dicabiMatricula || ''}
+                              onChange={(e) => updateFinca(fIndex, 'dicabiMatricula', e.target.value)}
+                              placeholder={fIndex === 0 ? "Ej: 04-03-1258-1 o Pendiente" : "Ej: 04-03-1258-2 o vacía"}
+                            />
+                          </div>
+                          <div className="form-field">
+                            <label className="form-label">Nombre del Titular Catastral</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={fincaItem.dicabiNombre !== undefined ? fincaItem.dicabiNombre : ((fIndex === 0 ? formData.dicabiNombre : '') || fincaItem.propietario || formData.propietarioPrincipal || '')}
+                              onChange={(e) => updateFinca(fIndex, 'dicabiNombre', e.target.value)}
+                              placeholder="Nombre según padrón fiscal DICABI"
+                            />
+                          </div>
+                          <div className="form-field">
+                            <label className="form-label">Área Catastral Registrada</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={fincaItem.dicabiArea !== undefined && fincaItem.dicabiArea !== '' ? fincaItem.dicabiArea : (fincaItem.areaValuada ? `${fincaItem.areaValuada} m²` : (fincaItem.areaRegistrada ? `${fincaItem.areaRegistrada} m²` : (fIndex === 0 ? formData.dicabiArea : '')))}
+                              onChange={(e) => updateFinca(fIndex, 'dicabiArea', e.target.value)}
+                              placeholder={fincaItem.areaValuada ? `${fincaItem.areaValuada} m²` : "Ej: 199.08 m²"}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="form-grid-2" style={{ marginTop: '0.5rem' }}>
+                          <div className="form-field">
+                            <label className="form-label">Dirección según DICABI / IUSI</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={fincaItem.dicabiDireccion !== undefined ? fincaItem.dicabiDireccion : ((fIndex === 0 ? formData.dicabiDireccion : '') || formData.direccion || '')}
+                              onChange={(e) => updateFinca(fIndex, 'dicabiDireccion', e.target.value)}
+                              placeholder="Dirección catastral municipal"
+                            />
+                          </div>
+                          <div className="form-field">
+                            <label className="form-label">Observaciones Catastrales DICABI</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={fincaItem.dicabiObservaciones !== undefined ? fincaItem.dicabiObservaciones : (fIndex === 0 ? formData.dicabiObservaciones : (fincaItem.dicabiMatricula ? '' : 'Finca no inscrita en DICABI.'))}
+                              onChange={(e) => updateFinca(fIndex, 'dicabiObservaciones', e.target.value)}
+                              placeholder="Ej: Finca no inscrita en DICABI."
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -1416,67 +1625,185 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
 
                 {formData.aplicaTerreno !== false && (
                   <>
-                    <div className="form-section-title">
-                      <MapPin size={16} />
-                      <span>Colindancias Registrales del Terreno (Norte, Sur, Este, Oeste)</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <div className="form-section-title" style={{ margin: 0 }}>
+                        <MapPin size={16} />
+                        <span>Colindancias Registrales y Físicas del Terreno — {formData.fincas.length} {formData.fincas.length === 1 ? 'Cuadro' : 'Cuadros según Fincas'}</span>
+                      </div>
+                      {formData.fincas.length > 1 && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                          onClick={() => copyColindanciasToAll(0)}
+                          title="Copia las colindancias registrales y físicas de la Finca 1 a las demás fincas"
+                        >
+                          <Copy size={13} />
+                          <span>Copiar Colindancias de Finca 1 a las demás</span>
+                        </button>
+                      )}
                     </div>
 
-                    <div className="form-grid-2">
-                      <div className="form-field">
-                        <label className="form-label">Norte</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={formData.colindancias?.norte || ''}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            colindancias: { ...formData.colindancias, norte: e.target.value }
-                          })}
-                          placeholder="Ej: 18.50 m con calle pública municipal"
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label className="form-label">Sur</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={formData.colindancias?.sur || ''}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            colindancias: { ...formData.colindancias, sur: e.target.value }
-                          })}
-                          placeholder="Ej: 18.50 m con Finca 5288"
-                        />
-                      </div>
-                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {formData.fincas.map((fincaItem, fIndex) => {
+                        const col = fincaItem.colindancias || (fIndex === 0 ? formData.colindancias : {}) || {};
+                        return (
+                          <div 
+                            key={fIndex} 
+                            style={{ 
+                              background: '#ffffff', 
+                              border: '1px solid #cbd5e1', 
+                              borderRadius: '8px', 
+                              overflow: 'hidden',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                            }}
+                          >
+                            <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.45rem 0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', fontWeight: 700 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span>
+                                  CUADRO DE COLINDANCIAS {formData.fincas.length > 1 ? `— FINCA: ${fincaItem.finca || `No. ${fIndex + 1}`}` : ''}
+                                </span>
+                                {formData.fincas.length > 1 && (
+                                  <span style={{ fontSize: '0.72rem', fontWeight: 500, color: '#93c5fd' }}>
+                                    ({fIndex === 0 ? 'Finca Principal' : `Finca Filial ${fIndex + 1}`})
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                style={{
+                                  background: 'rgba(255, 255, 255, 0.15)',
+                                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                                  color: '#ffffff',
+                                  borderRadius: '4px',
+                                  padding: '0.2rem 0.55rem',
+                                  fontSize: '0.72rem',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem'
+                                }}
+                                onClick={() => copyRegistralToFisica(fIndex)}
+                                title="Copia las colindancias registrales a las colindancias físicas de esta finca"
+                              >
+                                <Copy size={12} />
+                                <span>Copiar Registrales a Físicas</span>
+                              </button>
+                            </div>
 
-                    <div className="form-grid-2">
-                      <div className="form-field">
-                        <label className="form-label">Este</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={formData.colindancias?.este || ''}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            colindancias: { ...formData.colindancias, este: e.target.value }
-                          })}
-                          placeholder="Ej: 10.76 m con propiedad privada particular"
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label className="form-label">Oeste</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={formData.colindancias?.oeste || ''}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            colindancias: { ...formData.colindancias, oeste: e.target.value }
-                          })}
-                          placeholder="Ej: 10.76 m con lote colindante"
-                        />
-                      </div>
+                            <div style={{ padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                              {/* Grid con dos paneles: Colindancias Registrales vs Colindancias Físicas */}
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
+                                {/* Panel Registrales */}
+                                <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase', marginBottom: '0.6rem', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.3rem' }}>
+                                    🏛️ Colindancias Registrales (RGP)
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <div className="form-field" style={{ margin: 0 }}>
+                                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Norte Registral</label>
+                                      <input
+                                        type="text"
+                                        className="form-input"
+                                        style={{ fontSize: '0.82rem' }}
+                                        value={col.norte || ''}
+                                        onChange={(e) => updateFincaColindancia(fIndex, 'norte', e.target.value)}
+                                        placeholder="Ej: 18.50 m con calle pública municipal"
+                                      />
+                                    </div>
+                                    <div className="form-field" style={{ margin: 0 }}>
+                                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Sur Registral</label>
+                                      <input
+                                        type="text"
+                                        className="form-input"
+                                        style={{ fontSize: '0.82rem' }}
+                                        value={col.sur || ''}
+                                        onChange={(e) => updateFincaColindancia(fIndex, 'sur', e.target.value)}
+                                        placeholder="Ej: 18.50 m con Finca 5288"
+                                      />
+                                    </div>
+                                    <div className="form-field" style={{ margin: 0 }}>
+                                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Este Registral</label>
+                                      <input
+                                        type="text"
+                                        className="form-input"
+                                        style={{ fontSize: '0.82rem' }}
+                                        value={col.este || ''}
+                                        onChange={(e) => updateFincaColindancia(fIndex, 'este', e.target.value)}
+                                        placeholder="Ej: 10.76 m con propiedad privada particular"
+                                      />
+                                    </div>
+                                    <div className="form-field" style={{ margin: 0 }}>
+                                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Oeste Registral</label>
+                                      <input
+                                        type="text"
+                                        className="form-input"
+                                        style={{ fontSize: '0.82rem' }}
+                                        value={col.oeste || ''}
+                                        onChange={(e) => updateFincaColindancia(fIndex, 'oeste', e.target.value)}
+                                        placeholder="Ej: 10.76 m con lote colindante"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Panel Físicas */}
+                                <div style={{ background: '#f0fdf4', padding: '0.75rem', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#166534', textTransform: 'uppercase', marginBottom: '0.6rem', borderBottom: '1px solid #86efac', paddingBottom: '0.3rem' }}>
+                                    📍 Colindancias Físicas (In Situ / Campo)
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <div className="form-field" style={{ margin: 0 }}>
+                                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem', color: '#14532d' }}>Norte Físico</label>
+                                      <input
+                                        type="text"
+                                        className="form-input"
+                                        style={{ fontSize: '0.82rem', borderColor: '#86efac' }}
+                                        value={col.norteFisica || ''}
+                                        onChange={(e) => updateFincaColindancia(fIndex, 'norteFisica', e.target.value)}
+                                        placeholder="Ej: 18.50 m con calle pavimentada"
+                                      />
+                                    </div>
+                                    <div className="form-field" style={{ margin: 0 }}>
+                                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem', color: '#14532d' }}>Sur Físico</label>
+                                      <input
+                                        type="text"
+                                        className="form-input"
+                                        style={{ fontSize: '0.82rem', borderColor: '#86efac' }}
+                                        value={col.surFisica || ''}
+                                        onChange={(e) => updateFincaColindancia(fIndex, 'surFisica', e.target.value)}
+                                        placeholder="Ej: 18.50 m con pared perimetral y casa vecina"
+                                      />
+                                    </div>
+                                    <div className="form-field" style={{ margin: 0 }}>
+                                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem', color: '#14532d' }}>Este Físico</label>
+                                      <input
+                                        type="text"
+                                        className="form-input"
+                                        style={{ fontSize: '0.82rem', borderColor: '#86efac' }}
+                                        value={col.esteFisica || ''}
+                                        onChange={(e) => updateFincaColindancia(fIndex, 'esteFisica', e.target.value)}
+                                        placeholder="Ej: 10.76 m con muro medianero"
+                                      />
+                                    </div>
+                                    <div className="form-field" style={{ margin: 0 }}>
+                                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem', color: '#14532d' }}>Oeste Físico</label>
+                                      <input
+                                        type="text"
+                                        className="form-input"
+                                        style={{ fontSize: '0.82rem', borderColor: '#86efac' }}
+                                        value={col.oesteFisica || ''}
+                                        onChange={(e) => updateFincaColindancia(fIndex, 'oesteFisica', e.target.value)}
+                                        placeholder="Ej: 10.76 m con callejón de acceso o lote baldío"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </>
                 )}
@@ -2157,7 +2484,7 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                     {/* Tarjeta Bancaria 80% - Regla Oficial Haroldo */}
                     <div style={{ background: '#eff6ff', padding: '1rem', borderRadius: '6px', border: '1.5px solid #2563eb' }}>
                       <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>
-                        2. SUMA TOTAL VALOR BANCARIO (80% MÁXIMO)
+                        2. SUMA TOTAL VALOR BANCARIO
                       </div>
                       <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1e3a8a', marginTop: '4px' }}>
                         Q. {Number(formData.valorBancarioGTQ || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}

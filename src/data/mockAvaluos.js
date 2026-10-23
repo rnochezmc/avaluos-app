@@ -28,7 +28,12 @@ export const initialAvaluos = [
         areaDesmembrada: 0.00,
         areaActualRegistrada: 104.77,
         areaFisica: 104.77,
-        areaValuada: 104.77
+        areaValuada: 104.77,
+        dicabiNombre: "Inversiones y Desarrollos Inmobiliarios S.A.",
+        dicabiDireccion: "Apartamento No. 1102, ubicado en el Nivel No.11 del Edificio Vantier",
+        dicabiMatricula: "01-14-5521-8",
+        dicabiArea: "104.77 m²",
+        dicabiObservaciones: "Matrícula fiscal individual de apartamento."
       },
       { 
         finca: "10032", 
@@ -39,7 +44,12 @@ export const initialAvaluos = [
         areaDesmembrada: 0.00,
         areaActualRegistrada: 25.00,
         areaFisica: 25.00,
-        areaValuada: 25.00
+        areaValuada: 25.00,
+        dicabiNombre: "Inversiones y Desarrollos Inmobiliarios S.A.",
+        dicabiDireccion: "2 parqueos ubicados en el sótano No. 3 del Edificio Vantier",
+        dicabiMatricula: "",
+        dicabiArea: "25.00 m²",
+        dicabiObservaciones: "Finca no inscrita en DICABI."
       },
       { 
         finca: "10033", 
@@ -50,7 +60,12 @@ export const initialAvaluos = [
         areaDesmembrada: 0.00,
         areaActualRegistrada: 7.00,
         areaFisica: 7.00,
-        areaValuada: 7.00
+        areaValuada: 7.00,
+        dicabiNombre: "Inversiones y Desarrollos Inmobiliarios S.A.",
+        dicabiDireccion: "Bodega ubicada en el sótano No. uno del Edificio Vantier",
+        dicabiMatricula: "",
+        dicabiArea: "7.00 m²",
+        dicabiObservaciones: "Finca no inscrita en DICABI."
       }
     ],
     propietarioPrincipal: "Inversiones y Desarrollos Inmobiliarios S.A.",
@@ -191,7 +206,22 @@ export const initialAvaluos = [
         areaDesmembrada: 0.00,
         areaActualRegistrada: 253.08,
         areaFisica: 253.08,
-        areaValuada: 145.08
+        areaValuada: 145.08,
+        dicabiNombre: "WALTER MANFREDO GOMEZ HIGUEROS",
+        dicabiDireccion: "1ra. Calle 3-71 Zona 2, Tecpán",
+        dicabiMatricula: "04-03-1258-1",
+        dicabiArea: "145.08 m²",
+        dicabiObservaciones: "Matrícula fiscal cotejada con el catastro municipal de Tecpán Chimaltenango.",
+        colindancias: {
+          norte: "18.50 m con calle pública municipal",
+          sur: "18.50 m con Finca 5288",
+          este: "10.76 m con propiedad privada particular",
+          oeste: "10.76 m con lote colindante",
+          norteFisica: "18.50 m con calle pavimentada y acera municipal",
+          surFisica: "18.50 m con muro de block perimetral",
+          esteFisica: "10.76 m con pared de block colindante",
+          oesteFisica: "10.76 m con cerramiento y lote vecino"
+        }
       },
       { 
         finca: "7172", 
@@ -202,15 +232,82 @@ export const initialAvaluos = [
         areaDesmembrada: 0.00,
         areaActualRegistrada: 108.00,
         areaFisica: 108.00,
-        areaValuada: 54.00
+        areaValuada: 54.00,
+        dicabiNombre: "WALTER MANFREDO GOMEZ HIGUEROS",
+        dicabiDireccion: "1ra. Calle 3-71 Zona 2, Tecpán",
+        dicabiMatricula: "",
+        dicabiArea: "54.00 m²",
+        dicabiObservaciones: "Finca no inscrita en DICABI.",
+        colindancias: {
+          norte: "10.00 m con Finca 5289",
+          sur: "10.00 m con Finca 7173",
+          este: "10.80 m con callejón comunal",
+          oeste: "10.80 m con propiedad privada",
+          norteFisica: "10.00 m con patio interno delimitado",
+          surFisica: "10.00 m con servidumbre de paso",
+          esteFisica: "10.80 m con callejón empedrado",
+          oesteFisica: "10.80 m con muro prefabricado"
+        }
+      },
+      { 
+        finca: "7173", 
+        folio: "173", 
+        libro: "75E de Chimaltenango", 
+        propietario: "WALTER MANFREDO GOMEZ HIGUEROS",
+        areaRegistrada: 60.00,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 60.00,
+        areaFisica: 60.00,
+        areaValuada: 60.00,
+        dicabiNombre: "WALTER MANFREDO GOMEZ HIGUEROS",
+        dicabiDireccion: "1ra. Calle 3-71 Zona 2, Tecpán",
+        dicabiMatricula: "",
+        dicabiArea: "60.00 m²",
+        dicabiObservaciones: "Finca no inscrita en DICABI.",
+        colindancias: {
+          norte: "6.00 m con Finca 7172",
+          sur: "6.00 m con Finca 7174",
+          este: "10.00 m con callejón comunal",
+          oeste: "10.00 m con propiedad privada",
+          norteFisica: "6.00 m con servidumbre de paso",
+          surFisica: "6.00 m con área de parqueo común",
+          esteFisica: "10.00 m con callejón empedrado",
+          oesteFisica: "10.00 m con muro prefabricado"
+        }
+      },
+      { 
+        finca: "7174", 
+        folio: "174", 
+        libro: "75E de Chimaltenango", 
+        propietario: "WALTER MANFREDO GOMEZ HIGUEROS",
+        areaRegistrada: 40.00,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 40.00,
+        areaFisica: 40.00,
+        areaValuada: 40.00,
+        dicabiNombre: "WALTER MANFREDO GOMEZ HIGUEROS",
+        dicabiDireccion: "1ra. Calle 3-71 Zona 2, Tecpán",
+        dicabiMatricula: "",
+        dicabiArea: "40.00 m²",
+        dicabiObservaciones: "Finca no inscrita en DICABI.",
+        colindancias: {
+          norte: "4.00 m con Finca 7173",
+          sur: "4.00 m con lote matriz vecino",
+          este: "10.00 m con callejón comunal",
+          oeste: "10.00 m con propiedad privada",
+          norteFisica: "4.00 m con área de parqueo común",
+          surFisica: "4.00 m con cerca de alambre y seto vivo",
+          esteFisica: "10.00 m con final de callejón",
+          oesteFisica: "10.00 m con pared de block"
+        }
       }
     ],
     propietarioPrincipal: "WALTER MANFREDO GOMEZ HIGUEROS",
-    areaRegistrada: 361.08,
+    areaRegistrada: 461.08,
     areaDesmembrada: 0.00,
-    areaActualRegistrada: 361.08,
-    areaFisica: 361.08,
-    areaValuada: 199.08,
+    areaActualRegistrada: 461.08,
+    areaFisica: 461.08,
+    areaValuada: 299.08,
     
     // Aspectos Legales (con textos amplios y detallados)
     limitaciones: "Servidumbre de paso recíproca con predio colindante para acometida de servicios.",
@@ -250,7 +347,11 @@ export const initialAvaluos = [
       norte: "18.50 m con calle pública municipal",
       sur: "18.50 m con Finca 5288",
       este: "10.76 m con propiedad privada particular",
-      oeste: "10.76 m con lote colindante"
+      oeste: "10.76 m con lote colindante",
+      norteFisica: "18.50 m con calle pavimentada y acera municipal",
+      surFisica: "18.50 m con muro de block perimetral",
+      esteFisica: "10.76 m con pared de block colindante",
+      oesteFisica: "10.76 m con cerramiento y lote vecino"
     },
     
     // Servicios con checklist
@@ -349,7 +450,12 @@ export const initialAvaluos = [
         areaDesmembrada: 0.00,
         areaActualRegistrada: 285.25,
         areaFisica: 286.00,
-        areaValuada: 285.25
+        areaValuada: 285.25,
+        dicabiNombre: "Inmobiliaria Las Cumbres S.A.",
+        dicabiDireccion: "15 Avenida 4-32 Zona 10",
+        dicabiMatricula: "01-10-8452-9",
+        dicabiArea: "285.25 m²",
+        dicabiObservaciones: "Matrícula fiscal al día con pago de IUSI."
       },
       { 
         finca: "4522", 
@@ -360,7 +466,12 @@ export const initialAvaluos = [
         areaDesmembrada: 0.00,
         areaActualRegistrada: 285.25,
         areaFisica: 286.00,
-        areaValuada: 285.25
+        areaValuada: 285.25,
+        dicabiNombre: "Inmobiliaria Las Cumbres S.A.",
+        dicabiDireccion: "15 Avenida 4-32 Zona 10",
+        dicabiMatricula: "",
+        dicabiArea: "285.25 m²",
+        dicabiObservaciones: "Finca no inscrita en DICABI."
       }
     ],
     propietarioPrincipal: "Inmobiliaria Las Cumbres S.A.",
@@ -495,7 +606,12 @@ export const initialAvaluos = [
         areaDesmembrada: 50.00,
         areaActualRegistrada: 350.00,
         areaFisica: 350.00,
-        areaValuada: 350.00
+        areaValuada: 350.00,
+        dicabiNombre: "Carlos Enrique Morales Fuentes",
+        dicabiDireccion: "Condominio Prados del Encinal Casa 14, Fraijanes",
+        dicabiMatricula: "01-14-3321-4",
+        dicabiArea: "350.00 m²",
+        dicabiObservaciones: "Inscrito en catastro de Fraijanes."
       }
     ],
     propietarioPrincipal: "Carlos Enrique Morales Fuentes",
@@ -628,7 +744,12 @@ export const initialAvaluos = [
         areaDesmembrada: 0.00,
         areaActualRegistrada: 1250.00,
         areaFisica: 1250.00,
-        areaValuada: 1250.00
+        areaValuada: 1250.00,
+        dicabiNombre: "Logística Industrial del Sur S.A.",
+        dicabiDireccion: "Calzada Atanasio Tzul 22-00 Zona 12",
+        dicabiMatricula: "01-12-9904-2",
+        dicabiArea: "1250.00 m²",
+        dicabiObservaciones: "Matrícula fiscal industrial."
       }
     ],
     propietarioPrincipal: "Logística Industrial del Sur S.A.",

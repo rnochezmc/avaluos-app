@@ -307,7 +307,8 @@ export default function App() {
           normalize(f.finca).includes(term) ||
           normalize(f.folio).includes(term) ||
           normalize(f.libro).includes(term) ||
-          normalize(f.propietario).includes(term)
+          normalize(f.propietario).includes(term) ||
+          normalize(f.dicabiMatricula).includes(term)
         );
 
         return matchCode || matchOwner || matchBank || matchAddress || matchSector || matchDicabi || matchDpi || matchFincas;

@@ -623,7 +623,7 @@ export default function AvaluoDetailModal({
                 <>
                   <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
                     <DollarSign size={16} />
-                    <span>Valoración Bancaria de Terreno (80% Máximo de Garantía)</span>
+                    <span>Valoración Bancaria de Terreno</span>
                   </div>
                   <div className="table-container" style={{ marginBottom: '1.5rem' }}>
                     <table className="data-table">
@@ -674,79 +674,135 @@ export default function AvaluoDetailModal({
                 </>
               )}
 
-              {/* Colindancias */}
+              {/* Colindancias según cantidad de fincas con Registral y Física */}
               <div className="form-section-title">
                 <MapPin size={16} />
-                <span>Colindancias Registrales</span>
+                <span>Colindancias Registrales y Físicas — {fincas.length} {fincas.length === 1 ? 'Cuadro' : 'Cuadros según fincas'}</span>
               </div>
-              <div className="form-grid-2">
-                <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <strong>Norte:</strong> {avaluo.colindancias?.norte || 'S/D'}
-                </div>
-                <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <strong>Sur:</strong> {avaluo.colindancias?.sur || 'S/D'}
-                </div>
-                <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <strong>Este:</strong> {avaluo.colindancias?.este || 'S/D'}
-                </div>
-                <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <strong>Oeste:</strong> {avaluo.colindancias?.oeste || 'S/D'}
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: fincas.length > 1 ? 'repeat(auto-fit, minmax(320px, 1fr))' : '1fr', gap: '1rem' }}>
+                {fincas.map((f, i) => {
+                  const col = f.colindancias || (i === 0 ? avaluo.colindancias : {}) || {};
+                  const rootCol = avaluo.colindancias || {};
+
+                  const rNorte = col.norte || (i === 0 ? rootCol.norte : '') || 'S/D';
+                  const rSur = col.sur || (i === 0 ? rootCol.sur : '') || 'S/D';
+                  const rEste = col.este || (i === 0 ? rootCol.este : '') || 'S/D';
+                  const rOeste = col.oeste || (i === 0 ? rootCol.oeste : '') || 'S/D';
+
+                  const fNorte = col.norteFisica || (i === 0 ? rootCol.norteFisica : '') || rNorte || 'S/D';
+                  const fSur = col.surFisica || (i === 0 ? rootCol.surFisica : '') || rSur || 'S/D';
+                  const fEste = col.esteFisica || (i === 0 ? rootCol.esteFisica : '') || rEste || 'S/D';
+                  const fOeste = col.oesteFisica || (i === 0 ? rootCol.oesteFisica : '') || rOeste || 'S/D';
+
+                  return (
+                    <div key={i} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
+                      <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.4rem 0.75rem', fontWeight: 700, fontSize: '0.8rem', textAlign: 'center' }}>
+                        COLINDANCIAS{fincas.length > 1 ? ` — FINCA: ${f.finca || (i + 1)}` : ''}
+                      </div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                        <thead>
+                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                            <th style={{ width: '65px', padding: '0.35rem 0.5rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0' }}>Rumbo</th>
+                            <th style={{ padding: '0.35rem 0.5rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0' }}>Registral (RGP)</th>
+                            <th style={{ padding: '0.35rem 0.5rem', textAlign: 'left', fontWeight: 700, color: '#1e40af' }}>Física (In Situ)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Norte:</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rNorte}</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fNorte}</td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Sur:</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rSur}</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fSur}</td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Este:</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rEste}</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fEste}</td>
+                          </tr>
+                          <tr>
+                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Oeste:</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rOeste}</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fOeste}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* DICABI Independiente - Formato Oficial Haroldo */}
+              {/* DICABI Independiente - Formato Oficial Haroldo según cantidad de fincas */}
               <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
                 <Building size={16} />
-                <span>Dirección de Catastro y Avalúo de Bienes Inmuebles (DICABI)</span>
+                <span>Dirección de Catastro y Avalúo de Bienes Inmuebles (DICABI) — {fincas.length} {fincas.length === 1 ? 'Cuadro' : 'Cuadros'}</span>
               </div>
-              <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
-                <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.45rem 0.85rem', fontWeight: 700, fontSize: '0.82rem', textAlign: 'center', letterSpacing: '0.04em' }}>
-                  DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI)
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
-                  <tbody>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                        Nombre:
-                      </td>
-                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        {avaluo.dicabiNombre || '-'}
-                      </td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                        Dirección:
-                      </td>
-                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        {avaluo.dicabiDireccion || '-'}
-                      </td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                        Matricula:
-                      </td>
-                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        {avaluo.dicabiMatricula ? <strong>{avaluo.dicabiMatricula}</strong> : '-'}
-                      </td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                        Área:
-                      </td>
-                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        {avaluo.dicabiArea || '-'}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                        Observaciones:
-                      </td>
-                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        {avaluo.dicabiObservaciones || '-'}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {fincas.map((f, i) => {
+                  const isFirst = i === 0;
+                  const fNombre = f.dicabiNombre || (isFirst ? avaluo.dicabiNombre : '') || f.propietario || avaluo.propietarioPrincipal || '-';
+                  const fDireccion = f.dicabiDireccion || (isFirst ? avaluo.dicabiDireccion : '') || avaluo.dicabiDireccion || avaluo.direccion || '-';
+                  const fMatricula = f.dicabiMatricula || (isFirst ? avaluo.dicabiMatricula : '');
+                  const fArea = f.dicabiArea || (isFirst && avaluo.dicabiArea ? avaluo.dicabiArea : '') || (f.areaValuada ? `${Number(f.areaValuada).toFixed(2)} m²` : (f.areaRegistrada ? `${Number(f.areaRegistrada).toFixed(2)} m²` : '-'));
+                  const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
+                    ? f.dicabiObservaciones 
+                    : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : (fMatricula && fMatricula !== 'Pendiente' ? '-' : 'Finca no inscrita en DICABI.'));
+
+                  return (
+                    <div key={i} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
+                      <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.45rem 0.85rem', fontWeight: 700, fontSize: '0.82rem', textAlign: 'center', letterSpacing: '0.04em' }}>
+                        DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI){fincas.length > 1 ? ` — FINCA: ${f.finca || (i + 1)}` : ''}
+                      </div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                        <tbody>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                              Nombre:
+                            </td>
+                            <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                              {fNombre}
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                              Dirección:
+                            </td>
+                            <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                              {fDireccion}
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                              Matricula:
+                            </td>
+                            <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                              {fMatricula ? <strong>{fMatricula}</strong> : '-'}
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                              Área:
+                            </td>
+                            <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                              {fArea}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style={{ width: '135px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                              Observaciones:
+                            </td>
+                            <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                              {fObservaciones}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -800,7 +856,7 @@ export default function AvaluoDetailModal({
               {/* Desglose Bancario de Construcción al 80% */}
               <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
                 <DollarSign size={16} />
-                <span>Valoración Bancaria de Construcción (80% Máximo de Garantía)</span>
+                <span>Valoración Bancaria de Construcción</span>
               </div>
               <div className="table-container" style={{ marginBottom: '1.5rem' }}>
                 <table className="data-table">
