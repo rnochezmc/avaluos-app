@@ -180,10 +180,10 @@ export default function UserManagementModal({
             </div>
             <div>
               <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
-                Control de Usuarios y Roles — LEX ROSAM S.A.
+                Control de Usuarios y Colaboradores
               </h2>
               <p style={{ fontSize: '0.8rem', color: '#93c5fd', margin: 0 }}>
-                Administración de accesos para Aroldo Ruiz y equipo técnico
+                Administración de accesos para LEX ROSAM, S.A. y C VERDE, S.A.
               </p>
             </div>
           </div>
@@ -285,7 +285,7 @@ export default function UserManagementModal({
                 paddingBottom: '0.5rem'
               }}>
                 <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#0d2847' }}>
-                  {editingUserId ? 'Editar Colaborador' : 'Registrar Nuevo Colaborador en LEX ROSAM'}
+                  {editingUserId ? 'Editar Colaborador' : 'Registrar Nuevo Colaborador'}
                 </h4>
                 <button
                   type="button"
