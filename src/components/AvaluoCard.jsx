@@ -50,6 +50,19 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint }
           loading="lazy" 
         />
         {getStatusBadge(avaluo.estado)}
+        <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '4px' }}>
+          {(avaluo.tenantId === 'cverde' || avaluo.codigo?.startsWith('CV-')) ? (
+            <span style={{ background: 'rgba(0, 44, 34, 0.85)', color: '#00bb7f', border: '1px solid rgba(0, 187, 127, 0.4)', fontSize: '0.68rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00bb7f' }}></span>
+              C VERDE
+            </span>
+          ) : (
+            <span style={{ background: 'rgba(7, 23, 43, 0.85)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.4)', fontSize: '0.68rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#38bdf8' }}></span>
+              LEX ROSAM
+            </span>
+          )}
+        </div>
         <div className="aval-card-code">{avaluo.codigo}</div>
       </div>
 

@@ -11,6 +11,7 @@ import MobileBottomNav from './components/MobileBottomNav';
 import LoginScreen from './components/LoginScreen';
 import UserManagementModal from './components/UserManagementModal';
 import { initialAvaluos } from './data/mockAvaluos';
+import { getTenantConfig, DEFAULT_TENANT_ID } from './data/tenantsConfig';
 import { 
   subscribeToAvaluos, 
   saveAvaluoToCloud, 
@@ -71,6 +72,24 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [currentRole, setCurrentRole] = useState('autorizador');
 
+  // Multi-tenant selection state (lex-rosam | cverde | todos)
+  const [selectedTenantId, setSelectedTenantId] = useState(() => {
+    return localStorage.getItem('avaluos_active_tenant') || DEFAULT_TENANT_ID;
+  });
+
+  const handleSelectTenant = (tenantId) => {
+    setSelectedTenantId(tenantId);
+    try {
+      localStorage.setItem('avaluos_active_tenant', tenantId);
+    } catch (e) {
+      console.warn('Error saving active tenant', e);
+    }
+  };
+
+  const currentTenantConfig = useMemo(() => {
+    return getTenantConfig(selectedTenantId === 'todos' ? 'lex-rosam' : selectedTenantId);
+  }, [selectedTenantId]);
+
   // Load persistent data from localStorage or fallback to initial mock with smart photo sync
   const [avaluos, setAvaluos] = useState(() => {
     try {
@@ -82,6 +101,14 @@ export default function App() {
           const merged = parsed
             .filter(p => p.codigo !== 'LR-2026-10031' && p.id !== 'lr-2026-10031')
             .map(p => enrichWithDefaultPhotos(p));
+          
+          // Asegurar que si faltan los registros de C Verde del mock inicial, se incluyan
+          const cvItems = initialAvaluos.filter(i => i.codigo?.startsWith('CV-'));
+          for (const cv of cvItems) {
+            if (!merged.some(m => m.codigo === cv.codigo || m.id === cv.id)) {
+              merged.push(cv);
+            }
+          }
           return merged;
         }
       }
@@ -123,6 +150,7 @@ export default function App() {
 
   // Sincronización en tiempo real con Firebase Firestore
   useEffect(() => {
+    seedInitialAvaluosIfEmpty(initialAvaluos);
     let unsubscribe;
     try {
       unsubscribe = subscribeToAvaluos(
@@ -251,6 +279,7 @@ export default function App() {
         let assignedRole = 'no_autorizado';
         let assignedNombre = firebaseUser.displayName || 'Colaborador';
         let assignedTitulo = 'Personal Técnico';
+        let assignedTenantId = 'lex-rosam';
         let isActivo = false;
 
         // Cuentas administradoras maestras del sistema
@@ -258,17 +287,26 @@ export default function App() {
           assignedRole = 'soporte';
           assignedNombre = (firebaseUser.displayName || 'Ramiro Nóchez').replace(/^Ing\.\s*/i, '');
           assignedTitulo = 'Soporte Técnico y Sistemas';
+          assignedTenantId = 'all';
           isActivo = true;
-        } else if (email === 'cverdeavaluos@gmail.com' || email === 'aroldoruiz100@gmail.com') {
+        } else if (email === 'cverdeavaluos@gmail.com') {
+          assignedRole = 'admin';
+          assignedNombre = firebaseUser.displayName || 'Ing. Carlos Villagrán';
+          assignedTitulo = 'Director C VERDE / Valuador Autorizado 1890-R-2026';
+          assignedTenantId = 'cverde';
+          isActivo = true;
+        } else if (email === 'aroldoruiz100@gmail.com') {
           assignedRole = 'admin';
           assignedNombre = firebaseUser.displayName || 'Lic. Aroldo Ruiz';
-          assignedTitulo = 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026';
+          assignedTitulo = 'Dueño y Administrador / Valuador Autorizado 2572-R-2026';
+          assignedTenantId = 'all';
           isActivo = true;
         } else if (match) {
-          // Usuario registrado por Haroldo o Ramiro en la colección de usuarios
+          // Usuario registrado en la colección de usuarios
           assignedRole = match.rol || 'valuador';
           assignedNombre = match.nombre || firebaseUser.displayName || 'Colaborador';
           assignedTitulo = match.titulo || 'Personal Técnico';
+          assignedTenantId = match.tenantId || 'lex-rosam';
           isActivo = match.activo !== false;
         }
 
@@ -278,12 +316,16 @@ export default function App() {
           nombre: assignedNombre,
           rol: assignedRole,
           titulo: assignedTitulo,
+          tenantId: assignedTenantId,
           photoURL: firebaseUser.photoURL,
           activo: isActivo
         };
 
         setCurrentUser(userObj);
         setCurrentRole(assignedRole === 'valuador' ? 'ingreso' : 'autorizador');
+        if (assignedTenantId && assignedTenantId !== 'all') {
+          setSelectedTenantId(assignedTenantId);
+        }
         setIsAuthLoading(false);
       } else {
         // Ninguna cuenta de Google autenticada
@@ -335,12 +377,29 @@ export default function App() {
       .replace(/[\u0300-\u036f]/g, '');
   };
 
+  // Avaluos pertenecientes al tenant activo (para estadísticas globales sin verse afectadas por la barra de búsqueda)
+  const tenantFilteredAvaluos = useMemo(() => {
+    if (selectedTenantId === 'todos') return avaluos;
+    return avaluos.filter((item) => {
+      const itemTenant = item.tenantId || (item.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
+      return itemTenant === selectedTenantId;
+    });
+  }, [avaluos, selectedTenantId]);
+
   // Filtered & Sorted Avaluos
   const filteredAvaluos = useMemo(() => {
     const term = normalize(searchTerm.trim());
 
     return avaluos
       .filter((item) => {
+        // Multi-tenant company filter
+        if (selectedTenantId !== 'todos') {
+          const itemTenant = item.tenantId || (item.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
+          if (itemTenant !== selectedTenantId) {
+            return false;
+          }
+        }
+
         // Status filter matching new workflow
         if (activeFilter !== 'todos') {
           if (activeFilter === 'autorizado' && item.estado !== 'autorizado' && item.estado !== 'completado') {
@@ -407,7 +466,7 @@ export default function App() {
         }
         return 0;
       });
-  }, [avaluos, searchTerm, activeFilter, propertyTypeFilter, bankFilter, sortBy]);
+  }, [avaluos, selectedTenantId, searchTerm, activeFilter, propertyTypeFilter, bankFilter, sortBy]);
 
   // Handlers
   const handleSaveAvaluo = async (savedItem) => {
@@ -722,7 +781,7 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Top Navbar with Lex Rosam Branding & Role Selector */}
+      {/* Top Navbar with Multi-Tenant Branding & Role Selector */}
       <Navbar
         onNewAvaluo={() => setIsCreatingNew(true)}
         cloudStatus={cloudStatus}
@@ -731,11 +790,18 @@ export default function App() {
         currentUser={currentUser}
         onSignOut={handleSignOut}
         onOpenUserManagement={() => setShowUserManagement(true)}
+        currentTenant={currentTenantConfig}
+        selectedTenantId={selectedTenantId}
+        onSelectTenant={handleSelectTenant}
       />
 
       <main className="main-wrapper">
         {/* KPI Stats Overview Bar */}
-        <StatsOverview avaluos={avaluos} />
+        <StatsOverview 
+          avaluos={tenantFilteredAvaluos} 
+          currentTenant={currentTenantConfig}
+          selectedTenantId={selectedTenantId}
+        />
 
         {/* Omnisearch & Filters Bar */}
         <SearchAndFilters
@@ -839,6 +905,7 @@ export default function App() {
         <AvaluoFormModal
           avaluo={editingAvaluo}
           usuarios={usuarios}
+          currentTenant={currentTenantConfig}
           onClose={() => {
             if (lastFichaIdRef.current) {
               const previousItem = avaluos.find(a => a.id === lastFichaIdRef.current);

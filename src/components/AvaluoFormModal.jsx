@@ -9,9 +9,12 @@ import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
 import { fetchRgpPagesFromCloud } from '../firebase';
 import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { DEFAULT_DICTAMEN_GARANTIA, DICTAMEN_PRESETS } from '../data/mockAvaluos';
+import { getTenantConfig } from '../data/tenantsConfig';
 
-export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave }) {
+export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave, currentTenant }) {
   const isEditing = Boolean(avaluo?.id);
+  const activeTenantId = avaluo?.tenantId || (avaluo?.codigo?.startsWith('CV-') ? 'cverde' : (currentTenant?.id || 'lex-rosam'));
+  const tenantConfig = getTenantConfig(activeTenantId);
 
   const [activeStep, setActiveStep] = useState(1);
   const [isLocating, setIsLocating] = useState(false);
@@ -21,10 +24,11 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
 
   // Form State initialized with defaults or editing values
   const [formData, setFormData] = useState({
-    id: avaluo?.id || `lr-2026-${Date.now().toString().slice(-4)}`,
-    codigo: avaluo?.codigo || `LR-2026-0${Math.floor(Math.random() * 90) + 10}`,
+    tenantId: activeTenantId,
+    id: avaluo?.id || `${activeTenantId === 'cverde' ? 'cv' : 'lr'}-2026-${Date.now().toString().slice(-4)}`,
+    codigo: avaluo?.codigo || `${tenantConfig.codigoPrefix || 'LR-2026-'}0${Math.floor(Math.random() * 90) + 10}`,
     tipoAvaluo: avaluo?.tipoAvaluo || 'Comercial',
-    solicitante: avaluo?.solicitante || 'BANCO G&T CONTINENTAL',
+    solicitante: avaluo?.solicitante || (tenantConfig.id === 'cverde' ? 'BANCO INDUSTRIAL, S.A.' : 'BANCO G&T CONTINENTAL'),
     fechaSolicitud: avaluo?.fechaSolicitud || new Date().toISOString().slice(0, 10),
     fechaInspeccion: avaluo ? (avaluo.fechaInspeccion || '') : new Date().toISOString().slice(0, 10),
     fechaActualizacion: avaluo ? (avaluo.fechaInspeccion ? '' : (avaluo.fechaActualizacion || '')) : '',
@@ -272,14 +276,14 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
     valorBancarioUSD: avaluo?.valorBancarioUSD || 0,
 
     // Valuadores y Firmantes Oficiales (Reporte PDF)
-    valuadorPrincipal: avaluo?.valuadorPrincipal || 'Lic. Aroldo Oliverio Ruiz Orozco',
-    registroPrincipal: avaluo?.registroPrincipal || 'Valuador autorizado 2572-R-2026',
-    valuadorRevisor: avaluo?.valuadorRevisor !== undefined ? avaluo.valuadorRevisor : 'Lic. Luis Felipe Tolaque Tobias',
-    registroRevisor: avaluo?.registroRevisor !== undefined ? avaluo.registroRevisor : 'Valuador autorizado 193-T-93',
+    valuadorPrincipal: avaluo?.valuadorPrincipal || tenantConfig.valuadorPrincipal,
+    registroPrincipal: avaluo?.registroPrincipal || tenantConfig.registroPrincipal,
+    valuadorRevisor: avaluo?.valuadorRevisor !== undefined ? avaluo.valuadorRevisor : tenantConfig.valuadorRevisor,
+    registroRevisor: avaluo?.registroRevisor !== undefined ? avaluo.registroRevisor : tenantConfig.registroRevisor,
     incluirFirmaRevisor: avaluo?.incluirFirmaRevisor !== false,
 
     // Dictamen Oficial de Garantía Crediticia (Pág. 6 del reporte PDF)
-    dictamenGarantia: avaluo?.dictamenGarantia !== undefined ? avaluo.dictamenGarantia : DEFAULT_DICTAMEN_GARANTIA,
+    dictamenGarantia: avaluo?.dictamenGarantia !== undefined ? avaluo.dictamenGarantia : (tenantConfig.dictamenPredeterminado || DEFAULT_DICTAMEN_GARANTIA),
 
     // Fotos optimizadas (soporta múltiples fotos por categoría)
     fotos: (() => {
@@ -567,7 +571,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
         const currentTerreno = { ...next.desgloseTerreno };
         if (subfield === 'area') {
           currentTerreno.area = num;
-          // Fórmula oficial de Haroldo: Varas Cuadradas = Área m² * 1.43115
+          // Fórmula oficial de Aroldo: Varas Cuadradas = Área m² * 1.43115
           currentTerreno.varasCuadradas = parseFloat((num * 1.43115).toFixed(2));
         } else if (subfield === 'fincaAsociada') {
           currentTerreno.fincaAsociada = value;
@@ -673,7 +677,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
     };
   };
 
-  // Botón y toggle oficial de Haroldo para habilitar o deshabilitar terreno (Régimen PH / Apartamentos)
+  // Botón y toggle oficial de Aroldo para habilitar o deshabilitar terreno (Régimen PH / Apartamentos)
   const handleToggleAplicaTerreno = (applies) => {
     setFormData(prev => {
       const next = { ...prev, aplicaTerreno: applies };
@@ -850,7 +854,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
   };
 
   // Compresión fotográfica optimizada (evita bug de cuotas móviles y Firestore)
-  // Regla de Haroldo: Fecha de Inspección o Fecha de Actualización (mutuamente excluyentes)
+  // Regla de Aroldo: Fecha de Inspección o Fecha de Actualización (mutuamente excluyentes)
   const handleFechaInspeccionChange = (val) => {
     setFormData(prev => ({
       ...prev,
@@ -1022,6 +1026,32 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
     }));
   };
 
+  const activeTenantConfig = getTenantConfig(formData.tenantId || activeTenantId);
+
+  const handleTenantChange = (newTenantId) => {
+    const newCfg = getTenantConfig(newTenantId);
+    setFormData(prev => {
+      let newCodigo = prev.codigo || '';
+      if (!isEditing) {
+        if (newTenantId === 'cverde') {
+          newCodigo = newCodigo.replace(/^LR-/, 'CV-');
+          if (!newCodigo.startsWith('CV-')) newCodigo = `${newCfg.codigoPrefix || 'CV-2026-'}0${Math.floor(Math.random() * 90) + 10}`;
+        } else {
+          newCodigo = newCodigo.replace(/^CV-/, 'LR-');
+          if (!newCodigo.startsWith('LR-')) newCodigo = `${newCfg.codigoPrefix || 'LR-2026-'}0${Math.floor(Math.random() * 90) + 10}`;
+        }
+      }
+      return {
+        ...prev,
+        tenantId: newTenantId,
+        codigo: newCodigo,
+        solicitante: !isEditing && (prev.solicitante === 'BANCO G&T CONTINENTAL' || prev.solicitante === 'BANCO INDUSTRIAL, S.A.')
+          ? (newTenantId === 'cverde' ? 'BANCO INDUSTRIAL, S.A.' : 'BANCO G&T CONTINENTAL')
+          : prev.solicitante
+      };
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.codigo) {
@@ -1044,15 +1074,15 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
           style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, minHeight: 0, overflow: 'hidden' }}
         >
           {/* Form Header */}
-          <div className="modal-header" style={{ background: 'linear-gradient(135deg, #07172b 0%, #0d2847 100%)', flexShrink: 0 }}>
+          <div className="modal-header" style={{ background: activeTenantConfig.colores?.gradientModal || 'linear-gradient(135deg, #07172b 0%, #0d2847 100%)', flexShrink: 0 }}>
             <div className="modal-header-left">
-              <div style={{ background: '#ffffff', borderRadius: '6px', padding: '3px 5px', display: 'flex', alignItems: 'center' }}>
-                <img src="/lex-rosam-logo.png" alt="Lex Rosam" style={{ height: '28px', width: 'auto' }} />
+              <div style={{ background: '#ffffff', borderRadius: '6px', padding: '3px 6px', display: 'flex', alignItems: 'center' }}>
+                <img src={activeTenantConfig.logoUrl || '/lex-rosam-logo.png'} alt={activeTenantConfig.nombreCorto} style={{ height: '30px', width: 'auto', maxHeight: '30px' }} />
               </div>
               <div>
-                <h2 style={{ color: '#ffffff' }}>{isEditing ? `Editar Avalúo ${formData.codigo}` : 'Nuevo Expediente de Avalúo'}</h2>
+                <h2 style={{ color: '#ffffff' }}>{isEditing ? `Editar Avalúo ${formData.codigo}` : `Nuevo Expediente — ${activeTenantConfig.nombreCorto}`}</h2>
                 <div className="modal-header-sub" style={{ color: '#cbd5e1' }}>
-                  Paso {activeStep} de 5 — Formato Oficial LEX ROSAM S.A.
+                  Paso {activeStep} de 5 — Formato Oficial {activeTenantConfig.nombre}
                 </div>
               </div>
             </div>
@@ -1060,7 +1090,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
               <button
                 type="submit"
                 className="btn-primary"
-                style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem', background: '#2563eb' }}
+                style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem', background: activeTenantConfig.colores?.primary || '#2563eb' }}
               >
                 <Save size={14} style={{ display: 'inline', marginRight: '4px' }} />
                 Guardar Expediente
@@ -1120,6 +1150,71 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                 ============================================================== */}
             {activeStep === 1 && (
               <div>
+                {/* Empresa Emisora Selector */}
+                <div style={{
+                  marginBottom: '1.25rem',
+                  padding: '0.85rem 1rem',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem'
+                }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', display: 'block', marginBottom: '3px' }}>
+                      Empresa Valuadora Emisora (Multi-Tenant)
+                    </label>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#0f172a' }}>
+                      Expediente emitido bajo el formato oficial de: <span style={{ color: activeTenantConfig.colores?.primary }}>{activeTenantConfig.nombre}</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleTenantChange('lex-rosam')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '0.45rem 0.85rem',
+                        borderRadius: '7px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        border: (formData.tenantId || activeTenantId) === 'lex-rosam' ? '2px solid #002B49' : '1px solid #cbd5e1',
+                        background: (formData.tenantId || activeTenantId) === 'lex-rosam' ? '#eff6ff' : '#ffffff',
+                        color: (formData.tenantId || activeTenantId) === 'lex-rosam' ? '#002B49' : '#64748b'
+                      }}
+                    >
+                      <img src="/lex-rosam-logo.png" alt="Lex Rosam" style={{ height: '18px', width: 'auto' }} />
+                      <span>LEX ROSAM, S.A.</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTenantChange('cverde')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '0.45rem 0.85rem',
+                        borderRadius: '7px',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        border: (formData.tenantId || activeTenantId) === 'cverde' ? '2px solid #004e3b' : '1px solid #cbd5e1',
+                        background: (formData.tenantId || activeTenantId) === 'cverde' ? '#ecfdf5' : '#ffffff',
+                        color: (formData.tenantId || activeTenantId) === 'cverde' ? '#004e3b' : '#64748b'
+                      }}
+                    >
+                      <img src="/cverde-logo.jpg" alt="C Verde" style={{ height: '18px', width: 'auto', borderRadius: '2px' }} />
+                      <span>C VERDE, S.A.</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="form-section-title">
                   <FileText size={16} />
                   <span>Identificación del Avalúo y Datos de Solicitud</span>
@@ -2768,7 +2863,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                       </div>
                     </div>
 
-                    {/* Tarjeta Bancaria 80% - Regla Oficial Haroldo */}
+                    {/* Tarjeta Bancaria 80% - Regla Oficial Aroldo */}
                     <div style={{ background: '#eff6ff', padding: '1rem', borderRadius: '6px', border: '1.5px solid #2563eb' }}>
                       <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>
                         2. SUMA TOTAL VALOR BANCARIO

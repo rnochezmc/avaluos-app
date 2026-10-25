@@ -42,7 +42,18 @@ export default function AvaluoTable({ avaluos, onView, onEdit, onDelete, onPrint
             return (
               <tr key={av.id}>
                 <td>
-                  <span className="table-code-badge">{av.codigo}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="table-code-badge">{av.codigo}</span>
+                    {(av.tenantId === 'cverde' || av.codigo?.startsWith('CV-')) ? (
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#ecfdf5', color: '#004e3b', border: '1px solid #a7f3d0' }}>
+                        C VERDE
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#eff6ff', color: '#002B49', border: '1px solid #bfdbfe' }}>
+                        LEX ROSAM
+                      </span>
+                    )}
+                  </div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>{av.tipoAvaluo}</div>
                 </td>
                 <td>

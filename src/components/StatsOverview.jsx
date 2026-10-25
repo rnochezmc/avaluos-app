@@ -1,7 +1,7 @@
 import React from 'react';
 import { Files, DollarSign, ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
 
-export default function StatsOverview({ avaluos }) {
+export default function StatsOverview({ avaluos, currentTenant, selectedTenantId = 'lex-rosam' }) {
   const totalCount = avaluos.length;
   
   const totalValuationGTQ = avaluos.reduce((acc, curr) => acc + (Number(curr.valorComercialGTQ) || 0), 0);
@@ -10,6 +10,12 @@ export default function StatsOverview({ avaluos }) {
   const autorizadosCount = avaluos.filter(a => a.estado === 'autorizado' || a.estado === 'completado').length;
   const enRevisionCount = avaluos.filter(a => a.estado === 'en_revision' || a.estado === 'proceso').length;
   const devueltosCount = avaluos.filter(a => a.estado === 'devuelto').length;
+
+  const autorizadorLabel = selectedTenantId === 'cverde'
+    ? 'Autorizados (C Verde)'
+    : (selectedTenantId === 'todos' ? 'Autorizados Totales' : `Autorizados (${currentTenant?.autorizadorNombreCorto || 'Aroldo'})`);
+
+  const primaryAccent = currentTenant?.colores?.primary || '#1e3a8a';
 
   const formatQ = (val) => {
     return 'Q. ' + Number(val).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -22,11 +28,13 @@ export default function StatsOverview({ avaluos }) {
   return (
     <div className="stats-banner">
       <div className="stat-card">
-        <div className="stat-icon" style={{ background: 'rgba(30, 58, 138, 0.1)', color: '#1e3a8a' }}>
+        <div className="stat-icon" style={{ background: selectedTenantId === 'cverde' ? 'rgba(0, 78, 59, 0.1)' : 'rgba(30, 58, 138, 0.1)', color: primaryAccent }}>
           <Files size={22} />
         </div>
         <div className="stat-content">
-          <div className="stat-label">Expedientes Totales</div>
+          <div className="stat-label">
+            {selectedTenantId === 'todos' ? 'Expedientes (Todas)' : `Expedientes (${currentTenant?.nombreCorto || 'Empresa'})`}
+          </div>
           <div className="stat-value">{totalCount}</div>
         </div>
       </div>
@@ -37,7 +45,7 @@ export default function StatsOverview({ avaluos }) {
         </div>
         <div className="stat-content">
           <div className="stat-label">Valor Comercial Total (Q)</div>
-          <div className="stat-value" style={{ fontSize: '1.15rem', color: '#0d2847' }}>
+          <div className="stat-value" style={{ fontSize: '1.15rem', color: selectedTenantId === 'cverde' ? '#004e3b' : '#0d2847' }}>
             {formatQ(totalValuationGTQ)}
           </div>
           <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
@@ -47,12 +55,12 @@ export default function StatsOverview({ avaluos }) {
       </div>
 
       <div className="stat-card">
-        <div className="stat-icon" style={{ background: 'rgba(37, 99, 235, 0.12)', color: '#2563eb' }}>
+        <div className="stat-icon" style={{ background: selectedTenantId === 'cverde' ? 'rgba(0, 187, 127, 0.15)' : 'rgba(37, 99, 235, 0.12)', color: selectedTenantId === 'cverde' ? '#007956' : '#2563eb' }}>
           <ShieldCheck size={22} />
         </div>
         <div className="stat-content">
-          <div className="stat-label">Autorizados (Aroldo)</div>
-          <div className="stat-value" style={{ color: '#2563eb' }}>{autorizadosCount}</div>
+          <div className="stat-label">{autorizadorLabel}</div>
+          <div className="stat-value" style={{ color: selectedTenantId === 'cverde' ? '#007956' : '#2563eb' }}>{autorizadosCount}</div>
         </div>
       </div>
 

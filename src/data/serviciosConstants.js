@@ -1,6 +1,6 @@
 /**
  * Lista oficial de Servicios e Infraestructura requerida para Avalúos LEX ROSAM
- * Solicitud de Haroldo: 31 elementos en orden oficial
+ * Solicitud de Aroldo: 31 elementos en orden oficial
  */
 
 export const SERVICIOS_INFRAESTRUCTURA_LIST = [

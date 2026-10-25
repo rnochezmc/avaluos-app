@@ -3,17 +3,22 @@ import { X, Printer, ArrowLeft, FileText } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 import { extractAllRgpPages } from '../utils/pdfHelper';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
+import { getTenantConfig } from '../data/tenantsConfig';
 
 export default function OfficialReportPrintView({ avaluo, onClose, config = {} }) {
-  // Official LEX ROSAM S.A. Branding
+  const avaluoTenant = getTenantConfig(avaluo?.tenantId || (avaluo?.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam'));
+
+  // Official Multi-Tenant Company Branding (Lex Rosam o Cverde)
   const company = {
-    name: config.name || "LEX ROSAM",
-    tagline: config.tagline || "SOCIEDAD ANÓNIMA — AVALÚOS",
-    phone: config.phone || "+502 6203-0795",
-    emails: config.emails || "solicituddeavaluos@lexrosam.com",
-    website: config.website || "https://lexrosam.com/",
-    navyColor: "#0d2847",
-    accentColor: "#1e40af"
+    name: config.name || avaluoTenant.nombreCorto || "LEX ROSAM",
+    fullName: config.fullName || avaluoTenant.nombre || "LEX ROSAM, S.A.",
+    tagline: config.tagline || avaluoTenant.tagline || "SOCIEDAD ANÓNIMA — AVALÚOS",
+    phone: config.phone || avaluoTenant.telefono || "+502 6203-0795",
+    emails: config.emails || avaluoTenant.email || "solicituddeavaluos@lexrosam.com",
+    website: config.website || avaluoTenant.sitioWeb || "https://lexrosam.com/",
+    logoUrl: avaluoTenant.logoUrl || "/lex-rosam-logo.png",
+    navyColor: avaluoTenant.colores?.primary || "#0d2847",
+    accentColor: avaluoTenant.colores?.accent || "#1e40af"
   };
 
   const formatQ = (val) => {
@@ -94,8 +99,8 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
     <div className="pdf-page-header" style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <img 
-          src="/lex-rosam-logo.png" 
-          alt="LEX ROSAM S.A." 
+          src={company.logoUrl} 
+          alt={company.name} 
           style={{ height: '42px', width: 'auto', objectFit: 'contain' }}
         />
       </div>
@@ -109,7 +114,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
   const PageFooter = ({ pageNum }) => (
     <div className="pdf-page-footer" style={{ borderTop: '1px solid #cbd5e1', paddingTop: '0.4rem', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#475569' }}>
       {pageNum && (
-        <div style={{ fontWeight: 700, borderBottom: '1.5px solid #0d2847', padding: '0 6px', color: '#0d2847' }}>
+        <div style={{ fontWeight: 700, borderBottom: `1.5px solid ${company.navyColor}`, padding: '0 6px', color: company.navyColor }}>
           {pageNum}
         </div>
       )}
@@ -328,7 +333,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
           </button>
           <div>
             <h3 style={{ fontSize: '1rem', color: '#ffffff', margin: 0, fontWeight: 700 }}>
-              Vista Previa de Impresión Oficial LEX ROSAM ({totalPages} Páginas)
+              Vista Previa de Impresión Oficial {company.name} ({totalPages} Páginas)
             </h3>
             <span style={{ fontSize: '0.75rem', color: '#93c5fd' }}>
               Expediente: {avaluo.codigo} — Formato Oficial para Bancos e Instituciones Financieras
@@ -561,7 +566,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                 <p style={{ margin: 0 }}>
                   <strong>Tipo de cambio {avaluo.tipoCambio || '7.62581'}</strong>, según Banco de Guatemala.
                 </p>
-                {/* CORRECCIÓN FOTO 66: Se eliminó el texto entre paréntesis a petición de Haroldo */}
+                {/* CORRECCIÓN FOTO 66: Se eliminó el texto entre paréntesis a petición de Aroldo */}
                 <p style={{ marginTop: '0.35rem', marginBottom: 0, textAlign: 'justify' }}>
                   A juicio del suscrito valuador con fecha {avaluo.fechaActualizacion || avaluo.fechaInspeccion || '2026'}, el inmueble descrito tiene un valor comercial 
                   de <strong>{formatQ(avaluo.valorComercialGTQ)}</strong> o al cambio en dólares al <strong>{formatUSD(avaluo.valorComercialUSD)}</strong>.
@@ -569,20 +574,28 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
               </div>
             </div>
 
-            {/* Firmas de los Valuadores Autorizados ubicadas directamente abajo de los valores a solicitud de Haroldo */}
+            {/* Firmas de los Valuadores Autorizados ubicadas directamente abajo de los valores a solicitud de Aroldo */}
             <div className="pdf-signatures-container" style={{ marginTop: '4rem', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around' }}>
               {avaluo.incluirFirmaRevisor !== false && (
                 <div className="pdf-signature-block">
                   <div className="pdf-signature-line"></div>
-                  <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias'}</div>
-                  <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>{avaluo.registroRevisor || 'Valuador autorizado 193-T-93'}</div>
+                  <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
+                    {avaluo.valuadorRevisor || (avaluoTenant.valuadorRevisor?.nombre || 'Lic. Luis Felipe Tolaque Tobias')}
+                  </div>
+                  <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    {avaluo.registroRevisor || (avaluoTenant.valuadorRevisor?.registro || 'Valuador autorizado 193-T-93')}
+                  </div>
                 </div>
               )}
 
               <div className="pdf-signature-block">
                 <div className="pdf-signature-line"></div>
-                <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorPrincipal || 'Lic. Aroldo Oliverio Ruiz Orozco'}</div>
-                <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>{avaluo.registroPrincipal || 'Valuador autorizado 2572-R-2026'}</div>
+                <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
+                  {avaluo.valuadorPrincipal || (avaluoTenant.valuadoresAutorizados?.[0]?.nombre || 'Lic. Aroldo Oliverio Ruiz Orozco')}
+                </div>
+                <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                  {avaluo.registroPrincipal || (avaluoTenant.valuadoresAutorizados?.[0]?.registro || 'Valuador autorizado 2572-R-2026')}
+                </div>
               </div>
             </div>
           </div>
@@ -592,13 +605,13 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
 
         {/* ==============================================================
             PÁGINA 3: CALIFICACIÓN DE LA GARANTÍA Y CONSIDERACIONES GENERALES
-            (Página exclusiva e independiente a solicitud de Haroldo Ruiz)
+            (Página exclusiva e independiente a solicitud de Aroldo Ruiz)
             ============================================================== */}
         <section className="pdf-sheet-page">
           <PageHeader />
 
           <div className="pdf-sheet-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '1.25rem' }}>
+            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.4rem', marginBottom: '1.25rem' }}>
               CALIFICACION DE GARANTIA Y CONSIDERACIONES GENERALES DEL PRESENTE INFORME
             </div>
 
@@ -630,15 +643,23 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
               {avaluo.incluirFirmaRevisor !== false && (
                 <div className="pdf-signature-block">
                   <div className="pdf-signature-line"></div>
-                  <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias'}</div>
-                  <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>{avaluo.registroRevisor || 'Valuador autorizado 193-T-93'}</div>
+                  <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
+                    {avaluo.valuadorRevisor || (avaluoTenant.valuadorRevisor?.nombre || 'Lic. Luis Felipe Tolaque Tobias')}
+                  </div>
+                  <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    {avaluo.registroRevisor || (avaluoTenant.valuadorRevisor?.registro || 'Valuador autorizado 193-T-93')}
+                  </div>
                 </div>
               )}
 
               <div className="pdf-signature-block">
                 <div className="pdf-signature-line"></div>
-                <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorPrincipal || 'Lic. Aroldo Oliverio Ruiz Orozco'}</div>
-                <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>{avaluo.registroPrincipal || 'Valuador autorizado 2572-R-2026'}</div>
+                <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
+                  {avaluo.valuadorPrincipal || (avaluoTenant.valuadoresAutorizados?.[0]?.nombre || 'Lic. Aroldo Oliverio Ruiz Orozco')}
+                </div>
+                <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                  {avaluo.registroPrincipal || (avaluoTenant.valuadoresAutorizados?.[0]?.registro || 'Valuador autorizado 2572-R-2026')}
+                </div>
               </div>
             </div>
           </div>
@@ -653,7 +674,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
           <PageHeader />
 
           <div className="pdf-sheet-content">
-            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.3rem', marginBottom: '0.6rem' }}>
+            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.3rem', marginBottom: '0.6rem' }}>
               INFORMACION DE LA PROPIEDAD
             </div>
 
@@ -739,7 +760,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                   );
                 })}
                 {fincas.length > 1 && (
-                  <tr style={{ background: '#f8fafc', fontWeight: 700, borderTop: '2px solid #0d2847' }}>
+                  <tr style={{ background: '#f8fafc', fontWeight: 700, borderTop: `2px solid ${company.navyColor}` }}>
                     <td>TOTAL:</td>
                     <td>{Number(avaluo.areaRegistrada || 0).toFixed(6)} m²</td>
                     <td style={{ color: '#b91c1c' }}>{Number(avaluo.areaDesmembrada || 0).toFixed(6)} m²</td>
@@ -916,7 +937,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                               <th style={{ width: '48px', padding: '0.14rem 0.3rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>RUMBO</th>
                               <th style={{ padding: '0.14rem 0.3rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>REGISTRAL (RGP)</th>
-                              <th style={{ padding: '0.14rem 0.3rem', textAlign: 'left', fontWeight: 700, color: '#1e40af' }}>FÍSICA (IN SITU)</th>
+                              <th style={{ padding: '0.14rem 0.3rem', textAlign: 'left', fontWeight: 700, color: company.accentColor }}>FÍSICA (IN SITU)</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -965,7 +986,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
           <PageHeader />
 
           <div className="pdf-sheet-content">
-            {/* CORRECCIÓN: Lista oficial de Servicios e Infraestructura (31 Elementos solicitados por Haroldo) */}
+            {/* CORRECCIÓN: Lista oficial de Servicios e Infraestructura (31 Elementos solicitados por Aroldo) */}
             <div className="pdf-boxed-table">
               <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.35rem 0.6rem', fontSize: '0.8rem', letterSpacing: '0.04em' }}>
                 SERVICIOS E INFRAESTRUCTURA
@@ -1002,7 +1023,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
 
               {avaluo.serviciosAdicionales?.length > 0 && (
                 <div style={{ borderTop: '1px solid #cbd5e1', padding: '0.25rem 0.5rem', background: '#f8fafc' }}>
-                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#0d2847', marginBottom: '2px' }}>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: company.navyColor, marginBottom: '2px' }}>
                     Servicios Adicionales:
                   </div>
                   <div style={{ fontSize: '0.67rem', color: '#334155' }}>
@@ -1103,16 +1124,16 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                 <div className="pdf-valuation-block" style={{ marginBottom: '0.6rem' }}>
                   <table className="pdf-blue-table">
                     <thead>
-                      <tr style={{ background: '#0d2847', color: '#ffffff' }}>
-                        <th colSpan={6} style={{ textAlign: 'center', fontSize: '0.85rem', padding: '0.3rem' }}>TERRENO</th>
+                      <tr style={{ background: company.navyColor, color: '#ffffff' }}>
+                        <th colSpan={6} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.85rem', padding: '0.3rem', border: `1px solid ${company.navyColor}` }}>TERRENO</th>
                       </tr>
-                      <tr style={{ background: '#1e3a8a', color: '#ffffff', fontSize: '0.78rem' }}>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>FINCA</th>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>AREA (m²)</th>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>EQUIVALENTE EN VARAS² (v²)</th>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>UNIDAD</th>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>VALOR</th>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>TOTAL</th>
+                      <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.78rem' }}>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>FINCA</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>EQUIVALENTE EN VARAS² (v²)</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
                       </tr>
                     </thead>
                     <tbody style={{ fontSize: '0.78rem' }}>
@@ -1156,15 +1177,15 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
               <div className="pdf-valuation-block" style={{ marginBottom: '0.6rem' }}>
                 <table className="pdf-blue-table">
                   <thead>
-                    <tr style={{ background: '#0d2847', color: '#ffffff' }}>
-                      <th colSpan={5} style={{ textAlign: 'center', fontSize: '0.85rem', padding: '0.3rem' }}>CONSTRUCCION</th>
+                    <tr style={{ background: company.navyColor, color: '#ffffff' }}>
+                      <th colSpan={5} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.85rem', padding: '0.3rem', border: `1px solid ${company.navyColor}` }}>CONSTRUCCION</th>
                     </tr>
-                    <tr style={{ background: '#1e3a8a', color: '#ffffff', fontSize: '0.78rem' }}>
-                      <th style={{ textAlign: 'left', paddingLeft: '8px', padding: '0.28rem 0.4rem' }}>DESCRIPCIÓN</th>
-                      <th style={{ padding: '0.28rem 0.4rem' }}>AREA (m²)</th>
-                      <th style={{ padding: '0.28rem 0.4rem' }}>UNIDAD</th>
-                      <th style={{ padding: '0.28rem 0.4rem' }}>VALOR</th>
-                      <th style={{ padding: '0.28rem 0.4rem' }}>TOTAL</th>
+                    <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.78rem' }}>
+                      <th style={{ background: company.navyColor, color: '#ffffff', textAlign: 'left', paddingLeft: '8px', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>DESCRIPCIÓN</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
                     </tr>
                   </thead>
                   <tbody style={{ fontSize: '0.78rem' }}>
@@ -1191,7 +1212,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
               </div>
 
               {/* Resumen Total al Pie de la Valuación Comercial */}
-              <div style={{ marginTop: '0.6rem', padding: '0.65rem 1rem', background: '#f8fafc', border: '1.5px solid #0d2847', borderRadius: '4px', textAlign: 'right' }}>
+              <div style={{ marginTop: '0.6rem', padding: '0.65rem 1rem', background: '#f8fafc', border: `1.5px solid ${company.navyColor}`, borderRadius: '4px', textAlign: 'right' }}>
                 <div style={{ fontSize: '0.82rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
                   SUMA TOTAL VALOR COMERCIAL:
                 </div>
@@ -1217,7 +1238,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
           <div className="pdf-sheet-content">
             {/* SECCIÓN 2: VALUACIÓN BANCARIA */}
             <div style={{ marginBottom: '0.75rem' }}>
-              <div style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.85rem', marginBottom: '0.45rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              <div style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', marginBottom: '0.45rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                 2. VALUACIÓN BANCARIA
               </div>
 
@@ -1226,16 +1247,16 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                 <div className="pdf-valuation-block" style={{ marginBottom: '0.6rem' }}>
                   <table className="pdf-blue-table">
                     <thead>
-                      <tr style={{ background: '#0d2847', color: '#ffffff' }}>
-                        <th colSpan={6} style={{ textAlign: 'center', fontSize: '0.85rem', padding: '0.3rem' }}>TERRENO</th>
+                      <tr style={{ background: company.navyColor, color: '#ffffff' }}>
+                        <th colSpan={6} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.85rem', padding: '0.3rem', border: `1px solid ${company.navyColor}` }}>TERRENO</th>
                       </tr>
-                      <tr style={{ background: '#1e3a8a', color: '#ffffff', fontSize: '0.78rem' }}>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>FINCA</th>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>AREA (m²)</th>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>EQUIVALENTE EN VARAS² (v²)</th>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>UNIDAD</th>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>VALOR</th>
-                        <th style={{ padding: '0.28rem 0.4rem' }}>TOTAL</th>
+                      <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.78rem' }}>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>FINCA</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>EQUIVALENTE EN VARAS² (v²)</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
                       </tr>
                     </thead>
                     <tbody style={{ fontSize: '0.78rem' }}>
@@ -1279,15 +1300,15 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
               <div className="pdf-valuation-block" style={{ marginBottom: '0.6rem' }}>
                 <table className="pdf-blue-table">
                   <thead>
-                    <tr style={{ background: '#0d2847', color: '#ffffff' }}>
-                      <th colSpan={5} style={{ textAlign: 'center', fontSize: '0.85rem', padding: '0.3rem' }}>CONSTRUCCION</th>
+                    <tr style={{ background: company.navyColor, color: '#ffffff' }}>
+                      <th colSpan={5} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.85rem', padding: '0.3rem', border: `1px solid ${company.navyColor}` }}>CONSTRUCCION</th>
                     </tr>
-                    <tr style={{ background: '#1e3a8a', color: '#ffffff', fontSize: '0.78rem' }}>
-                      <th style={{ textAlign: 'left', paddingLeft: '8px', padding: '0.28rem 0.4rem' }}>DESCRIPCIÓN</th>
-                      <th style={{ padding: '0.28rem 0.4rem' }}>AREA (m²)</th>
-                      <th style={{ padding: '0.28rem 0.4rem' }}>UNIDAD</th>
-                      <th style={{ padding: '0.28rem 0.4rem' }}>VALOR</th>
-                      <th style={{ padding: '0.28rem 0.4rem' }}>TOTAL</th>
+                    <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.78rem' }}>
+                      <th style={{ background: company.navyColor, color: '#ffffff', textAlign: 'left', paddingLeft: '8px', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>DESCRIPCIÓN</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.28rem 0.4rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
                     </tr>
                   </thead>
                   <tbody style={{ fontSize: '0.78rem' }}>
@@ -1315,12 +1336,12 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                 </table>
               </div>
 
-              {/* Resumen Total Bancario - Título Oficial Solicitado por Haroldo */}
-              <div style={{ marginTop: '0.6rem', padding: '0.65rem 1rem', background: '#f8fafc', border: '1.5px solid #1e40af', borderRadius: '4px', textAlign: 'right' }}>
+              {/* Resumen Total Bancario - Solicitado por Aroldo */}
+              <div style={{ marginTop: '0.6rem', padding: '0.65rem 1rem', background: '#f8fafc', border: `1.5px solid ${company.navyColor}`, borderRadius: '4px', textAlign: 'right' }}>
                 <div style={{ fontSize: '0.82rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
                   SUMA TOTAL VALOR BANCARIO:
                 </div>
-                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1e40af', margin: '2px 0' }}>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: company.navyColor, margin: '2px 0' }}>
                   {formatQ(computedBancarioGTQ)}
                 </div>
                 <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#334155' }}>
@@ -1348,7 +1369,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
             <PageHeader />
 
             <div className="pdf-sheet-content">
-              <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '1.25rem' }}>
+              <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.4rem', marginBottom: '1.25rem' }}>
                 FOTOGRAFÍAS {photoPages.length > 1 ? `(PARTE ${pIdx + 1} DE ${photoPages.length})` : ''}
               </div>
 
@@ -1381,7 +1402,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                       ) : (
                         <div className="pdf-photo-empty" style={{ background: '#f8fafc', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                           <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — SIN REGISTRO ]</span>
-                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Seguridad Contractual LEX ROSAM</span>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Seguridad Contractual {company.name}</span>
                         </div>
                       )}
                     </div>
@@ -1401,7 +1422,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
           <PageHeader />
 
           <div className="pdf-sheet-content">
-            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '1rem' }}>
+            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.4rem', marginBottom: '1rem' }}>
               MATRICULA DICABI
             </div>
 
@@ -1424,21 +1445,21 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                 <div className="pdf-photo-empty" style={{ background: '#f8fafc', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                   <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — DOCUMENTO DICABI NO ADJUNTO ]</span>
                   <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '4px' }}>
-                    {avaluo.dicabiMatricula ? `Matrícula: ${avaluo.dicabiMatricula} • ` : ''}Seguridad Contractual LEX ROSAM
+                    {avaluo.dicabiMatricula ? `Matrícula: ${avaluo.dicabiMatricula} • ` : ''}Seguridad Contractual {company.name}
                   </span>
                 </div>
               </div>
             )}
 
             {/* Resumen de Consultas Electrónicas RGP */}
-            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '0.75rem' }}>
+            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.4rem', marginBottom: '0.75rem' }}>
               CONSULTAS ELECTRÓNICAS DEL REGISTRO GENERAL DE LA PROPIEDAD (RGP)
             </div>
 
             {rgpPages && rgpPages.length > 0 ? (
               <div style={{ background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0d2847', fontWeight: 700, fontSize: '0.82rem' }}>
-                  <FileText size={18} style={{ color: '#1e40af' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: company.navyColor, fontWeight: 700, fontSize: '0.82rem' }}>
+                  <FileText size={18} style={{ color: company.accentColor }} />
                   <span>Certificaciones Registrales Incorporadas ({rgpPages.length} {rgpPages.length === 1 ? 'página' : 'páginas'})</span>
                 </div>
                 <p style={{ fontSize: '0.76rem', color: '#475569', margin: 0, lineHeight: 1.45 }}>
@@ -1448,16 +1469,16 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                   {avaluo.consultasPdfs && avaluo.consultasPdfs.length > 0 ? (
                     avaluo.consultasPdfs.map((docItem, dIdx) => (
                       <div key={dIdx} style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 10px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontWeight: 700, color: '#0d2847' }}>{docItem.name}</span>
+                        <span style={{ fontWeight: 700, color: company.navyColor }}>{docItem.name}</span>
                         {docItem.pages && docItem.pages.length > 0 && (
-                          <span style={{ background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '3px', fontWeight: 600, fontSize: '0.68rem' }}>
+                          <span style={{ background: avaluoTenant.colores?.lightBg || '#ecfdf5', color: company.accentColor, padding: '1px 6px', borderRadius: '3px', fontWeight: 600, fontSize: '0.68rem' }}>
                             {docItem.pages.length} {docItem.pages.length === 1 ? 'pág.' : 'págs.'}
                           </span>
                         )}
                       </div>
                     ))
                   ) : (
-                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 10px', fontSize: '0.72rem', color: '#0d2847', fontWeight: 600 }}>
+                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 10px', fontSize: '0.72rem', color: company.navyColor, fontWeight: 600 }}>
                       {rgpPages.length} {rgpPages.length === 1 ? 'página adjunta' : 'páginas adjuntas'}
                     </div>
                   )}
@@ -1482,17 +1503,17 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
             <PageHeader />
 
             <div className="pdf-sheet-content">
-              <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '0.65rem' }}>
+              <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.4rem', marginBottom: '0.65rem' }}>
                 CONSULTAS ELECTRÓNICAS DEL REGISTRO GENERAL DE LA PROPIEDAD (RGP)
               </div>
 
               {/* Encabezado del documento individual y numeración de página */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '6px', padding: '0.45rem 0.85rem', marginBottom: '0.65rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 700, color: '#0d2847' }}>
-                  <FileText size={16} style={{ color: '#1e40af', flexShrink: 0 }} />
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 700, color: company.navyColor }}>
+                  <FileText size={16} style={{ color: company.accentColor, flexShrink: 0 }} />
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                 </span>
-                <span style={{ background: '#0d2847', color: '#ffffff', padding: '3px 10px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 700, flexShrink: 0 }}>
+                <span style={{ background: company.navyColor, color: '#ffffff', padding: '3px 10px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 700, flexShrink: 0 }}>
                   Página {p.pageIndex} de {p.totalPaginas}
                 </span>
               </div>

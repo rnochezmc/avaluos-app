@@ -212,6 +212,14 @@ export async function seedInitialAvaluosIfEmpty(initialList) {
       for (const item of initialList) {
         await saveAvaluoToCloud(item);
       }
+    } else if (Array.isArray(initialList)) {
+      const existingIds = snap.docs.map(d => d.id);
+      const cvItems = initialList.filter(i => i.codigo?.startsWith('CV-') || i.tenantId === 'cverde');
+      for (const cv of cvItems) {
+        if (!existingIds.includes(cv.id)) {
+          await saveAvaluoToCloud(cv);
+        }
+      }
     }
   } catch (err) {
     console.warn('No se pudo inicializar los datos en Firebase (posible modo offline):', err);
@@ -275,16 +283,8 @@ export async function seedInitialUsuariosIfEmpty() {
           email: 'rnochezmc@gmail.com',
           nombre: 'Ramiro Nóchez',
           rol: 'soporte',
-          titulo: 'Soporte Técnico y Sistemas',
-          activo: true,
-          creadoEl: new Date().toISOString()
-        },
-        {
-          id: 'cverdeavaluos_gmail_com',
-          email: 'cverdeavaluos@gmail.com',
-          nombre: 'Lic. Aroldo Ruiz',
-          rol: 'admin',
-          titulo: 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026',
+          tenantId: 'all',
+          titulo: 'Soporte Técnico de Sistemas',
           activo: true,
           creadoEl: new Date().toISOString()
         },
@@ -293,7 +293,18 @@ export async function seedInitialUsuariosIfEmpty() {
           email: 'aroldoruiz100@gmail.com',
           nombre: 'Lic. Aroldo Ruiz',
           rol: 'admin',
-          titulo: 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026',
+          tenantId: 'all',
+          titulo: 'Dueño y Administrador / Valuador Autorizado 2572-R-2026',
+          activo: true,
+          creadoEl: new Date().toISOString()
+        },
+        {
+          id: 'cverdeavaluos_gmail_com',
+          email: 'cverdeavaluos@gmail.com',
+          nombre: 'Ing. Carlos Villagrán',
+          rol: 'admin',
+          tenantId: 'cverde',
+          titulo: 'Director C VERDE / Valuador Autorizado',
           activo: true,
           creadoEl: new Date().toISOString()
         }
@@ -303,18 +314,30 @@ export async function seedInitialUsuariosIfEmpty() {
         await saveUsuarioToCloud(u);
       }
     } else {
-      // Asegurar que el registro de Ramiro no tenga "Ing." en Firestore
+      // Asegurar que el registro de Ramiro tenga rol soporte y acceso a todos los tenants
       const docRef = doc(db, USUARIOS_COLLECTION, 'rnochezmc_gmail_com');
-      await setDoc(docRef, { nombre: 'Ramiro Nóchez' }, { merge: true });
+      await setDoc(docRef, { nombre: 'Ramiro Nóchez', rol: 'soporte', tenantId: 'all' }, { merge: true });
 
-      // Asegurar que la cuenta aroldoruiz100@gmail.com esté activa en Firestore
+      // Asegurar que la cuenta aroldoruiz100@gmail.com esté activa en Firestore vinculada a Lex Rosam
       const docRefH = doc(db, USUARIOS_COLLECTION, 'aroldoruiz100_gmail_com');
       await setDoc(docRefH, {
         id: 'aroldoruiz100_gmail_com',
         email: 'aroldoruiz100@gmail.com',
         nombre: 'Lic. Aroldo Ruiz',
         rol: 'admin',
-        titulo: 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026',
+        tenantId: 'lex-rosam',
+        activo: true
+      }, { merge: true });
+
+      // Asegurar que la cuenta cverdeavaluos@gmail.com esté vinculada a Cverde
+      const docRefCV = doc(db, USUARIOS_COLLECTION, 'cverdeavaluos_gmail_com');
+      await setDoc(docRefCV, {
+        id: 'cverdeavaluos_gmail_com',
+        email: 'cverdeavaluos@gmail.com',
+        nombre: 'Ing. Carlos Villagrán',
+        rol: 'admin',
+        tenantId: 'cverde',
+        titulo: 'Director C VERDE / Valuador Autorizado',
         activo: true
       }, { merge: true });
     }

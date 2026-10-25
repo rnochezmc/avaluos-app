@@ -8,8 +8,8 @@ import {
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
 import { fetchRgpPagesFromCloud } from '../firebase';
-import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
+import { getTenantConfig } from '../data/tenantsConfig';
 
 export default function AvaluoDetailModal({ 
   avaluo, 
@@ -21,6 +21,7 @@ export default function AvaluoDetailModal({
   onRemovePdf,
   onUploadPdf
 }) {
+  const avaluoTenant = getTenantConfig(avaluo?.tenantId || (avaluo?.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam'));
   const [activeTab, setActiveTab] = useState('registral');
   const [isRejecting, setIsRejecting] = useState(false);
   const [rejectionComment, setRejectionComment] = useState('');
@@ -212,16 +213,16 @@ export default function AvaluoDetailModal({
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-window" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '980px' }}>
         
-        {/* Modal Top Header with Lex Rosam Branding */}
-        <div className="modal-header" style={{ background: 'linear-gradient(135deg, #07172b 0%, #0d2847 100%)' }}>
+        {/* Modal Top Header with Tenant Branding */}
+        <div className="modal-header" style={{ background: avaluoTenant.colores?.gradientModal || 'linear-gradient(135deg, #07172b 0%, #0d2847 100%)' }}>
           <div className="modal-header-left">
-            <div style={{ background: '#ffffff', borderRadius: '6px', padding: '3px 5px', display: 'flex', alignItems: 'center' }}>
-              <img src="/lex-rosam-logo.png" alt="Lex Rosam" style={{ height: '28px', width: 'auto' }} />
+            <div style={{ background: '#ffffff', borderRadius: '6px', padding: '3px 6px', display: 'flex', alignItems: 'center' }}>
+              <img src={avaluoTenant.logoUrl || '/lex-rosam-logo.png'} alt={avaluoTenant.nombreCorto} style={{ height: '30px', width: 'auto', maxHeight: '30px' }} />
             </div>
             <div>
               <h2 style={{ color: '#ffffff' }}>EXPEDIENTE DE AVALÚO: {avaluo.codigo}</h2>
               <div className="modal-header-sub" style={{ color: '#cbd5e1' }}>
-                LEX ROSAM S.A. | {avaluo.solicitante} | {avaluo.tipoAvaluo}
+                {avaluoTenant.nombre} | {avaluo.solicitante} | {avaluo.tipoAvaluo}
               </div>
             </div>
           </div>
@@ -388,7 +389,7 @@ export default function AvaluoDetailModal({
           </div>
         </div>
 
-        {/* Modal de Regresar para Modificar (si Haroldo activó el botón) */}
+        {/* Modal de Regresar para Modificar (si Aroldo activó el botón) */}
         {isRejecting && (
           <div style={{ background: '#fef2f2', padding: '1rem 1.5rem', borderBottom: '2px solid #ef4444' }}>
             <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#991b1b', marginBottom: '0.4rem' }}>
@@ -480,7 +481,7 @@ export default function AvaluoDetailModal({
               onClick={() => setActiveTab('legal')}
             >
               <Scale size={16} />
-              <span>6. Dictamen Lex Rosam</span>
+              <span>6. Dictamen {avaluoTenant.nombreCorto}</span>
             </button>
           </div>
         </div>
@@ -836,7 +837,7 @@ export default function AvaluoDetailModal({
                 })}
               </div>
 
-              {/* DICABI Independiente - Formato Oficial Haroldo según cantidad de fincas */}
+              {/* DICABI Independiente - Formato Oficial Aroldo según cantidad de fincas */}
               <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
                 <Building size={16} />
                 <span>Dirección de Catastro y Avalúo de Bienes Inmuebles (DICABI) — {fincas.length} {fincas.length === 1 ? 'Cuadro' : 'Cuadros'}</span>
@@ -1321,17 +1322,17 @@ export default function AvaluoDetailModal({
             </div>
           )}
 
-          {/* TAB 6: DICTAMEN LEGAL LEX ROSAM */}
+          {/* TAB 6: DICTAMEN LEGAL TENANT */}
           {activeTab === 'legal' && (
             <div>
               <div className="form-section-title">
                 <Scale size={16} />
-                <span>Dictamen Bancario y Consideraciones Generales LEX ROSAM S.A.</span>
+                <span>Dictamen Bancario y Consideraciones Generales {avaluoTenant.nombre}</span>
               </div>
 
-              <div style={{ padding: '1.25rem', background: '#eff6ff', borderRadius: '8px', border: '1.5px solid #2563eb', marginBottom: '1.25rem' }}>
+              <div style={{ padding: '1.25rem', background: avaluoTenant.id === 'cverde' ? '#ecfdf5' : '#eff6ff', borderRadius: '8px', border: `1.5px solid ${avaluoTenant.colores?.primary || '#2563eb'}`, marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <strong style={{ color: '#1e40af' }}>Dictamen de Garantía Oficial (Pág. 6):</strong>
+                  <strong style={{ color: avaluoTenant.colores?.primary || '#1e40af' }}>Dictamen de Garantía Oficial (Pág. 6):</strong>
                   {onEdit && (
                     <button
                       type="button"
@@ -1339,14 +1340,14 @@ export default function AvaluoDetailModal({
                         onClose();
                         onEdit(avaluo);
                       }}
-                      style={{ background: '#ffffff', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '3px 8px', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      style={{ background: '#ffffff', color: avaluoTenant.colores?.primary || '#1e40af', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '3px 8px', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
                       <Edit3 size={13} /> Editar Dictamen
                     </button>
                   )}
                 </div>
                 <p style={{ marginTop: '0.4rem', color: '#0f172a', fontStyle: 'italic', lineHeight: 1.5 }}>
-                  {avaluo.dictamenGarantia || DEFAULT_DICTAMEN_GARANTIA}
+                  {avaluo.dictamenGarantia || avaluoTenant.dictamenDefault || DEFAULT_DICTAMEN_GARANTIA}
                 </p>
               </div>
 
@@ -1355,7 +1356,7 @@ export default function AvaluoDetailModal({
                 <p><strong>II.</strong> El presente avalúo se emite como una opinión técnica fundamentada en criterios profesionales y de buena fe.</p>
                 <p><strong>III.</strong> El informe se emite con fines informativos de garantía crediticia.</p>
                 <p><strong>IV.</strong> Datos registrales verificados mediante consulta electrónica oficial del Registro de la Propiedad.</p>
-                <p><strong>V.</strong> LEX ROSAM S.A. es una entidad independiente y no mantiene vínculo con las partes intervinientes.</p>
+                <p><strong>V.</strong> {avaluoTenant.nombre} es una entidad independiente y no mantiene vínculo con las partes intervinientes.</p>
               </div>
             </div>
           )}
@@ -1370,7 +1371,7 @@ export default function AvaluoDetailModal({
             type="button" 
             className="btn-primary" 
             onClick={handlePrint}
-            style={{ background: '#0d2847' }}
+            style={{ background: avaluoTenant.colores?.primary || '#0d2847' }}
           >
             <Printer size={15} style={{ display: 'inline', marginRight: '5px' }} />
             Imprimir Formato Oficial PDF

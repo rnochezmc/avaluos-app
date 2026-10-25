@@ -864,5 +864,220 @@ export const initialAvaluos = [
       dicabi: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"
     },
     consultasPdfs: []
+  },
+  {
+    id: "cv-2026-001",
+    codigo: "CV-2026-001",
+    tenantId: "cverde",
+    tipoAvaluo: "Residencial",
+    solicitante: "BANCO INDUSTRIAL, S.A.",
+    fechaSolicitud: "2026-08-05",
+    fechaInspeccion: "10 de agosto de 2026",
+    fechaActualizacion: "",
+    bienMostradoPor: "Ing. Carlos Enrique Villagrán",
+    direccion: "Km 18.5 Carretera a El Salvador, Condominio Los Encinos, Lote 45, Manzana C, Fraijanes, Guatemala",
+    coordenadas: "14.52184, -90.45892",
+    descripcionGeneral: "Residencia campestre de dos niveles con estructura de concreto armado, techo de teja decorativa sobre losa, finos acabados de madera tratada, jardín frontal, pérgola social y garaje techado para 3 vehículos.",
+    dpi: "2541 68912 0101",
+    referenciaActualizacion: "Avalúo comercial formal para garantía hipotecaria",
+    estado: "autorizado",
+    observacionesAutorizador: "Inspección técnica física y análisis de mercado conformes a normativas bancarias. Garantía calificada de primer orden.",
+    aplicaTerreno: true,
+    dictamenGarantia: "“El inmueble reúne las condiciones técnicas, físicas y de mercado requeridas para constituir garantía fiduciaria o hipotecaria ante entidades del sistema bancario nacional, según las normativas y políticas crediticias vigentes.”",
+    valuadorPrincipal: "Ing. Carlos Enrique Villagrán",
+    registroPrincipal: "Perito Valuador Autorizado DICABI No. 1845-V",
+    valuadorRevisor: "Lic. Roberto Morales Solares",
+    registroRevisor: "Valuador Autorizado 412-T-2018",
+    incluirFirmaRevisor: true,
+    
+    fincas: [
+      { 
+        finca: "3412", 
+        folio: "112", 
+        libro: "45E de Guatemala", 
+        propietario: "Desarrollos Campestres Los Encinos, S.A.",
+        areaRegistrada: 450.00,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 450.00,
+        areaFisica: 450.00,
+        areaValuada: 450.00,
+        dicabiNombre: "Desarrollos Campestres Los Encinos, S.A.",
+        dicabiDireccion: "Km 18.5 Carretera a El Salvador, Condominio Los Encinos, Lote 45",
+        dicabiMatricula: "01-08-4123-5",
+        dicabiArea: "450.00 m²",
+        dicabiObservaciones: "Inmueble solvente en IUSI municipal de Fraijanes."
+      }
+    ],
+
+    colindancias: {
+      norte: "Con Lote 46 en 30.00 metros",
+      sur: "Con Lote 44 en 30.00 metros",
+      este: "Con calle principal del condominio en 15.00 metros",
+      oeste: "Con área verde comunal en 15.00 metros",
+      norteFisica: "Muro perimetral propio de block visto",
+      surFisica: "Muro medianero con vivienda vecina",
+      esteFisica: "Portón de ingreso vehicular y peatonal",
+      oesteFisica: "Muro perimetral colindante a bosque de pinos"
+    },
+
+    formaTerreno: "Regular / Rectangular",
+    pendiente: "Inclinación suave hacia el este (2%)",
+    orientacion: "Oriente",
+    
+    servicios: {
+      agua: true,
+      drenajes: true,
+      electricidad: true,
+      alumbrado: true,
+      pavimento: true,
+      aceras: true,
+      telefono: true,
+      cable: true,
+      internet: true,
+      transporte: true,
+      seguridad: true,
+      pozoPropio: true,
+      garita: true
+    },
+
+    valorComercialGTQ: 2150000,
+    valorBancarioGTQ: 1720000,
+    valorComercialUSD: 281937,
+    valorBancarioUSD: 225550,
+    tipoCambio: 7.62581,
+    
+    factores: {
+      ubicacion: "Sector campestre de alta plusvalía residencial en Fraijanes.",
+      entorno: "Condominio cerrado de alta categoría con garita de control 24/7.",
+      acceso: "Boulevard principal asfaltado de cuatro carriles.",
+      tendencia: "Crecimiento inmobiliario y consolidación residencial sostenida.",
+      factoresPositivos: "Entorno natural con amplias áreas verdes y excelente seguridad privada.",
+      factoresNegativos: "Tráfico vehicular en horas pico sobre Carretera a El Salvador."
+    },
+    
+    desgloseTerreno: { 
+      area: 450.00, 
+      unidad: "m²", 
+      valorUnitario: 1800, 
+      total: 810000,
+      fincaAsociada: "3412",
+      varasCuadradas: 644.02
+    },
+    desgloseConstruccion: { 
+      area: 320.00, 
+      unidad: "m²", 
+      valorUnitario: 4187.50, 
+      total: 1340000 
+    },
+    
+    fotos: {
+      entorno: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+      ingreso: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80",
+      interior: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80",
+      ubicacion: "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80",
+      croquis: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80",
+      dicabi: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"
+    },
+    consultasPdfs: []
+  },
+  {
+    id: "cv-2026-002",
+    codigo: "CV-2026-002",
+    tenantId: "cverde",
+    tipoAvaluo: "Comercial",
+    solicitante: "BANCO AGROMERCANTIL (BAM)",
+    fechaSolicitud: "2026-08-14",
+    fechaInspeccion: "16 de agosto de 2026",
+    fechaActualizacion: "",
+    bienMostradoPor: "Ing. Carlos Enrique Villagrán",
+    direccion: "4ta Avenida 12-59 Zona 10, Plaza Comercial Fontabella, Local 204, Ciudad de Guatemala",
+    coordenadas: "14.59821, -90.51231",
+    descripcionGeneral: "Local comercial ubicado en segundo nivel de prestigiosa plaza comercial en Zona Viva. Cuenta con mezzanine, vitrina de exhibición en vidrio templado y acabados corporativos.",
+    dpi: "1982 45120 0101",
+    referenciaActualizacion: "Valuación comercial para garantía de línea de crédito",
+    estado: "revision",
+    observacionesAutorizador: "Pendiente confirmación de solvencia de cuota de mantenimiento de la plaza.",
+    aplicaTerreno: false,
+    dictamenGarantia: "“El inmueble reúne las condiciones técnicas, físicas y de mercado requeridas para constituir garantía fiduciaria o hipotecaria ante entidades del sistema bancario nacional, según las normativas y políticas crediticias vigentes.”",
+    valuadorPrincipal: "Ing. Carlos Enrique Villagrán",
+    registroPrincipal: "Perito Valuador Autorizado DICABI No. 1845-V",
+    valuadorRevisor: "Lic. Roberto Morales Solares",
+    registroRevisor: "Valuador Autorizado 412-T-2018",
+    incluirFirmaRevisor: true,
+    
+    fincas: [
+      { 
+        finca: "7820", 
+        folio: "120", 
+        libro: "180E de Propiedad Horizontal de Guatemala", 
+        propietario: "Inversiones Comerciales Plaza Viva, S.A.",
+        areaRegistrada: 85.50,
+        areaDesmembrada: 0.00,
+        areaActualRegistrada: 85.50,
+        areaFisica: 85.50,
+        areaValuada: 85.50,
+        dicabiNombre: "Inversiones Comerciales Plaza Viva, S.A.",
+        dicabiDireccion: "4ta Avenida 12-59 Zona 10, Local 204",
+        dicabiMatricula: "01-10-8912-3",
+        dicabiArea: "85.50 m²",
+        dicabiObservaciones: "Matrícula fiscal de filial en PH."
+      }
+    ],
+
+    colindancias: {
+      norte: "Con pasillo de circulación comercial en 7.00 metros",
+      sur: "Con Local 203 en 12.21 metros",
+      este: "Con Local 205 en 12.21 metros",
+      oeste: "Con fachada exterior en 7.00 metros"
+    },
+
+    formaTerreno: "Regular",
+    pendiente: "Plano (Nivel 2)",
+    orientacion: "Poniente",
+    
+    servicios: {
+      agua: true,
+      drenajes: true,
+      electricidad: true,
+      alumbrado: true,
+      pavimento: true,
+      aceras: true,
+      telefono: true,
+      cable: true,
+      internet: true,
+      transporte: true,
+      seguridad: true,
+      pozoPropio: false,
+      garita: true
+    },
+
+    valorComercialGTQ: 1850000,
+    valorBancarioGTQ: 1480000,
+    valorComercialUSD: 242597,
+    valorBancarioUSD: 194078,
+    tipoCambio: 7.62581,
+    
+    desgloseTerreno: { 
+      area: 0, 
+      unidad: "m²", 
+      valorUnitario: 0, 
+      total: 0 
+    },
+    desgloseConstruccion: { 
+      area: 85.50, 
+      unidad: "m²", 
+      valorUnitario: 21637.42, 
+      total: 1850000 
+    },
+    
+    fotos: {
+      entorno: "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&w=800&q=80",
+      ingreso: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
+      interior: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=800&q=80",
+      ubicacion: "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80",
+      croquis: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80",
+      dicabi: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"
+    },
+    consultasPdfs: []
   }
 ];

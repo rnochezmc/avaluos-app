@@ -20,6 +20,7 @@ export default function UserManagementModal({
     nombre: '',
     email: '',
     rol: 'valuador',
+    tenantId: 'lex-rosam',
     titulo: 'Valuador Técnico de Ingreso',
     activo: true
   });
@@ -29,6 +30,7 @@ export default function UserManagementModal({
       nombre: '',
       email: '',
       rol: 'valuador',
+      tenantId: 'lex-rosam',
       titulo: 'Valuador Técnico de Ingreso',
       activo: true
     });
@@ -43,6 +45,7 @@ export default function UserManagementModal({
       nombre: cleanNombre,
       email: u.email || '',
       rol: u.rol || 'valuador',
+      tenantId: u.tenantId || (u.email === 'cverdeavaluos@gmail.com' ? 'cverde' : u.email === 'rnochezmc@gmail.com' ? 'all' : 'lex-rosam'),
       titulo: u.titulo || '',
       activo: u.activo !== false
     });
@@ -87,6 +90,7 @@ export default function UserManagementModal({
         nombre: formUser.nombre.trim(),
         email: formUser.email.toLowerCase().trim(),
         rol: formUser.rol,
+        tenantId: formUser.tenantId || 'lex-rosam',
         titulo: formUser.titulo.trim() || (
           formUser.rol === 'admin' ? 'Aprobador / Autorizador Oficial' : 
           formUser.rol === 'soporte' ? 'Soporte Técnico' : 
@@ -364,6 +368,28 @@ export default function UserManagementModal({
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
+                    Empresa Asignada (Multi-Tenant) *
+                  </label>
+                  <select
+                    value={formUser.tenantId || 'lex-rosam'}
+                    onChange={(e) => setFormUser({ ...formUser, tenantId: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.75rem',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.85rem',
+                      background: '#ffffff'
+                    }}
+                  >
+                    <option value="lex-rosam">LEX ROSAM, S.A.</option>
+                    <option value="cverde">C VERDE, S.A.</option>
+                    <option value="all">Todas las Empresas (SuperAdmin)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
                     Cargo o Título Profesional
                   </label>
                   <input
@@ -459,17 +485,32 @@ export default function UserManagementModal({
                         {u.email}
                       </td>
                       <td style={{ padding: '0.75rem 1rem' }}>
-                        <span style={{
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '12px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          background: badge.bg,
-                          color: badge.color,
-                          border: `1px solid ${badge.border}`
-                        }}>
-                          {badge.label}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                          <span style={{
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            background: badge.bg,
+                            color: badge.color,
+                            border: `1px solid ${badge.border}`
+                          }}>
+                            {badge.label}
+                          </span>
+                          {(u.tenantId === 'cverde' || u.email === 'cverdeavaluos@gmail.com') ? (
+                            <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#ecfdf5', color: '#004e3b', border: '1px solid #a7f3d0' }}>
+                              C VERDE
+                            </span>
+                          ) : (u.tenantId === 'all' || u.email === 'rnochezmc@gmail.com') ? (
+                            <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe' }}>
+                              TODAS
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#eff6ff', color: '#002B49', border: '1px solid #bfdbfe' }}>
+                              LEX ROSAM
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td style={{ padding: '0.75rem 1rem' }}>
                         {u.activo !== false ? (

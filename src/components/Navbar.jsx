@@ -11,7 +11,10 @@ export default function Navbar({
   onRoleChange,
   currentUser,
   onSignOut,
-  onOpenUserManagement
+  onOpenUserManagement,
+  currentTenant,
+  selectedTenantId = 'lex-rosam',
+  onSelectTenant
 }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
@@ -34,19 +37,24 @@ export default function Navbar({
   }, [showUserMenu]);
 
   const canManageUsers = currentUser?.rol === 'admin' || currentUser?.rol === 'soporte';
+  const canSwitchTenant = currentUser?.rol === 'admin' || currentUser?.rol === 'soporte' || currentUser?.tenantId === 'all';
 
   const getRoleDisplayName = () => {
-    if (currentUser?.rol === 'admin') return 'Lic. Aroldo Ruiz (Dueño / Autorizador)';
+    if (currentUser?.email === 'aroldoruiz100@gmail.com' || (currentUser?.rol === 'admin' && (selectedTenantId === 'lex-rosam' || selectedTenantId === 'todos'))) {
+      return 'Lic. Aroldo Ruiz (Dueño y Administrador)';
+    }
+    if (currentUser?.rol === 'admin' && selectedTenantId === 'cverde') {
+      return 'Ing. Carlos Villagrán (Director C VERDE)';
+    }
     if (currentUser?.rol === 'soporte') return 'Ramiro Nóchez (Soporte Técnico)';
     if (currentUser?.rol === 'valuador') return 'Ing. Auxiliar (Valuador Técnico)';
     if (currentUser?.rol === 'lector') return 'Usuario de Consulta';
     return (currentUser?.nombre || 'Usuario');
   };
 
-
   const getRoleBadge = () => {
-    if (currentUser?.rol === 'admin') return 'Aprobador Oficial';
-    if (currentUser?.rol === 'soporte') return 'SuperAdmin';
+    if (currentUser?.email === 'aroldoruiz100@gmail.com' || currentUser?.rol === 'admin') return 'Dueño / Administrador';
+    if (currentUser?.rol === 'soporte') return 'Soporte Técnico';
     if (currentUser?.rol === 'valuador') return 'Ingreso Técnico';
     return 'Lector';
   };
@@ -55,18 +63,24 @@ export default function Navbar({
     if (currentUser?.nombre) {
       return currentUser.nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
     }
-    return (currentUser?.email || 'LR').slice(0, 2).toUpperCase();
+    return (currentTenant?.nombreCorto || 'LR').slice(0, 2).toUpperCase();
   };
 
+  const navbarGradient = selectedTenantId === 'cverde'
+    ? (currentTenant?.colores?.gradientNavbar || 'linear-gradient(135deg, #002c22 0%, #004e3b 50%, #007956 100%)')
+    : 'linear-gradient(135deg, #07172b 0%, #0d2847 50%, #16325c 100%)';
+
+  const navbarLogo = selectedTenantId === 'cverde' ? '/cverde-logo.jpg' : '/lex-rosam-logo.png';
+
   return (
-    <header className="top-navbar" style={{ background: 'linear-gradient(135deg, #07172b 0%, #0d2847 50%, #16325c 100%)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+    <header className="top-navbar" style={{ background: navbarGradient, borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
       <div className="navbar-content">
         {/* Brand Logo & Title */}
         <div className="brand-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
           <div style={{ background: '#ffffff', borderRadius: '8px', padding: '4px 6px', display: 'flex', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
             <img 
-              src="/lex-rosam-logo.png" 
-              alt="Lex Rosam S.A." 
+              src={navbarLogo} 
+              alt={selectedTenantId === 'cverde' ? 'C VERDE' : 'LEX ROSAM'} 
               style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
               onError={(e) => {
                 e.target.onerror = null;
@@ -75,12 +89,103 @@ export default function Navbar({
             />
           </div>
           <div className="brand-text">
-            <h1 style={{ color: '#ffffff', letterSpacing: '0.04em', fontSize: '1.25rem', margin: 0 }}>LEX ROSAM</h1>
+            <h1 style={{ color: '#ffffff', letterSpacing: '0.04em', fontSize: '1.25rem', margin: 0 }}>
+              {selectedTenantId === 'cverde' ? 'C VERDE' : 'LEX ROSAM'}
+            </h1>
             <p style={{ color: '#cbd5e1', fontSize: '0.72rem', letterSpacing: '0.02em', textTransform: 'uppercase', margin: 0 }}>
-              Sociedad Anónima · Avalúos
+              {selectedTenantId === 'todos' 
+                ? 'Sociedad Anónima · Avalúos (Consolidado)' 
+                : (currentTenant?.tipoEntidad || 'Sociedad Anónima · Avalúos')}
             </p>
           </div>
         </div>
+
+        {/* Selector de Tenant para SuperAdmin / Soporte Técnico */}
+        {canSwitchTenant && (
+          <div 
+            className="tenant-selector-pill desktop-only" 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              background: 'rgba(0, 0, 0, 0.32)', 
+              padding: '3px 4px', 
+              borderRadius: '9999px', 
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              gap: '3px'
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => onSelectTenant && onSelectTenant('lex-rosam')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '0.25rem 0.65rem',
+                borderRadius: '9999px',
+                border: 'none',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: selectedTenantId === 'lex-rosam' ? '#0d2847' : 'transparent',
+                color: selectedTenantId === 'lex-rosam' ? '#ffffff' : '#cbd5e1',
+                boxShadow: selectedTenantId === 'lex-rosam' ? '0 2px 6px rgba(0,0,0,0.4), inset 0 0 0 1px #38bdf8' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+              title="Filtrar y emitir como LEX ROSAM S.A."
+            >
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#38bdf8' }} />
+              <span>LEX ROSAM</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onSelectTenant && onSelectTenant('cverde')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '0.25rem 0.65rem',
+                borderRadius: '9999px',
+                border: 'none',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: selectedTenantId === 'cverde' ? '#004e3b' : 'transparent',
+                color: selectedTenantId === 'cverde' ? '#ffffff' : '#cbd5e1',
+                boxShadow: selectedTenantId === 'cverde' ? '0 2px 6px rgba(0,0,0,0.4), inset 0 0 0 1px #00bb7f' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+              title="Filtrar y emitir como C VERDE S.A."
+            >
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00bb7f' }} />
+              <span>C VERDE</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onSelectTenant && onSelectTenant('todos')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '0.25rem 0.65rem',
+                borderRadius: '9999px',
+                border: 'none',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: selectedTenantId === 'todos' ? '#334155' : 'transparent',
+                color: selectedTenantId === 'todos' ? '#ffffff' : '#94a3b8',
+                boxShadow: selectedTenantId === 'todos' ? '0 2px 6px rgba(0,0,0,0.4)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+              title="Vista global de todos los expedientes de todas las empresas"
+            >
+              <span>Todas</span>
+            </button>
+          </div>
+        )}
 
         <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {/* Cloud Sync Status Badge */}
@@ -111,7 +216,7 @@ export default function Navbar({
             <span className="desktop-only">{cloudStatus === 'conectado' ? 'En Línea' : 'Local'}</span>
           </div>
 
-          {/* Botón de Gestión de Usuarios (visible para Haroldo y Ramiro) */}
+          {/* Botón de Gestión de Usuarios (visible para Aroldo y Ramiro) */}
           {canManageUsers && (
             <button
               type="button"
@@ -235,7 +340,7 @@ export default function Navbar({
                   </div>
                 </div>
 
-                {/* Acceso a Gestión de Usuarios si es Haroldo o Ramiro */}
+                {/* Acceso a Gestión de Usuarios si es Aroldo o Ramiro */}
                 {canManageUsers && (
                   <button
                     type="button"
@@ -267,7 +372,7 @@ export default function Navbar({
                   </button>
                 )}
 
-                {/* Simulador rápido de rol (útil para Haroldo probar la vista del auxiliar) */}
+                {/* Simulador rápido de rol (útil para Aroldo probar la vista del auxiliar) */}
                 <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '6px', paddingTop: '6px' }}>
                   <div style={{ padding: '4px 12px', fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
                     Simular vista de rol

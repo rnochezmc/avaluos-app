@@ -1401,7 +1401,6 @@ img {
 }
 
 .pdf-blue-table th {
-  background-color: #1e3a8a !important;
   color: #ffffff !important;
   font-weight: 700;
   padding: 0.45rem 0.6rem;
@@ -1588,7 +1587,6 @@ img {
   }
 
   .pdf-blue-table th {
-    background-color: #1e3a8a !important;
     color: #ffffff !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
