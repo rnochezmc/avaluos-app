@@ -1,125 +1,99 @@
-# C VERDE — Sistema de Registro, Control y Manejo de Avalúos
+# Plataforma de Gestión, Valuación y Emisión de Avalúos (Multi-Tenant)
 
-Aplicación web progresiva (PWA) responsiva para la gestión integral de avalúos comerciales, residenciales e industriales, basada en el formato oficial de **C VERDE S.A. / Avalúos & Negocios Inmobiliarios** (Guatemala).
-
----
-
-## 📌 Contexto del Proyecto
-
-* **Propietario / Contacto Principal**: Lic. Aroldo Oliverio Ruiz Orozco (Valuador autorizado 2572-R-2026).
-* **Valuador Revisor**: Lic. Luis Felipe Tolaque Tobias (Valuador autorizado 193-T-93).
-* **Entidades bancarias soportadas**: Banco G&T Continental, Banco Industrial, Banco Agromercantil (BAM), Banrural, BAC Credomatic.
-* **Objetivo de la Fase 1**: Base de datos de acceso gratuito y ágil para Aroldo desde su celular y computadora, sin costos recurrentes de servidores, con almacenamiento de datos y fotografías de campo.
-* **Objetivo de la Fase 2 (Monetizable)**: Integración con Inteligencia Artificial (Gemini Multimodal) para escaneo OCR de documentos del Registro General de la Propiedad (RGP) / DICABI, redacción automatizada de dictámenes y exportación automática a PDF oficial.
+Aplicación web profesional de alto rendimiento diseñada para la administración integral de avalúos comerciales, residenciales, bancarios e industriales en Guatemala. Cuenta con una arquitectura **Multi-Tenant** que permite operar de forma aislada o consolidada las firmas **LEX ROSAM, S.A.** y **C VERDE, S.A.**
 
 ---
 
-## 🚀 Inicio Rápido (Comandos)
+## 🏛️ Entidades y Arquitectura Multi-Tenant
 
-El proyecto está construido con React 19 + Vite y estilizado con un sistema de diseño propio en Vanilla CSS.
+La plataforma soporta la operación independiente de dos firmas con identidades, numeraciones, firmantes y colores corporativos diferenciados, administradas centralizadamente desde [src/data/tenantsConfig.js](src/data/tenantsConfig.js):
 
-```bash
-# 1. Ingresar a la carpeta del proyecto
-cd /Users/rnochezmc/.gemini/antigravity-ide/scratch/avaluos-app
+| Firma | Identificador | Correlativo | Paleta Corporativa | Sitio / Contacto |
+| :--- | :---: | :---: | :---: | :--- |
+| **LEX ROSAM, S.A.** | `lex-rosam` | `LR-2026-XXX` | Azul Marino (`#0d2847`) & Slate (`#1b497d`) | [lexrosam.com](https://lexrosam.com/) |
+| **C VERDE, S.A.** | `cverde` | `CV-2026-XXX` | Verde Bosque (`#004e3b`) & Esmeralda (`#007956`) | [cverde.com.gt](https://cverde.com.gt) |
+| **Modo Consolidado** | `all` *(Todas)* | Mixto | Vista Unificada Ejecutiva | Control Maestro |
 
-# 2. Instalar dependencias (si es necesario)
-npm install
+### Selector de Empresa en Barra Superior (Navbar)
+* **Filtrado por Empresa**: Permite enfocar la pantalla en **LEX ROSAM** o en **C VERDE**. Al seleccionar una entidad, las métricas del dashboard, los expedientes mostrados, los correlativos sugeridos y los temas visuales se adaptan automáticamente a dicha firma.
+* **Modo "Todas" (Consolidado)**: Diseñado para la dirección general de **Lic. Aroldo Ruiz**, permitiendo visualizar la cartera completa combinada, exportar respaldos consolidados y auditar todos los expedientes en un solo lugar.
+* **Aislamiento por Expediente**: Cada avalúo almacena su campo `tenantId`. Sin importar en qué vista se encuentre el usuario, cada avalúo individual conservará siempre su identidad, su membrete oficial, sus datos de contacto y sus colores propios.
 
-# 3. Iniciar el servidor local de desarrollo
-npm run dev
+---
 
-# 4. Compilar para producción
-npm run build
-```
+## 👥 Equipo y Roles del Sistema
 
-Servidor de desarrollo por defecto: **http://127.0.0.1:5173/**
+1. **Lic. Aroldo Ruiz** — *Dueño y Administrador de la Plataforma*:
+   - Valuador Autorizado No. 2572-R-2026.
+   - Acceso irrestricto a todas las empresas (`tenantId: 'all'`).
+   - Gestión de usuarios y colaboradores del equipo.
+   - Aprobación final de avalúos y habilitación de modificaciones para técnicos de campo.
+2. **Ramiro Nóchez** — *Soporte Técnico (Technical Support)*:
+   - Configuración de infraestructura, soporte de software y mantenimiento evolutivo.
+3. **Colaboradores y Técnicos de Campo**:
+   - Levantamiento de fichas, registro de inspección, toma de fotografías y captura de coordenadas satelitales.
 
 ---
 
 ## 🔍 Funcionalidades Principales
 
 ### 1. Motor de Búsqueda Omnicanal (Omnisearch)
-* **Búsqueda en tiempo real**: Por código de expediente (`LR-2026-001`), nombre del propietario (`Las Cumbres`, `Mendoza`), banco solicitante (`G&T`, `BAM`), dirección / sector (`Zona 10`, `Fraijanes`) o datos registrales (`Finca 4521`, `Folio 21`, `Libro 85E`).
-* **Filtros por Estado**: Todos, Completados, En Proceso, Borradores.
-* **Filtros por Tipo de Bien**: Comercial, Residencial, Industrial, Finca/Terreno.
-* **Filtros por Banco Solicitante**.
-* **Doble Modo de Vista**: Modo Tarjetas (ideal para teléfono móvil) y Modo Tabla (alta densidad para computadora).
+* **Búsqueda en tiempo real**: Por código (`LR-2026-001`, `CV-2026-072`), nombre de propietario o solicitante, banco (`G&T`, `Industrial`, `BAM`, `Banrural`), dirección física o datos registrales (`Finca`, `Folio`, `Libro`).
+* **Filtros Avanzados**: Por Empresa (Tenant), Estado (Borrador, En Proceso, Completado), Tipo de Inmueble y Banco Solicitante.
+* **Doble Modo de Visualización**: Modo Tarjetas (diseñado para teléfonos y tablets) y Modo Tabla (alta densidad de datos para computadora).
 
-### 2. Visor y Asistente de Creación de Expedientes
-* **Formulario por Pasos (Wizard)**:
-  1. *Solicitud e Identificación*: Código, banco, dirección y botón **"Usar mi GPS actual"** (toma las coordenadas satelitales en el terreno).
-  2. *Información Registral*: Fincas dinámicas (Finca, Folio, Libro, Propietario) y comparación de áreas (Registrada, Desmembrada, Física y Valuada en m²).
-  3. *Terreno y Servicios*: Matrícula DICABI, topografía, colindancias cardinales y checklist de 12 servicios públicos.
-  4. *Construcción y Valores*: Cuadros matemáticos con **cálculo automático de subtotales**, valor comercial, valor bancario (80%) y conversión a dólares según el Tipo de Cambio del Banco de Guatemala.
-  5. *Álbum Fotográfico*: Carga o captura directa con la cámara del celular en 6 categorías (Entorno, Ingreso, Interiores, Ubicación Satelital, Croquis y Boleta DICABI).
+### 2. Asistente Integral de Creación y Edición de Expedientes
+* **Captura GPS Satelital**: Botón con geolocalización directa de coordenadas in situ (`lat, lng`).
+* **Soporte Multi-Finca**: Registro detallado de múltiples fincas, folios y libros, con áreas individualizadas (Original Registrada, Desmembrada, Física y Valuada).
+* **Fórmula Oficial de Conversión**: Cálculo automático de varas cuadradas ($v^2 = m^2 \times 1.43115$).
+* **Régimen de Propiedad Horizontal**: Interruptor (*toggle*) para activar o desactivar la valoración del terreno en apartamentos y edificios en PH.
+* **Fechas Mutuamente Excluyentes**: Control estricto entre *Fecha de Inspección* y *Fecha de Actualización* según normativa bancaria.
+* **Valoración Dual**: Cuadros de Valuación Comercial y Valuación Bancaria (80%) con conversión automática a Dólares según el Tipo de Cambio del Banco de Guatemala.
+* **Dictamen de Garantía Editable**: Selección rápida de plantillas oficiales con posibilidad de personalización para casos especiales.
+* **31 Servicios Públicos e Infraestructura**: Checklist completo estandarizado para inspección de campo.
 
-### 3. Impresión Oficial de 9 Páginas Idéntica al Formato Cverde
-* Al presionar **"Imprimir"** en cualquier expediente se despliega la **Vista Previa Oficial**:
-  * **Página 1**: Solicitante, fechas, coordenadas, resumen registral y áreas.
-  * **Página 2**: Limitaciones, cuadro de valores (Q y USD), tipo de cambio y firmas de los dos valuadores autorizados.
-  * **Página 3**: Calificación de garantía y las 6 consideraciones generales del informe.
-  * **Página 4**: Consulta a distancia, RGP, IUSI, áreas y aspectos legales.
-  * **Página 5**: Dirección de Catastro (DICABI), características del terreno y colindancias.
-  * **Página 6**: Servicios públicos y características constructivas.
-  * **Página 7**: Dictamen de garantía y los **dos cuadros de valoración oficiales con encabezados azules** (Terreno y Construcción).
-  * **Página 8**: Galería fotográfica con 5 recuadros numerados.
-  * **Página 9**: Matrícula DICABI y consultas electrónicas RGP.
-* Reglas `@media print` integradas para generar el PDF limpio a través de `Cmd + P`.
+### 3. Carga y Procesamiento de Documentos Registrales (RGP y DICABI)
+* **Certificaciones Electrónicas RGP**: Carga de archivos PDF del Registro General de la Propiedad, procesados mediante PDF.js y presentados a **1 página por hoja** para garantizar total legibilidad de firmas, sellos y razones registrales.
+* **Almacenamiento Híbrido Resiliente**: Almacenamiento seguro en Google Cloud Firestore con soporte offline e IndexedDB para documentos de gran tamaño.
+* **Álbum Fotográfico Completo**: Entorno, Ingreso, Interiores, Ubicación Satelital, Croquis y Boleta DICABI.
 
-### 4. Seguridad de Datos y Cero Costo
-* **Persistencia local inmediata** en `localStorage`.
-* **Exportar BD**: Descarga un archivo `.json` de respaldo de todos los expedientes y fotos.
-* **Restaurar BD**: Carga la base de datos completa en cualquier momento.
-
----
-
-## 🎨 Ajuste Final de Nombre de Empresa y Colores Institucionales
-
-Cuando Haroldo confirme el nombre definitivo y los colores oficiales:
-
-1. **Datos de la Empresa / Membrete**: En `src/components/OfficialReportPrintView.jsx`:
-   ```javascript
-   const company = {
-     name: "C VERDE", // Reemplazar por el nombre definitivo
-     tagline: "AVALÚOS & NEGOCIOS INMOBILIARIOS",
-     phone: "+502 6203-0795",
-     emails: "oruiz@cverde.com.gt   jmmorales@cverde.com.gt",
-     logoColor: "#0f5132",
-     accentColor: "#198754"
-   };
-   ```
-2. **Colores en la Web App**: En `src/index.css`:
-   ```css
-   :root {
-     --cverde-primary: #064e3b; /* Color institucional principal */
-     --cverde-accent: #059669;  /* Color de acento / detalles */
-     /* ... */
-   }
-   ```
+### 4. Informe Oficial de Impresión Idéntico al Formato Físico
+* Vista previa de alta fidelidad que replica exactamente el estándar oficial de 9+ páginas:
+  - **Página 1**: Identificación del inmueble, solicitante, coordenadas y cuadro de *RESÚMENES*.
+  - **Página 2**: Limitaciones, dictamen resumido, cuadro de valores y firmas autorizadas.
+  - **Página 3**: Calificación de garantía y consideraciones generales del informe.
+  - **Página 4**: Consulta a distancia, antecedentes registrales, desglose de áreas y aspectos legales.
+  - **Página 5**: Dirección de Catastro (DICABI), características del terreno y colindancias por rumbo cardinal (físicas y registrales).
+  - **Página 6**: Servicios e infraestructura, características constructivas y **1. Valuación Comercial** (Terreno y Construcción).
+  - **Página 7**: **2. Valuación Bancaria**, cuadros de liquidación bancaria (80%) y cláusula de cierre.
+  - **Páginas 8+**: Registro fotográfico numerado.
+  - **Páginas Finales**: Matrícula DICABI y certificaciones electrónicas del RGP (desglosadas a página completa).
+* **Colores Corporativos Dinámicos**: Tanto en pantalla como al imprimir (`Cmd + P` o exportar PDF), los encabezados y recuadros de valuación adoptan el color de la empresa emisora (**Verde Bosque** `#004e3b` para C VERDE, **Azul Marino** `#0d2847` para LEX ROSAM).
 
 ---
 
-## 📁 Estructura del Proyecto
+## 🛠️ Tecnologías Utilizadas
 
-```text
-avaluos-app/
-├── index.html                           # Entrada HTML con fuentes Google (Outfit e Inter)
-├── package.json                         # Dependencias (React, Lucide-React, Vite)
-├── README.md                            # Documentación del proyecto
-└── src/
-    ├── main.jsx                         # Punto de montaje React
-    ├── App.jsx                          # Estado global, búsqueda, filtros y modales
-    ├── index.css                        # Tokens CSS, diseño responsivo y reglas @media print
-    ├── data/
-    │   └── mockAvaluos.js               # Expedientes de prueba con datos reales de Guatemala
-    └── components/
-        ├── Navbar.jsx                   # Barra superior con logo, respaldo y perfil
-        ├── SearchAndFilters.jsx         # Motor omnisearch, filtros de estado/banco y vistas
-        ├── StatsOverview.jsx            # Indicadores de cartera (Totales Q y USD)
-        ├── AvaluoCard.jsx               # Tarjeta responsiva con fotos y acciones rápidas
-        ├── AvaluoTable.jsx              # Vista tabular para computadora
-        ├── AvaluoDetailModal.jsx        # Visor interactivo del expediente por pestañas
-        ├── AvaluoFormModal.jsx          # Asistente de creación con captura GPS y fotos
-        ├── OfficialReportPrintView.jsx  # Replicación exacta de las 9 páginas para imprimir/PDF
-        └── MobileBottomNav.jsx          # Barra inferior para navegación en smartphones
+* **Frontend**: React 19, JavaScript moderno (ESNext), Vite 8.
+* **Estilizado**: Vanilla CSS con variables CSS personalizadas, diseño responsivo y optimización de impresión `@media print`.
+* **Iconografía**: Lucide React.
+* **Renderizado de PDFs**: PDF.js (`pdfjs-dist`).
+* **Backend y Almacenamiento**: Google Firebase (Cloud Firestore y Authentication).
+
+---
+
+## 💻 Comandos de Desarrollo
+
+```bash
+# Instalar dependencias
+npm install
+
+# Iniciar servidor de desarrollo local
+npm run dev
+
+# Compilar paquete de producción
+npm run build
+
+# Análisis de código (Linter)
+npm run lint
 ```
