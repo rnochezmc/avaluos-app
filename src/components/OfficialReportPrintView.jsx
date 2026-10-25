@@ -1,11 +1,10 @@
 import React from 'react';
-import { X, Printer, ArrowLeft, FileText, Download, ExternalLink } from 'lucide-react';
+import { X, Printer, ArrowLeft, FileText } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 import { extractAllRgpPages } from '../utils/pdfHelper';
+import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
 
 export default function OfficialReportPrintView({ avaluo, onClose, config = {} }) {
-  if (!avaluo) return null;
-
   // Official LEX ROSAM S.A. Branding
   const company = {
     name: config.name || "LEX ROSAM",
@@ -188,7 +187,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
         (avaluo.descripcionGeneral && avaluo.descripcionGeneral.toLowerCase().includes('apartamento'))
       );
 
-  const isApartamento = !aplicaTerreno;
+  const _isApartamento = !aplicaTerreno;
 
   // Totales comerciales (100%) y bancarios (80%)
   const tc = Number(avaluo.tipoCambio) || 7.62581;
@@ -312,20 +311,12 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
     return pages;
   }, [normalizedFotos, hasAnyPhoto]);
 
-  // Si hay más de 2 páginas de certificaciones RGP, se distribuyen en páginas de continuación
-  const rgpContinuationPages = React.useMemo(() => {
-    if (rgpPages.length <= 2) return [];
-    const remaining = rgpPages.slice(2);
-    const chunks = [];
-    for (let i = 0; i < remaining.length; i += 2) {
-      chunks.push(remaining.slice(i, i + 2));
-    }
-    return chunks;
-  }, [rgpPages]);
-
   const totalPhotoPages = hasAnyPhoto ? photoPages.length : 0;
   const dicabiPageNum = hasAnyPhoto ? (8 + totalPhotoPages) : 8;
-  const totalPages = dicabiPageNum + rgpContinuationPages.length;
+  const totalRgpPages = rgpPages.length;
+  const totalPages = dicabiPageNum + totalRgpPages;
+
+  if (!avaluo) return null;
 
   return (
     <div className="print-modal-overlay">
@@ -579,15 +570,17 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
             </div>
 
             {/* Firmas de los Valuadores Autorizados ubicadas directamente abajo de los valores a solicitud de Haroldo */}
-            <div className="pdf-signatures-container" style={{ marginTop: '4rem' }}>
-              <div className="pdf-signature-block">
-                <div className="pdf-signature-line" style={{ borderTop: '1.5px solid #0d2847' }}></div>
-                <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias'}</div>
-                <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>{avaluo.registroRevisor || 'Valuador autorizado 193-T-93'}</div>
-              </div>
+            <div className="pdf-signatures-container" style={{ marginTop: '4rem', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around' }}>
+              {avaluo.incluirFirmaRevisor !== false && (
+                <div className="pdf-signature-block">
+                  <div className="pdf-signature-line"></div>
+                  <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias'}</div>
+                  <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>{avaluo.registroRevisor || 'Valuador autorizado 193-T-93'}</div>
+                </div>
+              )}
 
               <div className="pdf-signature-block">
-                <div className="pdf-signature-line" style={{ borderTop: '1.5px solid #0d2847' }}></div>
+                <div className="pdf-signature-line"></div>
                 <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorPrincipal || 'Lic. Aroldo Oliverio Ruiz Orozco'}</div>
                 <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>{avaluo.registroPrincipal || 'Valuador autorizado 2572-R-2026'}</div>
               </div>
@@ -633,15 +626,17 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
             </ol>
 
             {/* Firmas de los Valuadores Autorizados ratificando la calificación de garantía */}
-            <div className="pdf-signatures-container" style={{ marginTop: 'auto', paddingTop: '2.5rem' }}>
-              <div className="pdf-signature-block">
-                <div className="pdf-signature-line" style={{ borderTop: '1.5px solid #0d2847' }}></div>
-                <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias'}</div>
-                <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>{avaluo.registroRevisor || 'Valuador autorizado 193-T-93'}</div>
-              </div>
+            <div className="pdf-signatures-container" style={{ marginTop: 'auto', paddingTop: '2.5rem', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around' }}>
+              {avaluo.incluirFirmaRevisor !== false && (
+                <div className="pdf-signature-block">
+                  <div className="pdf-signature-line"></div>
+                  <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias'}</div>
+                  <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>{avaluo.registroRevisor || 'Valuador autorizado 193-T-93'}</div>
+                </div>
+              )}
 
               <div className="pdf-signature-block">
-                <div className="pdf-signature-line" style={{ borderTop: '1.5px solid #0d2847' }}></div>
+                <div className="pdf-signature-line"></div>
                 <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorPrincipal || 'Lic. Aroldo Oliverio Ruiz Orozco'}</div>
                 <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>{avaluo.registroPrincipal || 'Valuador autorizado 2572-R-2026'}</div>
               </div>
@@ -775,16 +770,16 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
               </div>
             </div>
 
-            {/* DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI) - ANCHO COMPLETO OFICIAL SEGÚN CANTIDAD DE FINCAS (HAROLDO) */}
+            {/* DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI) - ANCHO COMPLETO OFICIAL SEGÚN CANTIDAD DE FINCAS (AROLDO) */}
             {fincas.map((f, i) => {
               const isFirst = i === 0;
-              const fNombre = f.dicabiNombre || (isFirst ? avaluo.dicabiNombre : '') || f.propietario || avaluo.propietarioPrincipal || '';
-              const fDireccion = f.dicabiDireccion || (isFirst ? avaluo.dicabiDireccion : '') || avaluo.dicabiDireccion || avaluo.direccion || '';
-              const fMatricula = f.dicabiMatricula || (isFirst ? avaluo.dicabiMatricula : '');
-              const fArea = f.dicabiArea || (isFirst && avaluo.dicabiArea ? avaluo.dicabiArea : '') || (f.areaValuada ? `${Number(f.areaValuada).toFixed(2)} m²` : (f.areaRegistrada ? `${Number(f.areaRegistrada).toFixed(2)} m²` : ''));
+              const fNombre = f.dicabiNombre || (isFirst ? (avaluo.dicabiNombre || '') : '');
+              const fDireccion = f.dicabiDireccion || (isFirst ? (avaluo.dicabiDireccion || '') : '');
+              const fMatricula = f.dicabiMatricula || (isFirst ? (avaluo.dicabiMatricula || '') : '');
+              const fArea = f.dicabiArea || (isFirst ? (avaluo.dicabiArea || '') : '');
               const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
                 ? f.dicabiObservaciones 
-                : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : (fMatricula && fMatricula !== 'Pendiente' ? '' : 'Finca no inscrita en DICABI.'));
+                : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : '');
 
               return (
                 <div 
@@ -1091,10 +1086,10 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
           <PageHeader />
 
           <div className="pdf-sheet-content">
-            <div className="pdf-dictamen-callout" style={{ borderLeft: '4px solid #0d2847', background: '#f8fafc', padding: '0.55rem 0.8rem', fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.75rem' }}>
-              “El inmueble evaluado reúne las condiciones necesarias para ser aceptado como garantía. La 
-              entidad financiera determinará los términos y políticas aplicables al otorgamiento del crédito 
-              correspondiente.” Tomar en cuenta: observaciones, notas y recomendaciones.
+            <div className="pdf-dictamen-callout" style={{ border: '1px solid #0f172a', background: '#f8fafc', padding: '0.65rem 0.85rem', fontSize: '0.8rem', fontStyle: 'italic', marginBottom: '0.75rem', lineHeight: 1.45, textAlign: 'justify' }}>
+              {avaluo.dictamenGarantia !== undefined && avaluo.dictamenGarantia !== '' 
+                ? avaluo.dictamenGarantia 
+                : DEFAULT_DICTAMEN_GARANTIA}
             </div>
 
             {/* SECCIÓN 1: VALUACIÓN COMERCIAL */}
@@ -1400,7 +1395,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
         ))}
 
         {/* ==============================================================
-            PÁGINA FINAL: MATRICULA DICABI Y CONSULTAS ELECTRÓNICAS (PDFS RGP)
+            PÁGINA: MATRICULA DICABI Y RESUMEN DE CONSULTAS ELECTRÓNICAS RGP
             ============================================================== */}
         <section className="pdf-sheet-page">
           <PageHeader />
@@ -1413,7 +1408,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
             {normalizedFotos.dicabi.length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: normalizedFotos.dicabi.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                 {normalizedFotos.dicabi.map((src, idx) => (
-                  <div key={idx} className="pdf-photo-frame" style={{ height: '220px' }}>
+                  <div key={idx} className="pdf-photo-frame" style={{ height: '320px' }}>
                     <img 
                       src={src} 
                       alt={`Matrícula DICABI ${idx + 1}`} 
@@ -1435,59 +1430,39 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
               </div>
             )}
 
-            {/* Consultas Electrónicas RGP con Despliegue Visual de Documentos */}
+            {/* Resumen de Consultas Electrónicas RGP */}
             <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '0.75rem' }}>
               CONSULTAS ELECTRÓNICAS DEL REGISTRO GENERAL DE LA PROPIEDAD (RGP)
             </div>
 
             {rgpPages && rgpPages.length > 0 ? (
-              rgpPages.length === 1 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#0d2847', fontWeight: 700 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <FileText size={15} style={{ color: '#1e40af' }} />
-                      <span>{rgpPages[0].name}</span>
-                    </span>
-                    <span style={{ background: '#e2e8f0', color: '#334155', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem' }}>
-                      Página {rgpPages[0].pageIndex} de {rgpPages[0].totalPaginas}
-                    </span>
-                  </div>
-                  <div className="pdf-photo-frame" style={{ height: '440px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
-                    <img 
-                      src={rgpPages[0].dataUrl} 
-                      alt={`Certificación RGP - ${rgpPages[0].name}`} 
-                      style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} 
-                      loading="eager" 
-                      decoding="sync" 
-                    />
-                  </div>
+              <div style={{ background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0d2847', fontWeight: 700, fontSize: '0.82rem' }}>
+                  <FileText size={18} style={{ color: '#1e40af' }} />
+                  <span>Certificaciones Registrales Incorporadas ({rgpPages.length} {rgpPages.length === 1 ? 'página' : 'páginas'})</span>
                 </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '0.5rem' }}>
-                  {rgpPages.slice(0, 2).map((p) => (
-                    <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: '#0d2847', fontWeight: 700 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          <FileText size={14} style={{ color: '#1e40af', flexShrink: 0 }} />
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                        </span>
-                        <span style={{ background: '#e2e8f0', color: '#334155', padding: '2px 6px', borderRadius: '4px', fontSize: '0.68rem', flexShrink: 0, marginLeft: '4px' }}>
-                          Pág. {p.pageIndex} de {p.totalPaginas}
-                        </span>
+                <p style={{ fontSize: '0.76rem', color: '#475569', margin: 0, lineHeight: 1.45 }}>
+                  Las certificaciones registrales electrónicas oficiales se presentan a continuación desglosadas a página completa (<strong>1 página por hoja</strong>) para garantizar la total legibilidad de sellos, firmas, razones registrales e historial de dominio.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' }}>
+                  {avaluo.consultasPdfs && avaluo.consultasPdfs.length > 0 ? (
+                    avaluo.consultasPdfs.map((docItem, dIdx) => (
+                      <div key={dIdx} style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 10px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontWeight: 700, color: '#0d2847' }}>{docItem.name}</span>
+                        {docItem.pages && docItem.pages.length > 0 && (
+                          <span style={{ background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '3px', fontWeight: 600, fontSize: '0.68rem' }}>
+                            {docItem.pages.length} {docItem.pages.length === 1 ? 'pág.' : 'págs.'}
+                          </span>
+                        )}
                       </div>
-                      <div className="pdf-photo-frame" style={{ height: '420px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
-                        <img 
-                          src={p.dataUrl} 
-                          alt={`Certificación RGP - ${p.name}`} 
-                          style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} 
-                          loading="eager" 
-                          decoding="sync" 
-                        />
-                      </div>
+                    ))
+                  ) : (
+                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 10px', fontSize: '0.72rem', color: '#0d2847', fontWeight: 600 }}>
+                      {rgpPages.length} {rgpPages.length === 1 ? 'página adjunta' : 'páginas adjuntas'}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )
+              </div>
             ) : (
               <div className="pdf-photo-frame" style={{ height: '150px', background: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — SIN CERTIFICACIONES RGP ADJUNTAS ]</span>
@@ -1500,44 +1475,41 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
         </section>
 
         {/* ==============================================================
-            PÁGINAS ADICIONALES DE CERTIFICACIONES RGP (SI TIENE MÁS DE 2 PÁGINAS)
+            PÁGINAS DE CERTIFICACIONES RGP: 1 DOCUMENTO POR HOJA
             ============================================================== */}
-        {rgpContinuationPages.map((pageChunk, cIdx) => (
-          <section key={`rgp-cont-${cIdx}`} className="pdf-sheet-page">
+        {rgpPages.map((p, pIdx) => (
+          <section key={p.id || `rgp-page-${pIdx}`} className="pdf-sheet-page">
             <PageHeader />
 
             <div className="pdf-sheet-content">
-              <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '1rem' }}>
-                CONSULTAS ELECTRÓNICAS DEL REGISTRO GENERAL DE LA PROPIEDAD (RGP) — CONTINUACIÓN (PARTE {cIdx + 2})
+              <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: '2px solid #0d2847', paddingBottom: '0.4rem', marginBottom: '0.65rem' }}>
+                CONSULTAS ELECTRÓNICAS DEL REGISTRO GENERAL DE LA PROPIEDAD (RGP)
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: pageChunk.length === 1 ? '1fr' : '1fr 1fr', gap: '12px' }}>
-                {pageChunk.map(p => (
-                  <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.74rem', color: '#0d2847', fontWeight: 700 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        <FileText size={15} style={{ color: '#1e40af', flexShrink: 0 }} />
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                      </span>
-                      <span style={{ background: '#e2e8f0', color: '#334155', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', flexShrink: 0 }}>
-                        Página {p.pageIndex} de {p.totalPaginas}
-                      </span>
-                    </div>
-                    <div className="pdf-photo-frame" style={{ height: pageChunk.length === 1 ? '680px' : '620px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
-                      <img 
-                        src={p.dataUrl} 
-                        alt={`Certificación RGP - ${p.name}`} 
-                        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} 
-                        loading="eager" 
-                        decoding="sync" 
-                      />
-                    </div>
-                  </div>
-                ))}
+              {/* Encabezado del documento individual y numeración de página */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '6px', padding: '0.45rem 0.85rem', marginBottom: '0.65rem' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 700, color: '#0d2847' }}>
+                  <FileText size={16} style={{ color: '#1e40af', flexShrink: 0 }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                </span>
+                <span style={{ background: '#0d2847', color: '#ffffff', padding: '3px 10px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 700, flexShrink: 0 }}>
+                  Página {p.pageIndex} de {p.totalPaginas}
+                </span>
+              </div>
+
+              {/* Imagen a página completa: 1 por hoja para máxima legibilidad */}
+              <div className="pdf-photo-frame" style={{ height: '780px', maxHeight: '810px', background: '#ffffff', border: '1.5px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img 
+                  src={p.dataUrl} 
+                  alt={`Certificación RGP - ${p.name} (Pág. ${p.pageIndex})`} 
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} 
+                  loading="eager" 
+                  decoding="sync" 
+                />
               </div>
             </div>
 
-            <PageFooter pageNum={dicabiPageNum + 1 + cIdx} />
+            <PageFooter pageNum={dicabiPageNum + 1 + pIdx} />
           </section>
         ))}
 

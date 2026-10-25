@@ -71,14 +71,36 @@ export async function convertPdfOrImageToPageImages(file) {
  * Si faltan dataUrls o páginas completas, las hidrata de IndexedDB o subcolecciones de Firebase.
  */
 export async function extractAllRgpPages(consultasPdfs = [], avaluoId = null) {
-  if (!Array.isArray(consultasPdfs) || consultasPdfs.length === 0) {
+  let list = Array.isArray(consultasPdfs) ? [...consultasPdfs] : [];
+
+  // Si la lista está vacía pero se proporcionó un avaluoId, consultar la subcolección rgpPages
+  if (list.length === 0 && avaluoId) {
+    try {
+      const cloudPages = await fetchRgpPagesFromCloud(avaluoId);
+      if (cloudPages && cloudPages.length > 0) {
+        return cloudPages
+          .sort((a, b) => (a.pageIndex || 0) - (b.pageIndex || 0))
+          .map((cp, idx) => ({
+            id: `${cp.docId || 'rgp'}-p${cp.pageIndex || idx + 1}`,
+            name: cp.docName || cp.fileName || 'Certificación RGP',
+            size: '',
+            fecha: '',
+            pageIndex: cp.pageIndex || idx + 1,
+            totalPaginas: cp.totalPaginas || cloudPages.length,
+            dataUrl: cp.dataUrl || generateOfficialRgpPlaceholder(cp.docName || cp.fileName)
+          }));
+      }
+    } catch (e) {
+      console.warn('Error recuperando páginas RGP desde la nube:', e);
+    }
     return [];
   }
 
   const allPages = [];
+  let cloudPagesCache = null;
 
-  for (let idx = 0; idx < consultasPdfs.length; idx++) {
-    const item = consultasPdfs[idx];
+  for (let idx = 0; idx < list.length; idx++) {
+    const item = list[idx];
     if (!item) continue;
 
     // Caso 1: Ya tiene páginas procesadas (nuevo formato)
@@ -93,11 +115,17 @@ export async function extractAllRgpPages(consultasPdfs = [], avaluoId = null) {
           if (localDoc?.pages?.some(p => p.dataUrl)) {
             pagesToUse = localDoc.pages;
           } else {
-            const cloudPages = await fetchRgpPagesFromCloud(avaluoId);
-            if (cloudPages && cloudPages.length > 0) {
-              const matched = cloudPages.filter(cp => cp.docId === item.id || cp.docName === item.name);
+            if (!cloudPagesCache) {
+              cloudPagesCache = await fetchRgpPagesFromCloud(avaluoId);
+            }
+            if (cloudPagesCache && cloudPagesCache.length > 0) {
+              const matched = cloudPagesCache.filter(cp => 
+                cp.docId === item.id || 
+                cp.docName === item.name || 
+                cp.fileName === item.name
+              );
               if (matched.length > 0) {
-                pagesToUse = matched;
+                pagesToUse = matched.sort((a, b) => (a.pageIndex || 0) - (b.pageIndex || 0));
               }
             }
           }

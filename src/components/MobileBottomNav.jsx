@@ -7,7 +7,7 @@ export default function MobileBottomNav({
   onScrollStats, 
   activeView, 
   onOpenProfile,
-  currentUser 
+  _currentUser 
 }) {
   return (
     <nav className="mobile-bottom-nav">

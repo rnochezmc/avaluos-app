@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, X, LayoutGrid, Table, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { Search, X, LayoutGrid, Table, ArrowUpDown } from 'lucide-react';
 
 export default function SearchAndFilters({
   searchTerm,

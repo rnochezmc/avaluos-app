@@ -179,7 +179,7 @@ export default function UserManagementModal({
                 Control de Usuarios y Roles — LEX ROSAM S.A.
               </h2>
               <p style={{ fontSize: '0.8rem', color: '#93c5fd', margin: 0 }}>
-                Administración de accesos para Haroldo Ruiz y equipo técnico
+                Administración de accesos para Aroldo Ruiz y equipo técnico
               </p>
             </div>
           </div>
@@ -356,7 +356,7 @@ export default function UserManagementModal({
                     }}
                   >
                     <option value="valuador">Valuador Técnico / Ingreso (Crea y envía a revisión)</option>
-                    <option value="admin">Aprobador / Autorizador (Haroldo Ruiz / Revisor oficial)</option>
+                    <option value="admin">Aprobador / Autorizador (Aroldo Ruiz / Revisor oficial)</option>
                     <option value="lector">Consulta / Lector (Solo lectura e impresión)</option>
                     <option value="soporte">Soporte Técnico / Desarrollador</option>
                   </select>
@@ -530,7 +530,7 @@ export default function UserManagementModal({
             fontSize: '0.8rem',
             color: '#0369a1'
           }}>
-            <strong>Nota para Haroldo Ruiz:</strong> Cuando un valuador técnico inicie sesión con su cuenta de Google, solo podrá crear expedientes y enviarlos a autorización. Solo los usuarios con rol de <strong>Aprobador / Autorizador</strong> pueden dar la firma y certificación oficial al avalúo.
+            <strong>Nota para Aroldo Ruiz:</strong> Cuando un valuador técnico inicie sesión con su cuenta de Google, solo podrá crear expedientes y enviarlos a autorización. Solo los usuarios con rol de <strong>Aprobador / Autorizador</strong> pueden dar la firma y certificación oficial al avalúo.
           </div>
         </div>
 

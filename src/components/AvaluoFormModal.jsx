@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, Save, MapPin, Camera, Building, DollarSign, FileText, Plus, 
-  Trash2, Crosshair, FileUp, CheckSquare, Square, Check, AlertCircle, RefreshCw, Copy 
+  Trash2, Crosshair, FileUp, CheckSquare, Square, Check, RefreshCw, Copy,
+  ShieldCheck
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST, getDefaultServicios } from '../data/serviciosConstants';
 import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
+import { fetchRgpPagesFromCloud } from '../firebase';
+import { getAvaluoFromLocalDb } from '../utils/localDb';
+import { DEFAULT_DICTAMEN_GARANTIA, DICTAMEN_PRESETS } from '../data/mockAvaluos';
 
-export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
+export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave }) {
   const isEditing = Boolean(avaluo?.id);
 
   const [activeStep, setActiveStep] = useState(1);
@@ -267,11 +271,15 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
     valorComercialUSD: avaluo?.valorComercialUSD || 0,
     valorBancarioUSD: avaluo?.valorBancarioUSD || 0,
 
-    // Valuadores
+    // Valuadores y Firmantes Oficiales (Reporte PDF)
     valuadorPrincipal: avaluo?.valuadorPrincipal || 'Lic. Aroldo Oliverio Ruiz Orozco',
     registroPrincipal: avaluo?.registroPrincipal || 'Valuador autorizado 2572-R-2026',
-    valuadorRevisor: avaluo?.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias',
-    registroRevisor: avaluo?.registroRevisor || 'Valuador autorizado 193-T-93',
+    valuadorRevisor: avaluo?.valuadorRevisor !== undefined ? avaluo.valuadorRevisor : 'Lic. Luis Felipe Tolaque Tobias',
+    registroRevisor: avaluo?.registroRevisor !== undefined ? avaluo.registroRevisor : 'Valuador autorizado 193-T-93',
+    incluirFirmaRevisor: avaluo?.incluirFirmaRevisor !== false,
+
+    // Dictamen Oficial de Garantía Crediticia (Pág. 6 del reporte PDF)
+    dictamenGarantia: avaluo?.dictamenGarantia !== undefined ? avaluo.dictamenGarantia : DEFAULT_DICTAMEN_GARANTIA,
 
     // Fotos optimizadas (soporta múltiples fotos por categoría)
     fotos: (() => {
@@ -298,6 +306,63 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
     // Consultas Electrónicas RGP (PDFs adjuntos)
     consultasPdfs: avaluo?.consultasPdfs || []
   });
+
+  // Hidratar páginas y dataUrls de RGP desde la nube o IndexedDB si faltan al editar
+  useEffect(() => {
+    let isMounted = true;
+    if (avaluo?.id) {
+      const rawList = avaluo.consultasPdfs || [];
+      const needsData = rawList.length === 0 || rawList.some(d => Array.isArray(d.pages) && d.pages.some(p => !p.dataUrl));
+      if (needsData) {
+        getAvaluoFromLocalDb(avaluo.id).then(local => {
+          if (local?.consultasPdfs?.some(d => d.pages?.some(p => p.dataUrl))) {
+            if (isMounted) {
+              setFormData(prev => ({ ...prev, consultasPdfs: local.consultasPdfs }));
+            }
+            return;
+          }
+          return fetchRgpPagesFromCloud(avaluo.id).then(cloudPages => {
+            if (!isMounted || !cloudPages || cloudPages.length === 0) return;
+            if (rawList.length === 0) {
+              const grouped = {};
+              cloudPages.forEach(cp => {
+                const key = cp.docId || cp.docName || 'doc';
+                if (!grouped[key]) {
+                  grouped[key] = {
+                    id: key,
+                    name: cp.docName || cp.fileName || 'Certificación RGP',
+                    size: '',
+                    fecha: '',
+                    pages: []
+                  };
+                }
+                grouped[key].pages.push(cp);
+              });
+              const docs = Object.values(grouped).map(d => ({
+                ...d,
+                pages: d.pages.sort((a, b) => (a.pageIndex || 0) - (b.pageIndex || 0))
+              }));
+              setFormData(prev => ({ ...prev, consultasPdfs: docs }));
+            } else {
+              const merged = rawList.map(d => {
+                const pagesWithData = (d.pages || []).map(p => {
+                  if (p.dataUrl) return p;
+                  const found = cloudPages.find(cp => 
+                    (cp.docId === d.id || cp.docName === d.name || cp.fileName === d.name) && 
+                    Number(cp.pageIndex) === Number(p.pageIndex)
+                  );
+                  return found?.dataUrl ? { ...p, dataUrl: found.dataUrl } : p;
+                });
+                return { ...d, pages: pagesWithData };
+              });
+              setFormData(prev => ({ ...prev, consultasPdfs: merged }));
+            }
+          });
+        }).catch(err => console.warn('Error hydrating RGP pages in form modal:', err));
+      }
+    }
+    return () => { isMounted = false; };
+  }, [avaluo?.id]);
 
   // Handle GPS coordinate capture directly on mobile phone
   const captureGPS = () => {
@@ -340,11 +405,11 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
           areaActualRegistrada: 0,
           areaFisica: 0,
           areaValuada: 0,
-          dicabiNombre: prev.propietarioPrincipal || prev.dicabiNombre || '',
-          dicabiDireccion: prev.dicabiDireccion || prev.direccion || '',
+          dicabiNombre: '',
+          dicabiDireccion: '',
           dicabiMatricula: '',
           dicabiArea: '',
-          dicabiObservaciones: 'Finca no inscrita en DICABI.',
+          dicabiObservaciones: '',
           colindancias: {
             norte: '',
             sur: '',
@@ -1035,7 +1100,7 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                 className={`modal-tab-btn ${activeStep === 4 ? 'active' : ''}`}
                 onClick={() => setActiveStep(4)}
               >
-                <span>4. Valores & Terreno</span>
+                <span>4. Valores & Dictamen</span>
               </button>
               <button
                 type="button"
@@ -1233,6 +1298,168 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                     onChange={(e) => setFormData({ ...formData, descripcionGeneral: e.target.value })}
                     placeholder="Descripción física y funcional del inmueble..."
                   />
+                </div>
+
+                {/* Profesionales Valuadores y Firmantes Oficiales */}
+                <div className="form-section-title" style={{ marginTop: '2rem' }}>
+                  <ShieldCheck size={16} />
+                  <span>Profesionales Valuadores y Firmantes Oficiales (Páginas 2 y 3 del Reporte)</span>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '1rem' }}>
+                  Configure los profesionales valuadores autorizados que certificarán y firmarán este expediente. Puede seleccionar de los accesos rápidos o escribir cualquier nombre y registro oficial libremente.
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: formData.incluirFirmaRevisor ? '1fr 1fr' : '1fr', gap: '1rem', background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', border: '1.5px solid #e2e8f0' }}>
+                  
+                  {/* Valuador Principal (Firma Derecha) */}
+                  <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '6px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0d2847' }}>
+                        Valuador Principal (Firma Oficial) *
+                      </span>
+                      <span style={{ fontSize: '0.72rem', background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                        Firma Principal
+                      </span>
+                    </div>
+
+                    <div className="form-field" style={{ margin: 0 }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '3px', display: 'block' }}>Nombre y Título del Valuador</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={formData.valuadorPrincipal}
+                        onChange={(e) => setFormData({ ...formData, valuadorPrincipal: e.target.value })}
+                        placeholder="Ej: Lic. Aroldo Oliverio Ruiz Orozco"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-field" style={{ margin: 0 }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '3px', display: 'block' }}>Número de Registro / Autorización</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={formData.registroPrincipal}
+                        onChange={(e) => setFormData({ ...formData, registroPrincipal: e.target.value })}
+                        placeholder="Ej: Valuador autorizado 2572-R-2026"
+                        required
+                      />
+                    </div>
+
+                    {/* Accesos rápidos Valuador Principal */}
+                    <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '0.6rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Accesos rápidos:</span>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({
+                            ...formData,
+                            valuadorPrincipal: 'Lic. Aroldo Oliverio Ruiz Orozco',
+                            registroPrincipal: 'Valuador autorizado 2572-R-2026'
+                          })}
+                          style={{ fontSize: '0.72rem', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: '4px', padding: '3px 8px', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                          Lic. Aroldo Ruiz (2572-R-2026)
+                        </button>
+                        {usuarios && usuarios.filter(u => u.rol === 'admin' || u.rol === 'valuador').map(u => (
+                          <button
+                            key={u.id || u.email}
+                            type="button"
+                            onClick={() => setFormData({
+                              ...formData,
+                              valuadorPrincipal: u.nombre || u.email,
+                              registroPrincipal: u.titulo || 'Valuador Autorizado'
+                            })}
+                            style={{ fontSize: '0.72rem', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', padding: '3px 8px', cursor: 'pointer' }}
+                          >
+                            {u.nombre}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Valuador Revisor / Segundo Firmante (Firma Izquierda) */}
+                  <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '6px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0d2847' }}>
+                        Valuador Revisor (Segundo Firmante)
+                      </span>
+                      <label style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={formData.incluirFirmaRevisor}
+                          onChange={(e) => setFormData({ ...formData, incluirFirmaRevisor: e.target.checked })}
+                        />
+                        <span style={{ fontWeight: 700, color: formData.incluirFirmaRevisor ? '#16a34a' : '#94a3b8' }}>
+                          {formData.incluirFirmaRevisor ? 'Activo (2 Firmas)' : 'Omitido (1 Firma)'}
+                        </span>
+                      </label>
+                    </div>
+
+                    {formData.incluirFirmaRevisor ? (
+                      <>
+                        <div className="form-field" style={{ margin: 0 }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '3px', display: 'block' }}>Nombre y Título del Revisor</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={formData.valuadorRevisor}
+                            onChange={(e) => setFormData({ ...formData, valuadorRevisor: e.target.value })}
+                            placeholder="Ej: Lic. Luis Felipe Tolaque Tobias"
+                          />
+                        </div>
+
+                        <div className="form-field" style={{ margin: 0 }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '3px', display: 'block' }}>Número de Registro / Autorización</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={formData.registroRevisor}
+                            onChange={(e) => setFormData({ ...formData, registroRevisor: e.target.value })}
+                            placeholder="Ej: Valuador autorizado 193-T-93"
+                          />
+                        </div>
+
+                        {/* Accesos rápidos Valuador Revisor */}
+                        <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '0.6rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Accesos rápidos:</span>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => setFormData({
+                                ...formData,
+                                valuadorRevisor: 'Lic. Luis Felipe Tolaque Tobias',
+                                registroRevisor: 'Valuador autorizado 193-T-93'
+                              })}
+                              style={{ fontSize: '0.72rem', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: '4px', padding: '3px 8px', cursor: 'pointer', fontWeight: 600 }}
+                            >
+                              Lic. Luis Felipe Tolaque (193-T-93)
+                            </button>
+                            {usuarios && usuarios.filter(u => u.rol === 'admin' || u.rol === 'valuador').map(u => (
+                              <button
+                                key={u.id || u.email}
+                                type="button"
+                                onClick={() => setFormData({
+                                  ...formData,
+                                  valuadorRevisor: u.nombre || u.email,
+                                  registroRevisor: u.titulo || 'Valuador Autorizado'
+                                })}
+                                style={{ fontSize: '0.72rem', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', padding: '3px 8px', cursor: 'pointer' }}
+                              >
+                                {u.nombre}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ padding: '1rem', textAlign: 'center', color: '#64748b', fontSize: '0.8rem', background: '#f8fafc', borderRadius: '4px', border: '1px dashed #cbd5e1' }}>
+                        ℹ️ Segunda firma omitida. El reporte oficial PDF centrará la firma del Valuador Principal en las páginas 2 y 3.
+                      </div>
+                    )}
+                  </div>
+
                 </div>
               </div>
             )}
@@ -1541,9 +1768,9 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                             <input
                               type="text"
                               className="form-input"
-                              value={fincaItem.dicabiNombre !== undefined ? fincaItem.dicabiNombre : ((fIndex === 0 ? formData.dicabiNombre : '') || fincaItem.propietario || formData.propietarioPrincipal || '')}
+                              value={fincaItem.dicabiNombre || ''}
                               onChange={(e) => updateFinca(fIndex, 'dicabiNombre', e.target.value)}
-                              placeholder="Nombre según padrón fiscal DICABI"
+                              placeholder="Nombre según padrón fiscal DICABI (opcional)"
                             />
                           </div>
                           <div className="form-field">
@@ -1551,9 +1778,9 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                             <input
                               type="text"
                               className="form-input"
-                              value={fincaItem.dicabiArea !== undefined && fincaItem.dicabiArea !== '' ? fincaItem.dicabiArea : (fincaItem.areaValuada ? `${fincaItem.areaValuada} m²` : (fincaItem.areaRegistrada ? `${fincaItem.areaRegistrada} m²` : (fIndex === 0 ? formData.dicabiArea : '')))}
+                              value={fincaItem.dicabiArea || ''}
                               onChange={(e) => updateFinca(fIndex, 'dicabiArea', e.target.value)}
-                              placeholder={fincaItem.areaValuada ? `${fincaItem.areaValuada} m²` : "Ej: 199.08 m²"}
+                              placeholder="Ej: 400.00 m² (opcional)"
                             />
                           </div>
                         </div>
@@ -1564,9 +1791,9 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                             <input
                               type="text"
                               className="form-input"
-                              value={fincaItem.dicabiDireccion !== undefined ? fincaItem.dicabiDireccion : ((fIndex === 0 ? formData.dicabiDireccion : '') || formData.direccion || '')}
+                              value={fincaItem.dicabiDireccion || ''}
                               onChange={(e) => updateFinca(fIndex, 'dicabiDireccion', e.target.value)}
-                              placeholder="Dirección catastral municipal"
+                              placeholder="Dirección catastral municipal (opcional)"
                             />
                           </div>
                           <div className="form-field">
@@ -1574,9 +1801,9 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                             <input
                               type="text"
                               className="form-input"
-                              value={fincaItem.dicabiObservaciones !== undefined ? fincaItem.dicabiObservaciones : (fIndex === 0 ? formData.dicabiObservaciones : (fincaItem.dicabiMatricula ? '' : 'Finca no inscrita en DICABI.'))}
+                              value={fincaItem.dicabiObservaciones || ''}
                               onChange={(e) => updateFinca(fIndex, 'dicabiObservaciones', e.target.value)}
-                              placeholder="Ej: Finca no inscrita en DICABI."
+                              placeholder="Ej: Finca no inscrita en DICABI (opcional)"
                             />
                           </div>
                         </div>
@@ -2192,6 +2419,66 @@ export default function AvaluoFormModal({ avaluo, onClose, onSave }) {
                 ============================================================== */}
             {activeStep === 4 && (
               <div>
+                {/* Cuadro Oficial Editable: Dictamen de Garantía Crediticia (Pág. 6 del reporte) */}
+                <div style={{ background: '#ffffff', padding: '1.25rem', borderRadius: '8px', border: '1.5px solid #0d2847', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <ShieldCheck size={18} style={{ color: '#1e40af' }} />
+                      <span style={{ fontWeight: 800, color: '#0d2847', fontSize: '0.92rem', textTransform: 'uppercase' }}>
+                        Dictamen Oficial de Garantía Crediticia (Cuadro Superior Pág. 6)
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.74rem', background: '#eff6ff', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                      Editable para el informe oficial PDF
+                    </span>
+                  </div>
+
+                  <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.75rem' }}>
+                    Este texto se imprime en el recuadro superior de la página 6 del reporte. Puede editarlo directamente o seleccionar una de las plantillas oficiales predefinidas:
+                  </p>
+
+                  {/* Botones de plantilla rápida */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginBottom: '0.75rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.favorable })}
+                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      ✓ Favorable Estándar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.condicionado })}
+                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      ⚠️ Favorable Condicionado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.noFavorable })}
+                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      ✕ No Favorable
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.construccion })}
+                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#fefce8', color: '#854d0e', border: '1px solid #fef08a', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      🏗️ En Construcción
+                    </button>
+                  </div>
+
+                  <textarea
+                    className="form-input"
+                    rows={3}
+                    style={{ width: '100%', fontStyle: 'italic', fontSize: '0.86rem', lineHeight: 1.5, padding: '0.65rem 0.85rem' }}
+                    value={formData.dictamenGarantia !== undefined ? formData.dictamenGarantia : DEFAULT_DICTAMEN_GARANTIA}
+                    onChange={(e) => setFormData({ ...formData, dictamenGarantia: e.target.value })}
+                    placeholder="Escriba el dictamen de garantía oficial..."
+                  />
+                </div>
+
                 <div className="form-section-title">
                   <DollarSign size={16} />
                   <span>Desglose Matemático de Valoración (Terreno con Fincas y Varas²)</span>

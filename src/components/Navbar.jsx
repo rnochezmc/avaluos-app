@@ -36,7 +36,7 @@ export default function Navbar({
   const canManageUsers = currentUser?.rol === 'admin' || currentUser?.rol === 'soporte';
 
   const getRoleDisplayName = () => {
-    if (currentUser?.rol === 'admin') return 'Lic. Haroldo Ruiz (Dueño / Autorizador)';
+    if (currentUser?.rol === 'admin') return 'Lic. Aroldo Ruiz (Dueño / Autorizador)';
     if (currentUser?.rol === 'soporte') return 'Ramiro Nóchez (Soporte Técnico)';
     if (currentUser?.rol === 'valuador') return 'Ing. Auxiliar (Valuador Técnico)';
     if (currentUser?.rol === 'lector') return 'Usuario de Consulta';
@@ -289,7 +289,7 @@ export default function Navbar({
                       color: '#1e293b'
                     }}
                   >
-                    <span>Lic. Haroldo Ruiz (Autorizador)</span>
+                    <span>Lic. Aroldo Ruiz (Autorizador)</span>
                     {currentRole === 'autorizador' && <Check size={14} color="#2563eb" />}
                   </div>
 

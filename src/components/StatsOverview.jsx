@@ -51,7 +51,7 @@ export default function StatsOverview({ avaluos }) {
           <ShieldCheck size={22} />
         </div>
         <div className="stat-content">
-          <div className="stat-label">Autorizados (Haroldo)</div>
+          <div className="stat-label">Autorizados (Aroldo)</div>
           <div className="stat-value" style={{ color: '#2563eb' }}>{autorizadosCount}</div>
         </div>
       </div>

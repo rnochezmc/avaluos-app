@@ -98,6 +98,7 @@ export async function saveAvaluoToCloud(avaluo) {
     for (const docItem of cleanData.consultasPdfs) {
       if (Array.isArray(docItem.pages)) {
         for (const page of docItem.pages) {
+          if (!page.dataUrl) continue; // Proteger: no sobreescribir páginas existentes si dataUrl no viene en memoria
           try {
             const pageDocId = `${docItem.id || 'doc'}_p${page.pageIndex}`;
             const pageDocRef = doc(db, AVALUOS_COLLECTION, String(avaluo.id), 'rgpPages', pageDocId);
@@ -152,8 +153,28 @@ export async function saveAvaluoToCloud(avaluo) {
 export async function fetchRgpPagesFromCloud(avaluoId) {
   if (!avaluoId) return [];
   try {
-    const colRef = collection(db, AVALUOS_COLLECTION, String(avaluoId), 'rgpPages');
-    const snap = await getDocs(colRef);
+    let colRef = collection(db, AVALUOS_COLLECTION, String(avaluoId), 'rgpPages');
+    let snap = await getDocs(colRef);
+    if (snap.empty && typeof avaluoId === 'string') {
+      const lower = avaluoId.toLowerCase();
+      if (lower !== avaluoId) {
+        colRef = collection(db, AVALUOS_COLLECTION, lower, 'rgpPages');
+        snap = await getDocs(colRef);
+      }
+    }
+    // Fallback: si no encuentra por ID directo, buscar por código de avalúo
+    if (snap.empty) {
+      const colAvaluos = collection(db, AVALUOS_COLLECTION);
+      const avaluosSnap = await getDocs(colAvaluos);
+      const matchedDoc = avaluosSnap.docs.find(d => {
+        const data = d.data();
+        return data.codigo === avaluoId || d.id === avaluoId || data.id === avaluoId;
+      });
+      if (matchedDoc) {
+        colRef = collection(db, AVALUOS_COLLECTION, matchedDoc.id, 'rgpPages');
+        snap = await getDocs(colRef);
+      }
+    }
     if (snap.empty) return [];
     const pages = [];
     snap.forEach((d) => pages.push(d.data()));
@@ -240,7 +261,7 @@ export async function deleteUsuarioFromCloud(id) {
 }
 
 /**
- * Inicializa las cuentas maestras de Haroldo Ruiz y Ramiro Nóchez si la colección está vacía.
+ * Inicializa las cuentas maestras de Aroldo Ruiz y Ramiro Nóchez si la colección está vacía.
  */
 export async function seedInitialUsuariosIfEmpty() {
   try {
@@ -261,7 +282,7 @@ export async function seedInitialUsuariosIfEmpty() {
         {
           id: 'cverdeavaluos_gmail_com',
           email: 'cverdeavaluos@gmail.com',
-          nombre: 'Lic. Haroldo Ruiz',
+          nombre: 'Lic. Aroldo Ruiz',
           rol: 'admin',
           titulo: 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026',
           activo: true,
@@ -270,7 +291,7 @@ export async function seedInitialUsuariosIfEmpty() {
         {
           id: 'aroldoruiz100_gmail_com',
           email: 'aroldoruiz100@gmail.com',
-          nombre: 'Lic. Haroldo Ruiz',
+          nombre: 'Lic. Aroldo Ruiz',
           rol: 'admin',
           titulo: 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026',
           activo: true,
@@ -291,7 +312,7 @@ export async function seedInitialUsuariosIfEmpty() {
       await setDoc(docRefH, {
         id: 'aroldoruiz100_gmail_com',
         email: 'aroldoruiz100@gmail.com',
-        nombre: 'Lic. Haroldo Ruiz',
+        nombre: 'Lic. Aroldo Ruiz',
         rol: 'admin',
         titulo: 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026',
         activo: true

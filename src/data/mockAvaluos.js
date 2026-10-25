@@ -1,3 +1,13 @@
+// Dictamen Oficial de Garantía Crediticia predeterminado y plantillas rápidas
+export const DEFAULT_DICTAMEN_GARANTIA = '“El inmueble evaluado reúne las condiciones necesarias para ser aceptado como garantía. La entidad financiera determinará los términos y políticas aplicables al otorgamiento del crédito correspondiente.” Tomar en cuenta: observaciones, notas y recomendaciones.';
+
+export const DICTAMEN_PRESETS = {
+  favorable: '“El inmueble evaluado reúne las condiciones necesarias para ser aceptado como garantía. La entidad financiera determinará los términos y políticas aplicables al otorgamiento del crédito correspondiente.” Tomar en cuenta: observaciones, notas y recomendaciones.',
+  condicionado: '“El inmueble evaluado reúne las condiciones para ser aceptado como garantía crediticia, condicionado al estricto cumplimiento de las observaciones técnicas y recomendaciones estipuladas en el presente dictamen.”',
+  noFavorable: '“El inmueble evaluado NO reúne las condiciones técnicas necesarias para ser aceptado como garantía hipotecaria bajo las políticas de riesgo vigentes.”',
+  construccion: '“El inmueble evaluado reúne las condiciones necesarias para garantía crediticia conforme al avance físico de obra verificado a la fecha de inspección y sujeto a supervisión periódica de desembolsos.”'
+};
+
 // Mock inicial de expedientes de avalúos basados exactamente en el formato LEX ROSAM S.A.
 export const initialAvaluos = [
   {
@@ -594,7 +604,7 @@ export const initialAvaluos = [
     dpi: "2341 87654 0108",
     referenciaActualizacion: "Inspección física y certificación de valor 2026",
     estado: "devuelto",
-    observacionesAutorizador: "Haroldo Ruiz: Por favor verificar la medida de desmembración en Finca 8912 e ingresar las colindancias exactas del plano.",
+    observacionesAutorizador: "Aroldo Ruiz: Por favor verificar la medida de desmembración en Finca 8912 e ingresar las colindancias exactas del plano.",
     
     fincas: [
       { 

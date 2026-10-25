@@ -1318,6 +1318,8 @@ img {
 .pdf-boxed-table {
   border: 1px solid #1e293b;
   background-color: #ffffff;
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 .pdf-data-row {
@@ -1451,8 +1453,8 @@ img {
 }
 
 .pdf-signature-line {
-  border-bottom: 1px solid #0f172a;
-  height: 45px;
+  border-bottom: 1.5px solid #0d2847;
+  height: 50px;
   margin-bottom: 0.5rem;
 }
 
@@ -1590,6 +1592,11 @@ img {
     color: #ffffff !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .pdf-boxed-table {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   .pdf-photo-frame {

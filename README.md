@@ -6,10 +6,10 @@ Aplicación web progresiva (PWA) responsiva para la gestión integral de avalúo
 
 ## 📌 Contexto del Proyecto
 
-* **Propietario / Contacto Principal**: Lic. Haroldo Oliverio Ruiz Orozco (Valuador autorizado 2572-R-2026).
+* **Propietario / Contacto Principal**: Lic. Aroldo Oliverio Ruiz Orozco (Valuador autorizado 2572-R-2026).
 * **Valuador Revisor**: Lic. Luis Felipe Tolaque Tobias (Valuador autorizado 193-T-93).
 * **Entidades bancarias soportadas**: Banco G&T Continental, Banco Industrial, Banco Agromercantil (BAM), Banrural, BAC Credomatic.
-* **Objetivo de la Fase 1**: Base de datos de acceso gratuito y ágil para Haroldo desde su celular y computadora, sin costos recurrentes de servidores, con almacenamiento de datos y fotografías de campo.
+* **Objetivo de la Fase 1**: Base de datos de acceso gratuito y ágil para Aroldo desde su celular y computadora, sin costos recurrentes de servidores, con almacenamiento de datos y fotografías de campo.
 * **Objetivo de la Fase 2 (Monetizable)**: Integración con Inteligencia Artificial (Gemini Multimodal) para escaneo OCR de documentos del Registro General de la Propiedad (RGP) / DICABI, redacción automatizada de dictámenes y exportación automática a PDF oficial.
 
 ---

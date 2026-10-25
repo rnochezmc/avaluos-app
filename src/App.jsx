@@ -261,7 +261,7 @@ export default function App() {
           isActivo = true;
         } else if (email === 'cverdeavaluos@gmail.com' || email === 'aroldoruiz100@gmail.com') {
           assignedRole = 'admin';
-          assignedNombre = firebaseUser.displayName || 'Lic. Haroldo Ruiz';
+          assignedNombre = firebaseUser.displayName || 'Lic. Aroldo Ruiz';
           assignedTitulo = 'Dueño LEX ROSAM / Valuador Autorizado 2572-R-2026';
           isActivo = true;
         } else if (match) {
@@ -462,7 +462,9 @@ export default function App() {
           };
           if (newStatus === 'autorizado') {
             next.fechaAutorizacion = new Date().toISOString().slice(0, 10);
-            next.autorizadoPor = 'Lic. Haroldo Ruiz (Reg. 2572-R-2026)';
+            next.autorizadoPor = currentUser?.nombre 
+              ? `${currentUser.nombre} (${item.registroPrincipal || 'Reg. 2572-R-2026'})` 
+              : `${item.valuadorPrincipal || 'Lic. Aroldo Ruiz'} (${item.registroPrincipal || 'Reg. 2572-R-2026'})`;
           }
           updatedItem = next;
           return next;
@@ -478,7 +480,7 @@ export default function App() {
     if (updatedItem) {
       try {
         await saveAvaluoToLocalDb(updatedItem);
-      } catch (e) {}
+      } catch (_e) {}
       try {
         await saveAvaluoToCloud(updatedItem);
       } catch (err) {
@@ -544,7 +546,7 @@ export default function App() {
       setViewingAvaluo((cur) => (cur?.id === avaluoId ? updatedItem : cur));
       try {
         await saveAvaluoToLocalDb(updatedItem);
-      } catch (e) {}
+      } catch (_e) {}
       try {
         await saveAvaluoToCloud(updatedItem);
       } catch (err) {
@@ -562,7 +564,7 @@ export default function App() {
       if (viewingAvaluo?.id === id) setViewingAvaluo(null);
       try {
         await deleteAvaluoFromLocalDb(id);
-      } catch (e) {}
+      } catch (_e) {}
       try {
         await deleteAvaluoFromCloud(id);
       } catch (err) {
@@ -657,7 +659,7 @@ export default function App() {
   if (!currentUser) {
     return (
       <LoginScreen
-        onLoginSuccess={(fbUser) => {
+        onLoginSuccess={(_fbUser) => {
           // El cambio de estado es administrado de inmediato por onAuthStateChanged
         }}
       />
@@ -692,7 +694,7 @@ export default function App() {
           <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.5, margin: '0.75rem 0 1.5rem' }}>
             La cuenta de Google <strong>{currentUser.email}</strong> no tiene permisos asignados en el sistema de <strong>LEX ROSAM S.A.</strong>
             <br /><br />
-            Comunícate con <strong>Haroldo Ruiz</strong> para que active tu usuario y te asigne un rol en el panel de colaboradores.
+            Comunícate con <strong>Aroldo Ruiz</strong> para que active tu usuario y te asigne un rol en el panel de colaboradores.
           </p>
           <button
             onClick={handleSignOut}
@@ -836,6 +838,7 @@ export default function App() {
       {(isCreatingNew || editingAvaluo) && (
         <AvaluoFormModal
           avaluo={editingAvaluo}
+          usuarios={usuarios}
           onClose={() => {
             if (lastFichaIdRef.current) {
               const previousItem = avaluos.find(a => a.id === lastFichaIdRef.current);
@@ -849,7 +852,7 @@ export default function App() {
         />
       )}
 
-      {/* Control de Usuarios y Roles (Haroldo Ruiz & Ramiro Nóchez) */}
+      {/* Control de Usuarios y Roles (Aroldo Ruiz & Ramiro Nóchez) */}
       {showUserManagement && (
         <UserManagementModal
           currentUser={currentUser}

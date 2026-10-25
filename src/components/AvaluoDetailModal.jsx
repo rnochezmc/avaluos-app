@@ -1,12 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, Printer, Edit3, MapPin, Building, Calendar, Sparkles, 
   CheckCircle, FileText, Camera, DollarSign, Scale, ExternalLink,
   ShieldCheck, AlertTriangle, ArrowRight, CornerDownLeft, Download, Trash2,
-  Upload, Loader
+  Upload, Loader, ZoomIn
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
+import { fetchRgpPagesFromCloud } from '../firebase';
+import { getAvaluoFromLocalDb } from '../utils/localDb';
+import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
 
 export default function AvaluoDetailModal({ 
   avaluo, 
@@ -22,7 +25,70 @@ export default function AvaluoDetailModal({
   const [isRejecting, setIsRejecting] = useState(false);
   const [rejectionComment, setRejectionComment] = useState('');
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [previewPageImage, setPreviewPageImage] = useState(null);
+  const [hydratedConsultasPdfs, setHydratedConsultasPdfs] = useState(avaluo?.consultasPdfs || []);
   const fileInputRef = useRef(null);
+
+  // Hidratar páginas y dataUrls de RGP desde la nube o IndexedDB si vienen compactadas
+  useEffect(() => {
+    let isMounted = true;
+    const rawList = avaluo?.consultasPdfs || [];
+
+    if (rawList.length === 0 && avaluo?.id) {
+      fetchRgpPagesFromCloud(avaluo.id).then(cloudPages => {
+        if (!isMounted || !cloudPages || cloudPages.length === 0) return;
+        const grouped = {};
+        cloudPages.forEach(cp => {
+          const key = cp.docId || cp.docName || 'doc';
+          if (!grouped[key]) {
+            grouped[key] = {
+              id: key,
+              name: cp.docName || cp.fileName || 'Certificación RGP',
+              size: '',
+              fecha: '',
+              pages: []
+            };
+          }
+          grouped[key].pages.push(cp);
+        });
+        const docs = Object.values(grouped).map(d => ({
+          ...d,
+          pages: d.pages.sort((a, b) => (a.pageIndex || 0) - (b.pageIndex || 0))
+        }));
+        setHydratedConsultasPdfs(docs);
+      }).catch(e => console.warn('Error fetching cloud RGP pages in detail modal:', e));
+      return;
+    }
+
+    const needsData = rawList.some(d => Array.isArray(d.pages) && d.pages.some(p => !p.dataUrl));
+    if (needsData && avaluo?.id) {
+      getAvaluoFromLocalDb(avaluo.id).then(local => {
+        if (local?.consultasPdfs?.some(d => d.pages?.some(p => p.dataUrl))) {
+          if (isMounted) setHydratedConsultasPdfs(local.consultasPdfs);
+          return;
+        }
+        return fetchRgpPagesFromCloud(avaluo.id).then(cloudPages => {
+          if (!isMounted || !cloudPages || cloudPages.length === 0) return;
+          const merged = rawList.map(d => {
+            const pagesWithData = (d.pages || []).map(p => {
+              if (p.dataUrl) return p;
+              const found = cloudPages.find(cp => 
+                (cp.docId === d.id || cp.docName === d.name || cp.fileName === d.name) && 
+                Number(cp.pageIndex) === Number(p.pageIndex)
+              );
+              return found?.dataUrl ? { ...p, dataUrl: found.dataUrl } : p;
+            });
+            return { ...d, pages: pagesWithData };
+          });
+          if (isMounted) setHydratedConsultasPdfs(merged);
+        });
+      }).catch(e => console.warn('Error hydrating RGP pages:', e));
+    } else {
+      setHydratedConsultasPdfs(rawList);
+    }
+
+    return () => { isMounted = false; };
+  }, [avaluo?.consultasPdfs, avaluo?.id]);
 
   const handlePdfUpload = async (e) => {
     const files = Array.from(e.target.files || []);
@@ -82,7 +148,7 @@ export default function AvaluoDetailModal({
   const handleAuthorize = () => {
     if (window.confirm(`¿Confirmar autorización del expediente ${avaluo.codigo} como Valuador Autorizado?`)) {
       if (onStatusChange) {
-        onStatusChange(avaluo.id, 'autorizado', 'Autorizado y firmado por Lic. Haroldo Ruiz');
+        onStatusChange(avaluo.id, 'autorizado', `Autorizado y firmado por ${avaluo.valuadorPrincipal || 'Lic. Aroldo Ruiz'}`);
       }
     }
   };
@@ -100,7 +166,7 @@ export default function AvaluoDetailModal({
   };
 
   const handleSendToReview = () => {
-    if (window.confirm(`¿Desea enviar el expediente ${avaluo.codigo} para autorización del Lic. Haroldo Ruiz?`)) {
+    if (window.confirm(`¿Desea enviar el expediente ${avaluo.codigo} para autorización del Lic. Aroldo Ruiz?`)) {
       if (onStatusChange) {
         onStatusChange(avaluo.id, 'en_revision', 'Enviado por técnico para revisión y autorización');
       }
@@ -209,7 +275,7 @@ export default function AvaluoDetailModal({
                 <ShieldCheck size={20} style={{ color: '#2563eb' }} />
                 <div>
                   <span style={{ fontWeight: 700, color: '#1e40af', fontSize: '0.85rem' }}>Expediente Autorizado</span>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Aprobado y certificado por Lic. Haroldo Ruiz (Reg. 2572-R-2026)</div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Aprobado y certificado por {avaluo.valuadorPrincipal || 'Lic. Aroldo Ruiz'} ({avaluo.registroPrincipal || 'Reg. 2572-R-2026'})</div>
                 </div>
               </>
             )}
@@ -576,17 +642,19 @@ export default function AvaluoDetailModal({
                 <ShieldCheck size={16} />
                 <span>Profesionales Valuadores Autorizados</span>
               </div>
-              <div className="form-grid-2">
+              <div className="form-grid-2" style={{ gridTemplateColumns: avaluo.incluirFirmaRevisor === false ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))' }}>
                 <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                   <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Valuador Principal</div>
                   <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorPrincipal || 'Lic. Aroldo Oliverio Ruiz Orozco'}</div>
                   <div style={{ fontSize: '0.8rem', color: '#1e40af' }}>{avaluo.registroPrincipal || 'Valuador autorizado 2572-R-2026'}</div>
                 </div>
-                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Valuador Revisor</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias'}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#1e40af' }}>{avaluo.registroRevisor || 'Valuador autorizado 193-T-93'}</div>
-                </div>
+                {avaluo.incluirFirmaRevisor !== false && (
+                  <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Valuador Revisor</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias'}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#1e40af' }}>{avaluo.registroRevisor || 'Valuador autorizado 193-T-93'}</div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -776,13 +844,13 @@ export default function AvaluoDetailModal({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {fincas.map((f, i) => {
                   const isFirst = i === 0;
-                  const fNombre = f.dicabiNombre || (isFirst ? avaluo.dicabiNombre : '') || f.propietario || avaluo.propietarioPrincipal || '-';
-                  const fDireccion = f.dicabiDireccion || (isFirst ? avaluo.dicabiDireccion : '') || avaluo.dicabiDireccion || avaluo.direccion || '-';
-                  const fMatricula = f.dicabiMatricula || (isFirst ? avaluo.dicabiMatricula : '');
-                  const fArea = f.dicabiArea || (isFirst && avaluo.dicabiArea ? avaluo.dicabiArea : '') || (f.areaValuada ? `${Number(f.areaValuada).toFixed(2)} m²` : (f.areaRegistrada ? `${Number(f.areaRegistrada).toFixed(2)} m²` : '-'));
+                  const fNombre = f.dicabiNombre || (isFirst ? (avaluo.dicabiNombre || '') : '') || '-';
+                  const fDireccion = f.dicabiDireccion || (isFirst ? (avaluo.dicabiDireccion || '') : '') || '-';
+                  const fMatricula = f.dicabiMatricula || (isFirst ? (avaluo.dicabiMatricula || '') : '') || '-';
+                  const fArea = f.dicabiArea || (isFirst ? (avaluo.dicabiArea || '') : '') || '-';
                   const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
                     ? f.dicabiObservaciones 
-                    : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : (fMatricula && fMatricula !== 'Pendiente' ? '-' : 'Finca no inscrita en DICABI.'));
+                    : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : '-');
 
                   return (
                     <div key={i} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
@@ -1088,9 +1156,9 @@ export default function AvaluoDetailModal({
                 )}
               </div>
 
-              {avaluo.consultasPdfs && avaluo.consultasPdfs.length > 0 ? (
+              {hydratedConsultasPdfs && hydratedConsultasPdfs.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  {avaluo.consultasPdfs.map((pdf, idx) => (
+                  {hydratedConsultasPdfs.map((pdf, idx) => (
                     <div 
                       key={pdf.id || idx}
                       style={{
@@ -1106,9 +1174,9 @@ export default function AvaluoDetailModal({
                           <div>
                             <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0d2847' }}>{pdf.name}</div>
                             <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                              Tamaño: {pdf.size} {pdf.fecha ? `• Adjuntado el ${pdf.fecha}` : ''}
+                              {pdf.size ? `Tamaño: ${pdf.size} • ` : ''}{pdf.fecha ? `Adjuntado el ${pdf.fecha} • ` : ''}
                               {pdf.pages && pdf.pages.length > 0 && (
-                                <span style={{ marginLeft: '8px', background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                                <span style={{ background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>
                                   {pdf.pages.length} {pdf.pages.length === 1 ? 'página' : 'páginas'}
                                 </span>
                               )}
@@ -1168,28 +1236,51 @@ export default function AvaluoDetailModal({
                       {pdf.pages && pdf.pages.length > 0 ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.6rem', marginTop: '0.5rem', background: '#ffffff', padding: '0.6rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                           {pdf.pages.map((p, pIdx) => (
-                            <a 
+                            <div 
                               key={pIdx} 
-                              href={p.dataUrl} 
-                              target="_blank" 
-                              rel="noreferrer" 
-                              title="Clic para ver en tamaño completo"
-                              style={{ display: 'flex', flexDirection: 'column', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', textDecoration: 'none' }}
+                              onClick={() => {
+                                if (p.dataUrl) {
+                                  setPreviewPageImage({ dataUrl: p.dataUrl, name: `${pdf.name} (Pág. ${p.pageIndex || pIdx + 1})` });
+                                }
+                              }}
+                              title="Clic para ampliar documento"
+                              style={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                background: '#f8fafc', 
+                                border: '1px solid #cbd5e1', 
+                                borderRadius: '6px', 
+                                overflow: 'hidden', 
+                                cursor: p.dataUrl ? 'pointer' : 'default',
+                                position: 'relative'
+                              }}
                             >
-                              <div style={{ height: '140px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <img src={p.dataUrl} alt={`Página ${p.pageIndex || pIdx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                              <div style={{ height: '140px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                {p.dataUrl ? (
+                                  <>
+                                    <img src={p.dataUrl} alt={`Página ${p.pageIndex || pIdx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                    <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(13,40,71,0.75)', color: '#fff', borderRadius: '3px', padding: '2px 4px', display: 'flex', alignItems: 'center' }}>
+                                      <ZoomIn size={12} />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: '#94a3b8', fontSize: '0.7rem' }}>
+                                    <Loader size={16} className="spin" />
+                                    <span>Cargando...</span>
+                                  </div>
+                                )}
                               </div>
                               <div style={{ padding: '3px 6px', background: '#e2e8f0', fontSize: '0.68rem', fontWeight: 600, color: '#334155', textAlign: 'center' }}>
                                 Pág. {p.pageIndex || pIdx + 1} de {p.totalPaginas || pdf.pages.length}
                               </div>
-                            </a>
+                            </div>
                           ))}
                         </div>
                       ) : pdf.dataUrl && pdf.dataUrl.startsWith('data:image/') ? (
-                        <div style={{ maxWidth: '140px', marginTop: '0.5rem', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
-                          <a href={pdf.dataUrl} target="_blank" rel="noreferrer">
-                            <img src={pdf.dataUrl} alt={pdf.name} style={{ width: '100%', height: '140px', objectFit: 'contain' }} />
-                          </a>
+                        <div style={{ maxWidth: '140px', marginTop: '0.5rem', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', cursor: 'pointer' }}
+                          onClick={() => setPreviewPageImage({ dataUrl: pdf.dataUrl, name: pdf.name })}
+                        >
+                          <img src={pdf.dataUrl} alt={pdf.name} style={{ width: '100%', height: '140px', objectFit: 'contain' }} />
                         </div>
                       ) : null}
                     </div>
@@ -1239,9 +1330,23 @@ export default function AvaluoDetailModal({
               </div>
 
               <div style={{ padding: '1.25rem', background: '#eff6ff', borderRadius: '8px', border: '1.5px solid #2563eb', marginBottom: '1.25rem' }}>
-                <strong style={{ color: '#1e40af' }}>Dictamen de Garantía Oficial:</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <strong style={{ color: '#1e40af' }}>Dictamen de Garantía Oficial (Pág. 6):</strong>
+                  {onEdit && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onEdit(avaluo);
+                      }}
+                      style={{ background: '#ffffff', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '3px 8px', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Edit3 size={13} /> Editar Dictamen
+                    </button>
+                  )}
+                </div>
                 <p style={{ marginTop: '0.4rem', color: '#0f172a', fontStyle: 'italic', lineHeight: 1.5 }}>
-                  “El inmueble evaluado reúne las condiciones necesarias para ser aceptado como garantía. La entidad financiera determinará los términos y políticas aplicables al otorgamiento del crédito correspondiente.” Tomar en cuenta: observaciones, notas y recomendaciones.
+                  {avaluo.dictamenGarantia || DEFAULT_DICTAMEN_GARANTIA}
                 </p>
               </div>
 
@@ -1268,10 +1373,62 @@ export default function AvaluoDetailModal({
             style={{ background: '#0d2847' }}
           >
             <Printer size={15} style={{ display: 'inline', marginRight: '5px' }} />
-            Imprimir Formato Oficial (9 Páginas)
+            Imprimir Formato Oficial PDF
           </button>
         </div>
       </div>
+
+      {/* Lightbox / Modal de Vista Previa en Tamaño Completo para Páginas RGP */}
+      {previewPageImage && (
+        <div 
+          onClick={() => setPreviewPageImage(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(7, 23, 43, 0.88)',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            backdropFilter: 'blur(4px)'
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              borderRadius: '8px',
+              maxWidth: '900px',
+              width: '100%',
+              maxHeight: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.25rem', background: '#0d2847', color: '#ffffff' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{previewPageImage.name}</span>
+              <button 
+                type="button" 
+                onClick={() => setPreviewPageImage(null)}
+                style={{ background: 'transparent', border: 'none', color: '#ffffff', cursor: 'pointer', display: 'flex' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto', padding: '1rem', display: 'flex', justifyContent: 'center', background: '#f8fafc' }}>
+              <img 
+                src={previewPageImage.dataUrl} 
+                alt={previewPageImage.name} 
+                style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
