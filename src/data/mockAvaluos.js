@@ -100,8 +100,8 @@ export const initialAvaluos = [
     
     valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
     registroPrincipal: "Valuador autorizado 2572-R-2026",
-    valuadorRevisor: "Lic. Luis Felipe Tolaque Tobias",
-    registroRevisor: "Valuador autorizado 193-T-93",
+    valuadorRevisor: "Lic. Edgar Rolando Martínez Larios",
+    registroRevisor: "Valuador autorizado 2571-M-2026",
     
     dicabiNombre: "",
     dicabiDireccion: "Apartamento No. 1102, ubicado en el Nivel No.11 del Edificio Vantier, 2 parqueos ubicados en el sótano No. 3 y bodega ubicada en el sotano No. uno.",
@@ -337,8 +337,8 @@ export const initialAvaluos = [
     // Valuadores Oficiales
     valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
     registroPrincipal: "Valuador autorizado 2572-R-2026",
-    valuadorRevisor: "Lic. Luis Felipe Tolaque Tobias",
-    registroRevisor: "Valuador autorizado 193-T-93",
+    valuadorRevisor: "Lic. Edgar Rolando Martínez Larios",
+    registroRevisor: "Valuador autorizado 2571-M-2026",
     
     // DICABI (Independiente del RGP)
     dicabiNombre: "WALTER MANFREDO GOMEZ HIGUEROS",
@@ -506,8 +506,8 @@ export const initialAvaluos = [
     
     valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
     registroPrincipal: "Valuador autorizado 2572-R-2026",
-    valuadorRevisor: "Lic. Luis Felipe Tolaque Tobias",
-    registroRevisor: "Valuador autorizado 193-T-93",
+    valuadorRevisor: "Lic. Edgar Rolando Martínez Larios",
+    registroRevisor: "Valuador autorizado 2571-M-2026",
     
     dicabiNombre: "Inmobiliaria Las Cumbres S.A.",
     dicabiDireccion: "15 Avenida 4-32 Zona 10",
@@ -646,8 +646,8 @@ export const initialAvaluos = [
     
     valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
     registroPrincipal: "Valuador autorizado 2572-R-2026",
-    valuadorRevisor: "Lic. Luis Felipe Tolaque Tobias",
-    registroRevisor: "Valuador autorizado 193-T-93",
+    valuadorRevisor: "Lic. Edgar Rolando Martínez Larios",
+    registroRevisor: "Valuador autorizado 2571-M-2026",
     
     dicabiNombre: "Carlos Enrique Morales Fuentes",
     dicabiDireccion: "Condominio Prados del Encinal Casa 14, Fraijanes",
@@ -784,8 +784,8 @@ export const initialAvaluos = [
     
     valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
     registroPrincipal: "Valuador autorizado 2572-R-2026",
-    valuadorRevisor: "Lic. Luis Felipe Tolaque Tobias",
-    registroRevisor: "Valuador autorizado 193-T-93",
+    valuadorRevisor: "Lic. Edgar Rolando Martínez Larios",
+    registroRevisor: "Valuador autorizado 2571-M-2026",
     
     dicabiNombre: "Logística Industrial del Sur S.A.",
     dicabiDireccion: "Calzada Atanasio Tzul 22-00 Zona 12",
@@ -884,10 +884,10 @@ export const initialAvaluos = [
     observacionesAutorizador: "Inspección técnica física y análisis de mercado conformes a normativas bancarias. Garantía calificada de primer orden.",
     aplicaTerreno: true,
     dictamenGarantia: "“El inmueble reúne las condiciones técnicas, físicas y de mercado requeridas para constituir garantía fiduciaria o hipotecaria ante entidades del sistema bancario nacional, según las normativas y políticas crediticias vigentes.”",
-    valuadorPrincipal: "Ing. Carlos Enrique Villagrán",
-    registroPrincipal: "Perito Valuador Autorizado DICABI No. 1845-V",
-    valuadorRevisor: "Lic. Roberto Morales Solares",
-    registroRevisor: "Valuador Autorizado 412-T-2018",
+    valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
+    registroPrincipal: "Valuador autorizado 2572-R-2026",
+    valuadorRevisor: "Lic. Edgar Rolando Martínez Larios",
+    registroRevisor: "Valuador autorizado 2571-M-2026",
     incluirFirmaRevisor: true,
     
     fincas: [
@@ -999,10 +999,10 @@ export const initialAvaluos = [
     observacionesAutorizador: "Pendiente confirmación de solvencia de cuota de mantenimiento de la plaza.",
     aplicaTerreno: false,
     dictamenGarantia: "“El inmueble reúne las condiciones técnicas, físicas y de mercado requeridas para constituir garantía fiduciaria o hipotecaria ante entidades del sistema bancario nacional, según las normativas y políticas crediticias vigentes.”",
-    valuadorPrincipal: "Ing. Carlos Enrique Villagrán",
-    registroPrincipal: "Perito Valuador Autorizado DICABI No. 1845-V",
-    valuadorRevisor: "Lic. Roberto Morales Solares",
-    registroRevisor: "Valuador Autorizado 412-T-2018",
+    valuadorPrincipal: "Lic. Aroldo Oliverio Ruiz Orozco",
+    registroPrincipal: "Valuador autorizado 2572-R-2026",
+    valuadorRevisor: "Lic. Edgar Rolando Martínez Larios",
+    registroRevisor: "Valuador autorizado 2571-M-2026",
     incluirFirmaRevisor: true,
     
     fincas: [

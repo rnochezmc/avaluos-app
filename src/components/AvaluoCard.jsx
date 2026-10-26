@@ -68,7 +68,7 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint }
 
       <div className="aval-card-body">
         <div className="aval-card-title-row">
-          <h3 className="aval-card-title">{avaluo.propietarioPrincipal || 'Propietario no asignado'}</h3>
+          <h3 className="aval-card-title">{avaluo.propietarioPrincipal || avaluo.fincas?.[0]?.propietario || avaluo.bienMostradoPor || 'Propietario no asignado'}</h3>
           <span className="aval-card-type-tag">{avaluo.tipoAvaluo}</span>
         </div>
 

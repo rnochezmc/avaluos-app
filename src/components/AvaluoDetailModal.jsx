@@ -8,6 +8,7 @@ import {
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
 import { fetchRgpPagesFromCloud } from '../firebase';
+import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
 import { getTenantConfig } from '../data/tenantsConfig';
 
@@ -441,7 +442,7 @@ export default function AvaluoDetailModal({
               onClick={() => setActiveTab('registral')}
             >
               <FileText size={16} />
-              <span>1. Fincas & Registral</span>
+              <span>1. Solicitud & Fincas</span>
             </button>
             <button
               type="button"
@@ -494,7 +495,7 @@ export default function AvaluoDetailModal({
             <div>
               <div className="form-section-title">
                 <FileText size={16} />
-                <span>Datos Generales de la Solicitud</span>
+                <span>Datos Generales de la Solicitud e Inspección</span>
               </div>
               <div className="form-grid-3">
                 <div className="form-field">
@@ -508,6 +509,23 @@ export default function AvaluoDetailModal({
                 <div className="form-field">
                   <label className="form-label">Solicitante</label>
                   <div style={{ fontWeight: 600 }}>{avaluo.solicitante}</div>
+                </div>
+              </div>
+
+              <div className="form-grid-3" style={{ marginTop: '0.75rem' }}>
+                <div className="form-field">
+                  <label className="form-label">Propietario Principal (Según RGP)</label>
+                  <div style={{ fontWeight: 700, color: '#1e3a8a' }}>
+                    {avaluo.propietarioPrincipal || avaluo.fincas?.[0]?.propietario || avaluo.bienMostradoPor || 'No asignado'}
+                  </div>
+                </div>
+                <div className="form-field">
+                  <label className="form-label">Bien Mostrado Por</label>
+                  <div style={{ fontWeight: 600 }}>{avaluo.bienMostradoPor || 'N/A'}</div>
+                </div>
+                <div className="form-field">
+                  <label className="form-label">DPI / Identificación</label>
+                  <div>{avaluo.dpi || 'N/A'}</div>
                 </div>
               </div>
 
@@ -528,19 +546,23 @@ export default function AvaluoDetailModal({
 
               <div className="form-grid-2" style={{ marginTop: '0.75rem' }}>
                 <div className="form-field">
-                  <label className="form-label">Bien Mostrado Por</label>
-                  <div style={{ fontWeight: 600 }}>{avaluo.bienMostradoPor || 'N/A'}</div>
+                  <label className="form-label">Dirección Completa</label>
+                  <div style={{ fontWeight: 500 }}>{avaluo.direccion || 'N/A'}</div>
                 </div>
                 <div className="form-field">
-                  <label className="form-label">DPI / Identificación</label>
-                  <div>{avaluo.dpi || 'N/A'}</div>
+                  <label className="form-label">Coordenadas GPS</label>
+                  <div style={{ fontFamily: 'monospace', color: '#1e293b' }}>{avaluo.coordenadas || 'N/A'}</div>
                 </div>
               </div>
 
-              <div className="form-field" style={{ marginTop: '0.75rem' }}>
-                <label className="form-label">Dirección Completa</label>
-                <div style={{ fontWeight: 500 }}>{avaluo.direccion}</div>
-              </div>
+              {avaluo.descripcionGeneral && (
+                <div className="form-field" style={{ marginTop: '0.75rem' }}>
+                  <label className="form-label">Descripción General del Inmueble</label>
+                  <div style={{ fontSize: '0.88rem', color: '#334155', fontStyle: 'italic', background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    {avaluo.descripcionGeneral}
+                  </div>
+                </div>
+              )}
 
               {/* Fincas Registradas con Áreas Individuales */}
               <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
@@ -581,23 +603,41 @@ export default function AvaluoDetailModal({
               </div>
 
               {/* Aspectos Legales con Textos Amplios */}
-              <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
-                <Scale size={16} />
-                <span>Aspectos Legales y Gravámenes</span>
+              <div className="form-section-title" style={{ marginTop: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Scale size={16} />
+                  <span>Aspectos Legales y Gravámenes (Cuadro Oficial LIMITACIONES Página 2)</span>
+                </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.85rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div>
-                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Limitaciones y Servidumbres:</strong>
-                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px' }}>{avaluo.limitaciones || 'Sin limitaciones registradas.'}</div>
+                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Anotaciones y Gravámenes:</strong>
+                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.gravamenes || 'Libre de gravámenes vigentes.'}</div>
                 </div>
                 <div>
-                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Anotaciones Registrales:</strong>
-                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px' }}>{avaluo.anotaciones || 'Ninguna vigente.'}</div>
+                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Servidumbres:</strong>
+                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.servidumbres || 'Sin servidumbres activas.'}</div>
                 </div>
                 <div>
-                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Gravámenes e Hipotecas:</strong>
-                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px' }}>{avaluo.gravamenes || 'Libre de gravámenes vigentes.'}</div>
+                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Áreas Comunes:</strong>
+                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.areasComunes || 'No aplica'}</div>
                 </div>
+                <div>
+                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Desmembración:</strong>
+                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.desmembracion || 'Sin desmembraciones pendientes.'}</div>
+                </div>
+                {avaluo.limitaciones && (
+                  <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Otras Limitaciones Registrales:</strong>
+                    <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px' }}>{avaluo.limitaciones}</div>
+                  </div>
+                )}
+                {avaluo.anotaciones && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Anotaciones de Demanda o Embargo:</strong>
+                    <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px' }}>{avaluo.anotaciones}</div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -644,16 +684,32 @@ export default function AvaluoDetailModal({
                 <span>Profesionales Valuadores Autorizados</span>
               </div>
               <div className="form-grid-2" style={{ gridTemplateColumns: avaluo.incluirFirmaRevisor === false ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Valuador Principal</div>
+                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Valuador Principal</div>
+                    <span style={{ fontSize: '0.7rem', background: '#dbeafe', color: '#1e40af', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>Firma Oficial</span>
+                  </div>
                   <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorPrincipal || 'Lic. Aroldo Oliverio Ruiz Orozco'}</div>
                   <div style={{ fontSize: '0.8rem', color: '#1e40af' }}>{avaluo.registroPrincipal || 'Valuador autorizado 2572-R-2026'}</div>
+                  <div style={{ marginTop: '0.35rem', background: '#f8fafc', padding: '0.4rem', borderRadius: '6px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+                    <img src="/signatures/firma_aroldo_ruiz.png" alt="Firma Aroldo Ruiz" style={{ maxHeight: '55px', maxWidth: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+                  </div>
                 </div>
                 {avaluo.incluirFirmaRevisor !== false && (
-                  <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Valuador Revisor</div>
-                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0d2847' }}>{avaluo.valuadorRevisor || 'Lic. Luis Felipe Tolaque Tobias'}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#1e40af' }}>{avaluo.registroRevisor || 'Valuador autorizado 193-T-93'}</div>
+                  <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Valuador Revisor</div>
+                      <span style={{ fontSize: '0.7rem', background: '#ecfdf5', color: '#004e3b', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>Segundo Firmante</span>
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0d2847' }}>
+                      {avaluo.valuadorRevisor && !avaluo.valuadorRevisor.includes('Tolaque') && !avaluo.valuadorRevisor.includes('Morales Solares') ? avaluo.valuadorRevisor : 'Lic. Edgar Rolando Martínez Larios'}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#1e40af' }}>
+                      {avaluo.registroRevisor && !avaluo.registroRevisor.includes('193-T-93') && !avaluo.registroRevisor.includes('412-T-2018') ? avaluo.registroRevisor : 'Valuador autorizado 2571-M-2026'}
+                    </div>
+                    <div style={{ marginTop: '0.35rem', background: '#f8fafc', padding: '0.4rem', borderRadius: '6px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+                      <img src="/signatures/firma_edgar_martinez.png" alt="Firma Edgar Martínez" style={{ maxHeight: '55px', maxWidth: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+                    </div>
                   </div>
                 )}
               </div>

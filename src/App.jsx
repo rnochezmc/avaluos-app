@@ -36,28 +36,97 @@ const LEGACY_STORAGE_KEY_V2 = 'lexrosam_avaluos_db_v2';
 const LEGACY_STORAGE_KEY = 'cverde_avaluos_db_v1';
 const AUTH_USER_KEY = 'lexrosam_auth_user';
 
-// Función para enriquecer registros asegurando que cuenten con su álbum fotográfico completo
-const enrichWithDefaultPhotos = (avaluoItem) => {
-  const match = initialAvaluos.find(init => init.id === avaluoItem.id || init.codigo === avaluoItem.codigo);
-  if (!match || !match.fotos) return avaluoItem;
-  
-  const currentFotos = avaluoItem.fotos || {};
+// Función para enriquecer registros, fotos y reparar datos de limitaciones / áreas comunes / propietarios
+const repairAndEnrichAvaluo = (avaluoItem) => {
+  if (!avaluoItem) return { item: avaluoItem, changed: false };
   let changed = false;
-  const mergedFotos = { ...currentFotos };
-  
-  for (const key of ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi']) {
-    const curr = mergedFotos[key];
-    const hasPhoto = Array.isArray(curr) ? curr.length > 0 : (typeof curr === 'string' && curr.trim().length > 0);
-    if (!hasPhoto && match.fotos[key]) {
-      mergedFotos[key] = match.fotos[key];
+  let item = { ...avaluoItem };
+
+  // 1. Fotos por defecto si vienen vacías
+  const match = initialAvaluos.find(init => init.id === item.id || init.codigo === item.codigo);
+  if (match && match.fotos) {
+    const currentFotos = item.fotos || {};
+    const mergedFotos = { ...currentFotos };
+    for (const key of ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi']) {
+      const curr = mergedFotos[key];
+      const hasPhoto = Array.isArray(curr) ? curr.length > 0 : (typeof curr === 'string' && curr.trim().length > 0);
+      if (!hasPhoto && match.fotos[key]) {
+        mergedFotos[key] = match.fotos[key];
+        changed = true;
+      }
+    }
+    if (changed) {
+      item.fotos = mergedFotos;
+    }
+  }
+
+  // 2. Si texto de elementos comunes fue guardado en desmembracion por falta del campo areasComunes
+  if (
+    item.desmembracion && 
+    (/elementos comunes|areas comunes|áreas comunes|comunes|finca 500|finca 1334/i.test(item.desmembracion)) &&
+    (!item.areasComunes || item.areasComunes === 'No aplica' || item.areasComunes === 'No')
+  ) {
+    item.areasComunes = item.desmembracion;
+    item.desmembracion = 'No aplica';
+    changed = true;
+  }
+
+  // 3. Propietario principal si no está asignado pero existe en fincas o bienMostradoPor
+  if (!item.propietarioPrincipal || item.propietarioPrincipal.trim() === '' || item.propietarioPrincipal === 'Propietario no asignado') {
+    const firstFincaProp = item.fincas?.[0]?.propietario;
+    if (firstFincaProp && firstFincaProp.trim().length > 0) {
+      item.propietarioPrincipal = firstFincaProp;
+      changed = true;
+    } else if (item.bienMostradoPor && item.bienMostradoPor.trim().length > 0) {
+      item.propietarioPrincipal = item.bienMostradoPor;
       changed = true;
     }
   }
-  
-  if (changed) {
-    return { ...avaluoItem, fotos: mergedFotos };
+
+  // 4. Corrección de precisión centesimal en valor bancario (eliminación del artefacto Math.round)
+  if (item.valorComercialGTQ && Number(item.valorComercialGTQ) > 0) {
+    const comGTQ = Number(item.valorComercialGTQ);
+    const exact80 = parseFloat((comGTQ * 0.8).toFixed(2));
+    const tc = Number(item.tipoCambio) || 7.62581;
+    
+    // Si valorBancarioGTQ es un entero que coincide con Math.round(exact80) pero exact80 tiene centavos
+    if (
+      item.valorBancarioGTQ != null &&
+      Number.isInteger(Number(item.valorBancarioGTQ)) &&
+      !Number.isInteger(exact80) &&
+      Math.round(exact80) === Number(item.valorBancarioGTQ)
+    ) {
+      item.valorBancarioGTQ = exact80;
+      item.valorBancarioUSD = parseFloat((exact80 / tc).toFixed(2));
+      changed = true;
+    }
   }
-  return avaluoItem;
+
+  // 5. Normalización oficial de valuadores y sellos de firma
+  if (!item.valuadorPrincipal || item.valuadorPrincipal.includes('Villagrán')) {
+    item.valuadorPrincipal = 'Lic. Aroldo Oliverio Ruiz Orozco';
+    item.registroPrincipal = 'Valuador autorizado 2572-R-2026';
+    changed = true;
+  }
+  if (!item.valuadorRevisor || item.valuadorRevisor.includes('Tolaque') || item.valuadorRevisor.includes('Morales Solares')) {
+    item.valuadorRevisor = 'Lic. Edgar Rolando Martínez Larios';
+    item.registroRevisor = 'Valuador autorizado 2571-M-2026';
+    changed = true;
+  }
+  if (!item.firmaPrincipalImg) {
+    item.firmaPrincipalImg = '/signatures/firma_aroldo_ruiz.png';
+    changed = true;
+  }
+  if (!item.firmaRevisorImg) {
+    item.firmaRevisorImg = '/signatures/firma_edgar_martinez.png';
+    changed = true;
+  }
+
+  return { item, changed };
+};
+
+const enrichWithDefaultPhotos = (avaluoItem) => {
+  return repairAndEnrichAvaluo(avaluoItem).item;
 };
 
 export default function App() {
@@ -134,14 +203,26 @@ export default function App() {
         setAvaluos((prev) => {
           return prev.map((item) => {
             const local = localList.find(l => l.id === item.id);
-            if (local && Array.isArray(local.consultasPdfs) && local.consultasPdfs.length > 0) {
+            if (!local) return item;
+            let updated = item;
+
+            if (Array.isArray(local.consultasPdfs) && local.consultasPdfs.length > 0) {
               const localHasPages = local.consultasPdfs.some(d => Array.isArray(d.pages) && d.pages.length > 0);
               const curHasPages = Array.isArray(item.consultasPdfs) && item.consultasPdfs.some(d => Array.isArray(d.pages) && d.pages.length > 0);
               if (localHasPages && !curHasPages) {
-                return { ...item, consultasPdfs: local.consultasPdfs };
+                updated = { ...updated, consultasPdfs: local.consultasPdfs };
               }
             }
-            return item;
+
+            if (local.fotos && typeof local.fotos === 'object') {
+              const localHasFotos = Object.values(local.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
+              const curHasFotos = updated.fotos && Object.values(updated.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
+              if (localHasFotos && !curHasFotos) {
+                updated = { ...updated, fotos: local.fotos };
+              }
+            }
+
+            return updated;
           });
         });
       }
@@ -165,20 +246,29 @@ export default function App() {
 
             const cleanCloud = cloudList.filter(m => m.codigo !== 'LR-2026-10031' && m.id !== 'lr-2026-10031');
 
-            // Sincronizar inteligentemente las fotos si vienen incompletas de Firestore
+            // Sincronizar inteligentemente fotos y reparar datos si vienen de Firestore
             const enrichedCloud = cleanCloud.map(item => {
-              const enriched = enrichWithDefaultPhotos(item);
-              if (enriched !== item) {
-                saveAvaluoToCloud(enriched).catch(err => console.warn('Sync foto cloud error', err));
+              const { item: repaired, changed } = repairAndEnrichAvaluo(item);
+              if (changed) {
+                saveAvaluoToCloud(repaired).catch(err => console.warn('Sync repair cloud error', err));
               }
-              return enriched;
+              return repaired;
             });
 
-            // Sincronizar avaluos preservando páginas locales de PDFs con dataUrl
+            // Sincronizar avaluos preservando páginas locales de PDFs y fotos con dataUrl
             setAvaluos((prevList) => {
               return enrichedCloud.map((cloudItem) => {
                 const prevItem = prevList.find(p => p.id === cloudItem.id);
                 if (!prevItem) return cloudItem;
+
+                let mergedItem = { ...cloudItem };
+
+                // Preservar fotos si el cloud viene sin fotos pero localmente sí existen
+                const prevHasFotos = prevItem.fotos && Object.values(prevItem.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
+                const cloudHasFotos = cloudItem.fotos && Object.values(cloudItem.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
+                if (prevHasFotos && !cloudHasFotos) {
+                  mergedItem.fotos = prevItem.fotos;
+                }
 
                 if (Array.isArray(prevItem.consultasPdfs) && prevItem.consultasPdfs.length > 0) {
                   const cloudPdfs = cloudItem.consultasPdfs || [];
@@ -192,12 +282,9 @@ export default function App() {
                     }
                     return cloudDoc;
                   });
-                  return {
-                    ...cloudItem,
-                    consultasPdfs: mergedPdfs.length > 0 ? mergedPdfs : prevItem.consultasPdfs
-                  };
+                  mergedItem.consultasPdfs = mergedPdfs.length > 0 ? mergedPdfs : prevItem.consultasPdfs;
                 }
-                return cloudItem;
+                return mergedItem;
               });
             });
 
@@ -206,6 +293,14 @@ export default function App() {
               if (!currentViewing) return null;
               const cloudMatch = enrichedCloud.find(c => c.id === currentViewing.id);
               if (!cloudMatch) return currentViewing;
+
+              let mergedViewing = { ...cloudMatch };
+
+              const viewHasFotos = currentViewing.fotos && Object.values(currentViewing.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
+              const cloudHasFotos = cloudMatch.fotos && Object.values(cloudMatch.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
+              if (viewHasFotos && !cloudHasFotos) {
+                mergedViewing.fotos = currentViewing.fotos;
+              }
 
               if (Array.isArray(currentViewing.consultasPdfs) && currentViewing.consultasPdfs.length > 0) {
                 const mergedPdfs = (cloudMatch.consultasPdfs || []).map((cloudDoc) => {
@@ -218,12 +313,9 @@ export default function App() {
                   }
                   return cloudDoc;
                 });
-                return {
-                  ...cloudMatch,
-                  consultasPdfs: mergedPdfs.length > 0 ? mergedPdfs : currentViewing.consultasPdfs
-                };
+                mergedViewing.consultasPdfs = mergedPdfs.length > 0 ? mergedPdfs : currentViewing.consultasPdfs;
               }
-              return cloudMatch;
+              return mergedViewing;
             });
           }
         },
@@ -272,7 +364,14 @@ export default function App() {
         const match = usuarios.find(u => u.email?.toLowerCase().trim() === email);
 
         // Si no es cuenta principal y usuarios aún no cargan de Firestore, esperar
-        if (email !== 'rnochezmc@gmail.com' && email !== 'cverdeavaluos@gmail.com' && email !== 'aroldoruiz100@gmail.com' && !usuariosLoaded) {
+        if (
+          email !== 'rnochezmc@gmail.com' && 
+          email !== 'cverdeavaluos@gmail.com' && 
+          email !== 'oruiz@cverde.com.gt' && 
+          email !== 'jmmorales@cverde.com.gt' && 
+          email !== 'aroldoruiz100@gmail.com' && 
+          !usuariosLoaded
+        ) {
           return;
         }
 
@@ -289,10 +388,10 @@ export default function App() {
           assignedTitulo = 'Soporte Técnico y Sistemas';
           assignedTenantId = 'all';
           isActivo = true;
-        } else if (email === 'cverdeavaluos@gmail.com') {
+        } else if (email === 'cverdeavaluos@gmail.com' || email === 'oruiz@cverde.com.gt' || email === 'jmmorales@cverde.com.gt') {
           assignedRole = 'admin';
-          assignedNombre = firebaseUser.displayName || 'Ing. Carlos Villagrán';
-          assignedTitulo = 'Director C VERDE / Valuador Autorizado 1890-R-2026';
+          assignedNombre = firebaseUser.displayName || (email === 'oruiz@cverde.com.gt' ? 'Lic. Aroldo Ruiz' : email === 'jmmorales@cverde.com.gt' ? 'Ing. Juan Manuel Morales' : 'Ing. Carlos Villagrán');
+          assignedTitulo = 'Director C VERDE / Valuador Autorizado';
           assignedTenantId = 'cverde';
           isActivo = true;
         } else if (email === 'aroldoruiz100@gmail.com') {
@@ -903,6 +1002,7 @@ export default function App() {
       {/* Create / Edit Wizard Modal */}
       {(isCreatingNew || editingAvaluo) && (
         <AvaluoFormModal
+          key={editingAvaluo?.id || (isCreatingNew ? 'new-avaluo' : 'none')}
           avaluo={editingAvaluo}
           usuarios={usuarios}
           currentTenant={currentTenantConfig}

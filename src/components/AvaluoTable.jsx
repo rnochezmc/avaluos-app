@@ -57,7 +57,7 @@ export default function AvaluoTable({ avaluos, onView, onEdit, onDelete, onPrint
                   <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>{av.tipoAvaluo}</div>
                 </td>
                 <td>
-                  <div style={{ fontWeight: 600 }}>{av.propietarioPrincipal}</div>
+                  <div style={{ fontWeight: 600 }}>{av.propietarioPrincipal || av.fincas?.[0]?.propietario || av.bienMostradoPor || 'No asignado'}</div>
                   <div style={{ fontSize: '0.76rem', color: 'var(--slate-500)', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {av.direccion}
                   </div>

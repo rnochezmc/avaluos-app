@@ -22,6 +22,11 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [pdfProcessStatus, setPdfProcessStatus] = useState('');
 
+  // Asegurar que al abrir para editar o crear siempre inicie en el Paso 1 (Solicitud & Inspección)
+  useEffect(() => {
+    setActiveStep(1);
+  }, [avaluo?.id]);
+
   // Form State initialized with defaults or editing values
   const [formData, setFormData] = useState({
     tenantId: activeTenantId,
@@ -42,7 +47,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
     observacionesAutorizador: avaluo?.observacionesAutorizador || '',
 
     // Información Registral con múltiples fincas y áreas independientes
-    propietarioPrincipal: avaluo?.propietarioPrincipal || '',
+    propietarioPrincipal: avaluo?.propietarioPrincipal || avaluo?.fincas?.[0]?.propietario || '',
     fincas: avaluo?.fincas && avaluo.fincas.length > 0 
       ? avaluo.fincas.map((f, i) => ({
           finca: f.finca || '',
@@ -592,7 +597,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
       const terrenoTotal = next.aplicaTerreno !== false ? (parseFloat(next.desgloseTerreno?.total) || 0) : 0;
       const totalComercial = parseFloat((terrenoTotal + (next.desgloseConstruccion?.total || 0)).toFixed(2));
       next.valorComercialGTQ = totalComercial;
-      next.valorBancarioGTQ = Math.round(totalComercial * 0.8); // 80% standard bank guarantee
+      next.valorBancarioGTQ = parseFloat((totalComercial * 0.8).toFixed(2)); // 80% standard bank guarantee con decimales exactos
       const tc = next.tipoCambio || 7.62581;
       next.valorComercialUSD = parseFloat((totalComercial / tc).toFixed(2));
       next.valorBancarioUSD = parseFloat((next.valorBancarioGTQ / tc).toFixed(2));
@@ -665,7 +670,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
     const terrenoTotal = prev.aplicaTerreno !== false ? (parseFloat(prev.desgloseTerreno?.total) || 0) : 0;
     const totalComercial = parseFloat((terrenoTotal + nextDesglose.total).toFixed(2));
     const tc = parseFloat(prev.tipoCambio) || 7.62581;
-    const valBancario = Math.round(totalComercial * 0.8);
+    const valBancario = parseFloat((totalComercial * 0.8).toFixed(2));
 
     return {
       ...prev,
@@ -684,7 +689,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
       const terrenoTotal = applies ? (parseFloat(next.desgloseTerreno?.total) || 0) : 0;
       const totalComercial = parseFloat((terrenoTotal + (next.desgloseConstruccion?.total || 0)).toFixed(2));
       next.valorComercialGTQ = totalComercial;
-      next.valorBancarioGTQ = Math.round(totalComercial * 0.8);
+      next.valorBancarioGTQ = parseFloat((totalComercial * 0.8).toFixed(2));
       const tc = next.tipoCambio || 7.62581;
       next.valorComercialUSD = parseFloat((totalComercial / tc).toFixed(2));
       next.valorBancarioUSD = parseFloat((next.valorBancarioGTQ / tc).toFixed(2));
@@ -733,7 +738,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
       const terrenoTotal = prev.aplicaTerreno !== false ? nextTerreno.total : 0;
       const totalComercial = parseFloat((terrenoTotal + (prev.desgloseConstruccion?.total || 0)).toFixed(2));
       const tc = parseFloat(prev.tipoCambio) || 7.62581;
-      const valBancario = Math.round(totalComercial * 0.8);
+      const valBancario = parseFloat((totalComercial * 0.8).toFixed(2));
 
       return {
         ...prev,
@@ -791,7 +796,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
       const terrenoTotal = prev.aplicaTerreno !== false ? nextTerreno.total : 0;
       const totalComercial = parseFloat((terrenoTotal + (prev.desgloseConstruccion?.total || 0)).toFixed(2));
       const tc = parseFloat(prev.tipoCambio) || 7.62581;
-      const valBancario = Math.round(totalComercial * 0.8);
+      const valBancario = parseFloat((totalComercial * 0.8).toFixed(2));
 
       return {
         ...prev,
@@ -840,7 +845,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
       const terrenoTotal = prev.aplicaTerreno !== false ? nextTerreno.total : 0;
       const totalComercial = parseFloat((terrenoTotal + (prev.desgloseConstruccion?.total || 0)).toFixed(2));
       const tc = parseFloat(prev.tipoCambio) || 7.62581;
-      const valBancario = Math.round(totalComercial * 0.8);
+      const valBancario = parseFloat((totalComercial * 0.8).toFixed(2));
 
       return {
         ...prev,
@@ -1313,7 +1318,25 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                   </div>
                 </div>
 
-                <div className="form-grid-2">
+                <div className="form-grid-3">
+                  <div className="form-field">
+                    <label className="form-label">Propietario Principal (Según RGP o Solicitud) *</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.propietarioPrincipal}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData(prev => ({
+                          ...prev,
+                          propietarioPrincipal: val,
+                          fincas: prev.fincas.map((f, i) => (i === 0 && (!f.propietario || f.propietario === prev.propietarioPrincipal)) ? { ...f, propietario: val } : f)
+                        }));
+                      }}
+                      placeholder="Ej: JUAN PEREZ / INMOBILIARIA S.A."
+                      required
+                    />
+                  </div>
                   <div className="form-field">
                     <label className="form-label">Bien Mostrado Por (Nombre completo)</label>
                     <input
@@ -1524,12 +1547,12 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                               type="button"
                               onClick={() => setFormData({
                                 ...formData,
-                                valuadorRevisor: 'Lic. Luis Felipe Tolaque Tobias',
-                                registroRevisor: 'Valuador autorizado 193-T-93'
+                                valuadorRevisor: 'Lic. Edgar Rolando Martínez Larios',
+                                registroRevisor: 'Valuador autorizado 2571-M-2026'
                               })}
                               style={{ fontSize: '0.72rem', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: '4px', padding: '3px 8px', cursor: 'pointer', fontWeight: 600 }}
                             >
-                              Lic. Luis Felipe Tolaque (193-T-93)
+                              Lic. Edgar Martínez (2571-M-2026)
                             </button>
                             {usuarios && usuarios.filter(u => u.rol === 'admin' || u.rol === 'valuador').map(u => (
                               <button
@@ -1741,54 +1764,120 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                   </div>
                 </div>
 
-                {/* Aspectos Legales con Textos Amplios */}
-                <div className="form-section-title" style={{ marginTop: '1.5rem' }}>
-                  <FileText size={16} />
-                  <span>Aspectos Legales (Permite Detalle y Textos Largos)</span>
+                {/* Aspectos Legales y Gravámenes - Cuadro Oficial LIMITACIONES (Página 2 del Reporte) */}
+                <div className="form-section-title" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FileText size={16} />
+                    <span>Aspectos Legales y Gravámenes (Cuadro Oficial LIMITACIONES Página 2)</span>
+                  </div>
+                  <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 'normal' }}>
+                    Se imprime directamente en la Página 2 del Formato Oficial
+                  </span>
                 </div>
 
                 <div className="form-grid-2">
                   <div className="form-field">
-                    <label className="form-label">Limitaciones o Servidumbres</label>
-                    <textarea
-                      rows={2}
-                      className="form-input"
-                      value={formData.limitaciones}
-                      onChange={(e) => setFormData({ ...formData, limitaciones: e.target.value })}
-                      placeholder="Describa servidumbres de paso, acueducto, vista o limitaciones inscritas..."
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label className="form-label">Anotaciones Registrales</label>
-                    <textarea
-                      rows={2}
-                      className="form-input"
-                      value={formData.anotaciones}
-                      onChange={(e) => setFormData({ ...formData, anotaciones: e.target.value })}
-                      placeholder="Anotaciones de demanda, embargos o ninguna vigente..."
-                    />
-                  </div>
-                </div>
-
-                <div className="form-grid-2">
-                  <div className="form-field">
-                    <label className="form-label">Gravámenes e Hipotecas</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                      <label className="form-label" style={{ marginBottom: 0 }}>Anotaciones y Gravámenes *</label>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, gravamenes: 'Libre de gravámenes hipotecarios.' })}
+                        style={{ fontSize: '0.72rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
+                      >
+                        + Libre de gravámenes
+                      </button>
+                    </div>
                     <textarea
                       rows={2}
                       className="form-input"
                       value={formData.gravamenes}
                       onChange={(e) => setFormData({ ...formData, gravamenes: e.target.value })}
-                      placeholder="Hipotecas a favor de bancos o entidades, montos y fechas..."
+                      placeholder="Ej: Hipoteca a favor de Banco G&T Continental, Sociedad Anónima, en cada una de las fincas..."
                     />
                   </div>
+
                   <div className="form-field">
-                    <label className="form-label">Detalle de Desmembraciones / Áreas Comunes</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                      <label className="form-label" style={{ marginBottom: 0 }}>Servidumbres *</label>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, servidumbres: 'Sin servidumbres activas.' })}
+                        style={{ fontSize: '0.72rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
+                      >
+                        + Sin servidumbres
+                      </button>
+                    </div>
+                    <textarea
+                      rows={2}
+                      className="form-input"
+                      value={formData.servidumbres}
+                      onChange={(e) => setFormData({ ...formData, servidumbres: e.target.value })}
+                      placeholder="Ej: Servidumbre de paso recíproca con predio colindante / Sin servidumbres activas..."
+                    />
+                  </div>
+                </div>
+
+                <div className="form-grid-2" style={{ marginTop: '0.65rem' }}>
+                  <div className="form-field">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                      <label className="form-label" style={{ marginBottom: 0 }}>Áreas Comunes *</label>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, areasComunes: 'No aplica' })}
+                        style={{ fontSize: '0.72rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
+                      >
+                        + No aplica
+                      </button>
+                    </div>
+                    <textarea
+                      rows={2}
+                      className="form-input"
+                      value={formData.areasComunes}
+                      onChange={(e) => setFormData({ ...formData, areasComunes: e.target.value })}
+                      placeholder="Ej: Soportan y gozan de los elementos comunes que constan en la Finca 1334, Folio 334, Libro 1163E / No aplica..."
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                      <label className="form-label" style={{ marginBottom: 0 }}>Desmembración *</label>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, desmembracion: 'Sin desmembraciones pendientes.' })}
+                        style={{ fontSize: '0.72rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
+                      >
+                        + Sin desmembraciones
+                      </button>
+                    </div>
                     <textarea
                       rows={2}
                       className="form-input"
                       value={formData.desmembracion}
                       onChange={(e) => setFormData({ ...formData, desmembracion: e.target.value })}
-                      placeholder="Detalle de fracciones desmembradas o áreas comunes del inmueble..."
+                      placeholder="Ej: Sin desmembraciones pendientes / Desmembraciones de fracciones autorizadas / No aplica..."
+                    />
+                  </div>
+                </div>
+
+                <div className="form-grid-2" style={{ marginTop: '0.65rem' }}>
+                  <div className="form-field">
+                    <label className="form-label">Otras Limitaciones o Régimen Inscrito</label>
+                    <textarea
+                      rows={2}
+                      className="form-input"
+                      value={formData.limitaciones}
+                      onChange={(e) => setFormData({ ...formData, limitaciones: e.target.value })}
+                      placeholder="Ej: Sometido al régimen de propiedad horizontal y reglamento interno..."
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Anotaciones de Demanda o Embargo</label>
+                    <textarea
+                      rows={2}
+                      className="form-input"
+                      value={formData.anotaciones}
+                      onChange={(e) => setFormData({ ...formData, anotaciones: e.target.value })}
+                      placeholder="Ej: Ninguna anotación de demanda vigente según consulta electrónica del RGP..."
                     />
                   </div>
                 </div>
@@ -2865,32 +2954,93 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
 
                     {/* Tarjeta Bancaria 80% - Regla Oficial Aroldo */}
                     <div style={{ background: '#eff6ff', padding: '1rem', borderRadius: '6px', border: '1.5px solid #2563eb' }}>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>
-                        2. SUMA TOTAL VALOR BANCARIO
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>
+                          2. SUMA TOTAL VALOR BANCARIO
+                        </div>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', background: '#dbeafe', color: '#1e40af' }}>
+                          80% Garantía
+                        </span>
                       </div>
                       <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1e3a8a', marginTop: '4px' }}>
-                        Q. {Number(formData.valorBancarioGTQ || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                        Q. {Number(formData.valorBancarioGTQ || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#2563eb', marginTop: '2px' }}>
-                        $ {Number(formData.valorBancarioUSD || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} USD
+                        $ {Number(formData.valorBancarioUSD || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                      </div>
+                      {/* Botones de acción rápida para recalcular o ajustar el porcentaje bancario */}
+                      <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const com = parseFloat(formData.valorComercialGTQ) || 0;
+                            const exact80 = parseFloat((com * 0.8).toFixed(2));
+                            const tc = parseFloat(formData.tipoCambio) || 7.62581;
+                            setFormData(prev => ({
+                              ...prev,
+                              valorBancarioGTQ: exact80,
+                              valorBancarioUSD: parseFloat((exact80 / tc).toFixed(2))
+                            }));
+                          }}
+                          style={{ fontSize: '0.72rem', padding: '3px 8px', background: '#ffffff', border: '1px solid #93c5fd', borderRadius: '4px', color: '#1d4ed8', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          ⚡ 80% Estándar (Q. {(Number(formData.valorComercialGTQ || 0) * 0.8).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const com = parseFloat(formData.valorComercialGTQ) || 0;
+                            const exact70 = parseFloat((com * 0.7).toFixed(2));
+                            const tc = parseFloat(formData.tipoCambio) || 7.62581;
+                            setFormData(prev => ({
+                              ...prev,
+                              valorBancarioGTQ: exact70,
+                              valorBancarioUSD: parseFloat((exact70 / tc).toFixed(2))
+                            }));
+                          }}
+                          style={{ fontSize: '0.72rem', padding: '3px 8px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#475569', fontWeight: 500, cursor: 'pointer' }}
+                        >
+                          70% (Q. {(Number(formData.valorComercialGTQ || 0) * 0.7).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                        </button>
                       </div>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <label className="form-label" style={{ color: '#475569', margin: 0, fontSize: '0.85rem' }}>Tipo de Cambio Banguat:</label>
-                      <input
-                        type="number"
-                        step="any"
-                        className="form-input"
-                        style={{ width: '100px', padding: '0.35rem 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}
-                        value={formData.tipoCambio}
-                        onChange={(e) => handleCalcUpdate('tipoCambio', null, e.target.value)}
-                      />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <label className="form-label" style={{ color: '#475569', margin: 0, fontSize: '0.85rem' }}>Tipo de Cambio Banguat:</label>
+                        <input
+                          type="number"
+                          step="any"
+                          className="form-input"
+                          style={{ width: '100px', padding: '0.35rem 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}
+                          value={formData.tipoCambio}
+                          onChange={(e) => handleCalcUpdate('tipoCambio', null, e.target.value)}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <label className="form-label" style={{ color: '#475569', margin: 0, fontSize: '0.85rem' }}>Ajustar Valor Bancario (Q):</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="form-input"
+                          style={{ width: '140px', padding: '0.35rem 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}
+                          value={formData.valorBancarioGTQ || ''}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            const tc = parseFloat(formData.tipoCambio) || 7.62581;
+                            setFormData(prev => ({
+                              ...prev,
+                              valorBancarioGTQ: val,
+                              valorBancarioUSD: parseFloat((val / tc).toFixed(2))
+                            }));
+                          }}
+                        />
+                      </div>
                     </div>
                     <div style={{ fontSize: '0.78rem', color: '#64748b', fontStyle: 'italic' }}>
-                      ℹ️ El informe PDF genera automáticamente el cuadro bancario al 80% (unitario y subtotal) para garantía bancaria.
+                      ℹ️ El informe PDF genera automáticamente el cuadro bancario al 80% con 2 decimales exactos.
                     </div>
                   </div>
                 </div>

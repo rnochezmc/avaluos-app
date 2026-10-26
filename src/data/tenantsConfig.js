@@ -38,8 +38,10 @@ export const TENANTS = {
     // Firmantes por defecto
     valuadorPrincipal: 'Lic. Aroldo Oliverio Ruiz Orozco',
     registroPrincipal: 'Valuador autorizado 2572-R-2026',
-    valuadorRevisor: 'Lic. Luis Felipe Tolaque Tobias',
-    registroRevisor: 'Valuador autorizado 193-T-93',
+    firmaPrincipalImg: '/signatures/firma_aroldo_ruiz.png',
+    valuadorRevisor: 'Lic. Edgar Rolando Martínez Larios',
+    registroRevisor: 'Valuador autorizado 2571-M-2026',
+    firmaRevisorImg: '/signatures/firma_edgar_martinez.png',
     requiereRevisorPorDefecto: true,
 
     // Dictamen
@@ -56,7 +58,8 @@ export const TENANTS = {
     logoUrl: '/cverde-logo.jpg',
     logoBg: '#ffffff',
     codigoPrefix: 'CV-2026-',
-    email: 'cverdeavaluos@gmail.com',
+    email: 'oruiz@cverde.com.gt / jmmorales@cverde.com.gt',
+    emails: 'oruiz@cverde.com.gt / jmmorales@cverde.com.gt',
     telefono: '+502 2472-8503 / +502 5413-5106',
     sitioWeb: 'https://cverde.com.gt',
     direccion: '15 Avenida "A" 12-73, Colonia Miraflores II, Zona 11, Ciudad de Guatemala',
@@ -79,10 +82,12 @@ export const TENANTS = {
     },
 
     // Firmantes por defecto
-    valuadorPrincipal: 'Ing. Carlos Enrique Villagrán',
-    registroPrincipal: 'Perito Valuador Autorizado DICABI No. 1845-V',
-    valuadorRevisor: 'Lic. Roberto Morales Solares',
-    registroRevisor: 'Valuador Autorizado 412-T-2018',
+    valuadorPrincipal: 'Lic. Aroldo Oliverio Ruiz Orozco',
+    registroPrincipal: 'Valuador autorizado 2572-R-2026',
+    firmaPrincipalImg: '/signatures/firma_aroldo_ruiz.png',
+    valuadorRevisor: 'Lic. Edgar Rolando Martínez Larios',
+    registroRevisor: 'Valuador autorizado 2571-M-2026',
+    firmaRevisorImg: '/signatures/firma_edgar_martinez.png',
     requiereRevisorPorDefecto: true,
 
     // Dictamen

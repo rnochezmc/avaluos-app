@@ -45,7 +45,7 @@ export default function UserManagementModal({
       nombre: cleanNombre,
       email: u.email || '',
       rol: u.rol || 'valuador',
-      tenantId: u.tenantId || (u.email === 'cverdeavaluos@gmail.com' ? 'cverde' : u.email === 'rnochezmc@gmail.com' ? 'all' : 'lex-rosam'),
+      tenantId: u.tenantId || (u.email === 'cverdeavaluos@gmail.com' || u.email === 'oruiz@cverde.com.gt' || u.email === 'jmmorales@cverde.com.gt' ? 'cverde' : u.email === 'rnochezmc@gmail.com' ? 'all' : 'lex-rosam'),
       titulo: u.titulo || '',
       activo: u.activo !== false
     });
@@ -54,7 +54,7 @@ export default function UserManagementModal({
 
 
   const handleDelete = async (u) => {
-    if (u.email === 'rnochezmc@gmail.com' || u.email === 'cverdeavaluos@gmail.com' || u.email === 'aroldoruiz100@gmail.com') {
+    if (u.email === 'rnochezmc@gmail.com' || u.email === 'cverdeavaluos@gmail.com' || u.email === 'aroldoruiz100@gmail.com' || u.email === 'oruiz@cverde.com.gt' || u.email === 'jmmorales@cverde.com.gt') {
       alert('Esta es una cuenta maestra principal del sistema y no puede ser eliminada.');
       return;
     }
@@ -497,7 +497,7 @@ export default function UserManagementModal({
                           }}>
                             {badge.label}
                           </span>
-                          {(u.tenantId === 'cverde' || u.email === 'cverdeavaluos@gmail.com') ? (
+                          {(u.tenantId === 'cverde' || u.email === 'cverdeavaluos@gmail.com' || u.email === 'oruiz@cverde.com.gt' || u.email === 'jmmorales@cverde.com.gt') ? (
                             <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: '#ecfdf5', color: '#004e3b', border: '1px solid #a7f3d0' }}>
                               C VERDE
                             </span>
@@ -537,7 +537,7 @@ export default function UserManagementModal({
                           >
                             <Edit2 size={14} />
                           </button>
-                          {u.email !== 'rnochezmc@gmail.com' && u.email !== 'cverdeavaluos@gmail.com' && u.email !== 'aroldoruiz100@gmail.com' && (
+                          {u.email !== 'rnochezmc@gmail.com' && u.email !== 'cverdeavaluos@gmail.com' && u.email !== 'aroldoruiz100@gmail.com' && u.email !== 'oruiz@cverde.com.gt' && u.email !== 'jmmorales@cverde.com.gt' && (
                             <button
                               onClick={() => handleDelete(u)}
                               title="Eliminar usuario"

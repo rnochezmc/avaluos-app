@@ -4,8 +4,31 @@ import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 import { extractAllRgpPages } from '../utils/pdfHelper';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
 import { getTenantConfig } from '../data/tenantsConfig';
+import { getAvaluoFromLocalDb } from '../utils/localDb';
 
-export default function OfficialReportPrintView({ avaluo, onClose, config = {} }) {
+export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, config = {} }) {
+  const [hydratedAvaluo, setHydratedAvaluo] = React.useState(propAvaluo);
+
+  React.useEffect(() => {
+    setHydratedAvaluo(propAvaluo);
+    if (propAvaluo?.id) {
+      getAvaluoFromLocalDb(propAvaluo.id).then(localItem => {
+        if (localItem) {
+          setHydratedAvaluo(prev => {
+            const localHasFotos = localItem.fotos && Object.values(localItem.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
+            return {
+              ...prev,
+              ...localItem,
+              fotos: localHasFotos ? localItem.fotos : prev.fotos,
+              consultasPdfs: localItem.consultasPdfs || prev.consultasPdfs
+            };
+          });
+        }
+      }).catch(err => console.warn('Error hydrating in print view:', err));
+    }
+  }, [propAvaluo?.id]);
+
+  const avaluo = hydratedAvaluo || propAvaluo;
   const avaluoTenant = getTenantConfig(avaluo?.tenantId || (avaluo?.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam'));
 
   // Official Multi-Tenant Company Branding (Lex Rosam o Cverde)
@@ -92,6 +115,37 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
 
   const handlePrint = () => {
     window.print();
+  };
+
+  // Nombres y registros oficiales de los valuadores
+  const valPrincipalNombre = avaluo?.valuadorPrincipal || avaluoTenant.valuadorPrincipal || 'Lic. Aroldo Oliverio Ruiz Orozco';
+  const valPrincipalRegistro = avaluo?.registroPrincipal || avaluoTenant.registroPrincipal || 'Valuador autorizado 2572-R-2026';
+
+  const valRevisorNombre = avaluo?.valuadorRevisor && !avaluo.valuadorRevisor.includes('Tolaque') && !avaluo.valuadorRevisor.includes('Morales Solares') 
+    ? avaluo.valuadorRevisor 
+    : (avaluoTenant.valuadorRevisor || 'Lic. Edgar Rolando Martínez Larios');
+
+  const valRevisorRegistro = avaluo?.registroRevisor && !avaluo.registroRevisor.includes('193-T-93') && !avaluo.registroRevisor.includes('412-T-2018')
+    ? avaluo.registroRevisor
+    : (avaluoTenant.registroRevisor || 'Valuador autorizado 2571-M-2026');
+
+  // Determinar imágenes oficiales de firma y sello
+  const getFirmaPrincipalSrc = () => {
+    if (avaluo?.firmaPrincipalImg) return avaluo.firmaPrincipalImg;
+    const name = (valPrincipalNombre || '').toLowerCase();
+    if (name.includes('aroldo') || name.includes('ruiz') || avaluoTenant?.id === 'cverde' || avaluoTenant?.id === 'lex-rosam') {
+      return '/signatures/firma_aroldo_ruiz.png';
+    }
+    return null;
+  };
+
+  const getFirmaRevisorSrc = () => {
+    if (avaluo?.firmaRevisorImg) return avaluo.firmaRevisorImg;
+    const name = (valRevisorNombre || '').toLowerCase();
+    if (name.includes('edgar') || name.includes('martinez') || name.includes('larios') || name.includes('tolaque') || name.includes('morales') || avaluoTenant?.id === 'cverde' || avaluoTenant?.id === 'lex-rosam') {
+      return '/signatures/firma_edgar_martinez.png';
+    }
+    return null;
   };
 
   // Reusable Page Header with Official Lex Rosam Logo
@@ -203,10 +257,17 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
     ? Number(avaluo.valorComercialUSD)
     : parseFloat((computedComercialGTQ / tc).toFixed(2));
 
-  const computedBancarioGTQ = avaluo.valorBancarioGTQ != null && Number(avaluo.valorBancarioGTQ) > 0
+  // Corrección de redondeo bancario: cálculo exacto con 2 decimales para evitar descuadres de centavos
+  const exact80GTQ = parseFloat((computedComercialGTQ * 0.8).toFixed(2));
+  const isRoundedIntegerArtifact = avaluo.valorBancarioGTQ != null &&
+    Number.isInteger(Number(avaluo.valorBancarioGTQ)) &&
+    !Number.isInteger(exact80GTQ) &&
+    Math.round(exact80GTQ) === Number(avaluo.valorBancarioGTQ);
+
+  const computedBancarioGTQ = (avaluo.valorBancarioGTQ != null && Number(avaluo.valorBancarioGTQ) > 0 && !isRoundedIntegerArtifact)
     ? Number(avaluo.valorBancarioGTQ)
-    : Math.round(computedComercialGTQ * 0.8);
-  const computedBancarioUSD = avaluo.valorBancarioUSD != null && Number(avaluo.valorBancarioUSD) > 0
+    : exact80GTQ;
+  const computedBancarioUSD = (avaluo.valorBancarioUSD != null && Number(avaluo.valorBancarioUSD) > 0 && !isRoundedIntegerArtifact)
     ? Number(avaluo.valorBancarioUSD)
     : parseFloat((computedBancarioGTQ / tc).toFixed(2));
 
@@ -260,8 +321,6 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
 
   // Agrupación y paginación inteligente de fotos (máximo 6 slots por página para que no se desborden)
   const photoPages = React.useMemo(() => {
-    if (!hasAnyPhoto) return [];
-
     const categories = [
       { key: 'entorno', label: '1. Entorno' },
       { key: 'ingreso', label: '2. Ingreso / Fachada' },
@@ -314,10 +373,10 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
     }
 
     return pages;
-  }, [normalizedFotos, hasAnyPhoto]);
+  }, [normalizedFotos]);
 
-  const totalPhotoPages = hasAnyPhoto ? photoPages.length : 0;
-  const dicabiPageNum = hasAnyPhoto ? (8 + totalPhotoPages) : 8;
+  const totalPhotoPages = photoPages.length;
+  const dicabiPageNum = 8 + totalPhotoPages;
   const totalRgpPages = rgpPages.length;
   const totalPages = dicabiPageNum + totalRgpPages;
 
@@ -519,19 +578,27 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Anotaciones y gravámenes:</span>
-                <span className="pdf-data-value">{avaluo.gravamenes || 'Ninguna'}</span>
+                <span className="pdf-data-value">{avaluo.gravamenes || 'Libre de gravámenes hipotecarios.'}</span>
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Servidumbres:</span>
-                <span className="pdf-data-value">{avaluo.servidumbres || 'Ninguna'}</span>
+                <span className="pdf-data-value">{avaluo.servidumbres || 'Sin servidumbres activas.'}</span>
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Áreas comunes:</span>
-                <span className="pdf-data-value">{avaluo.areasComunes || 'No'}</span>
+                <span className="pdf-data-value">
+                  {((!avaluo.areasComunes || avaluo.areasComunes === 'No aplica') && avaluo.desmembracion && (/elementos comunes|areas comunes|áreas comunes|comunes|finca 500|finca 1334/i.test(avaluo.desmembracion)))
+                    ? avaluo.desmembracion
+                    : (avaluo.areasComunes || 'No aplica')}
+                </span>
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Desmembración:</span>
-                <span className="pdf-data-value">{avaluo.desmembracion || 'No'}</span>
+                <span className="pdf-data-value">
+                  {((!avaluo.areasComunes || avaluo.areasComunes === 'No aplica') && avaluo.desmembracion && (/elementos comunes|areas comunes|áreas comunes|comunes|finca 500|finca 1334/i.test(avaluo.desmembracion)))
+                    ? 'No aplica'
+                    : (avaluo.desmembracion || 'No aplica')}
+                </span>
               </div>
             </div>
 
@@ -551,13 +618,13 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                 <tbody>
                   <tr>
                     <td><strong>VALOR COMERCIAL</strong></td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: company.navyColor }}>{formatQ(avaluo.valorComercialGTQ)}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: company.accentColor }}>{formatUSD(avaluo.valorComercialUSD)}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 800, color: company.navyColor }}>{formatQ(computedComercialGTQ)}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 800, color: company.accentColor }}>{formatUSD(computedComercialUSD)}</td>
                   </tr>
                   <tr>
                     <td><strong>VALOR BANCARIO</strong></td>
-                    <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(avaluo.valorBancarioGTQ)}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatUSD(avaluo.valorBancarioUSD)}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(computedBancarioGTQ)}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatUSD(computedBancarioUSD)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -569,35 +636,61 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                 {/* CORRECCIÓN FOTO 66: Se eliminó el texto entre paréntesis a petición de Aroldo */}
                 <p style={{ marginTop: '0.35rem', marginBottom: 0, textAlign: 'justify' }}>
                   A juicio del suscrito valuador con fecha {avaluo.fechaActualizacion || avaluo.fechaInspeccion || '2026'}, el inmueble descrito tiene un valor comercial 
-                  de <strong>{formatQ(avaluo.valorComercialGTQ)}</strong> o al cambio en dólares al <strong>{formatUSD(avaluo.valorComercialUSD)}</strong>.
+                  de <strong>{formatQ(computedComercialGTQ)}</strong> o al cambio en dólares al <strong>{formatUSD(computedComercialUSD)}</strong>.
                 </p>
               </div>
             </div>
 
-            {/* Firmas de los Valuadores Autorizados ubicadas directamente abajo de los valores a solicitud de Aroldo */}
-            <div className="pdf-signatures-container" style={{ marginTop: '4rem', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around' }}>
-              {avaluo.incluirFirmaRevisor !== false && (
-                <div className="pdf-signature-block">
-                  <div className="pdf-signature-line"></div>
-                  <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
-                    {avaluo.valuadorRevisor || (avaluoTenant.valuadorRevisor?.nombre || 'Lic. Luis Felipe Tolaque Tobias')}
+            {/* Firmas en Página 2: Desactivadas según indicación del usuario ("creo que estas firmas no van") */}
+            {avaluo.mostrarFirmasEnPagina2 === true && (
+              <div className="pdf-signatures-container" style={{ marginTop: '4rem', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around' }}>
+                {avaluo.incluirFirmaRevisor !== false && (
+                  <div className="pdf-signature-block" style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    {getFirmaRevisorSrc() ? (
+                      <div style={{ minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img 
+                          src={getFirmaRevisorSrc()} 
+                          alt="Firma y Sello Oficial Valuador Revisor" 
+                          style={{ maxHeight: '115px', maxWidth: '230px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="pdf-signature-line"></div>
+                        <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
+                          {valRevisorNombre}
+                        </div>
+                        <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                          {valRevisorRegistro}
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    {avaluo.registroRevisor || (avaluoTenant.valuadorRevisor?.registro || 'Valuador autorizado 193-T-93')}
-                  </div>
-                </div>
-              )}
+                )}
 
-              <div className="pdf-signature-block">
-                <div className="pdf-signature-line"></div>
-                <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
-                  {avaluo.valuadorPrincipal || (avaluoTenant.valuadoresAutorizados?.[0]?.nombre || 'Lic. Aroldo Oliverio Ruiz Orozco')}
-                </div>
-                <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                  {avaluo.registroPrincipal || (avaluoTenant.valuadoresAutorizados?.[0]?.registro || 'Valuador autorizado 2572-R-2026')}
+                <div className="pdf-signature-block" style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  {getFirmaPrincipalSrc() ? (
+                    <div style={{ minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img 
+                        src={getFirmaPrincipalSrc()} 
+                        alt="Firma y Sello Oficial Valuador Principal" 
+                        style={{ maxHeight: '115px', maxWidth: '230px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="pdf-signature-line"></div>
+                      <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
+                        {valPrincipalNombre}
+                      </div>
+                      <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        {valPrincipalRegistro}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <PageFooter pageNum={2} />
@@ -641,25 +734,49 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
             {/* Firmas de los Valuadores Autorizados ratificando la calificación de garantía */}
             <div className="pdf-signatures-container" style={{ marginTop: 'auto', paddingTop: '2.5rem', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around' }}>
               {avaluo.incluirFirmaRevisor !== false && (
-                <div className="pdf-signature-block">
-                  <div className="pdf-signature-line"></div>
-                  <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
-                    {avaluo.valuadorRevisor || (avaluoTenant.valuadorRevisor?.nombre || 'Lic. Luis Felipe Tolaque Tobias')}
-                  </div>
-                  <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    {avaluo.registroRevisor || (avaluoTenant.valuadorRevisor?.registro || 'Valuador autorizado 193-T-93')}
-                  </div>
+                <div className="pdf-signature-block" style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  {getFirmaRevisorSrc() ? (
+                    <div style={{ minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img 
+                        src={getFirmaRevisorSrc()} 
+                        alt="Firma y Sello Oficial Valuador Revisor" 
+                        style={{ maxHeight: '115px', maxWidth: '230px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="pdf-signature-line"></div>
+                      <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
+                        {valRevisorNombre}
+                      </div>
+                      <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        {valRevisorRegistro}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
-              <div className="pdf-signature-block">
-                <div className="pdf-signature-line"></div>
-                <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
-                  {avaluo.valuadorPrincipal || (avaluoTenant.valuadoresAutorizados?.[0]?.nombre || 'Lic. Aroldo Oliverio Ruiz Orozco')}
-                </div>
-                <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                  {avaluo.registroPrincipal || (avaluoTenant.valuadoresAutorizados?.[0]?.registro || 'Valuador autorizado 2572-R-2026')}
-                </div>
+              <div className="pdf-signature-block" style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {getFirmaPrincipalSrc() ? (
+                  <div style={{ minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img 
+                      src={getFirmaPrincipalSrc()} 
+                      alt="Firma y Sello Oficial Valuador Principal" 
+                      style={{ maxHeight: '115px', maxWidth: '230px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="pdf-signature-line"></div>
+                    <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
+                      {valPrincipalNombre}
+                    </div>
+                    <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                      {valPrincipalRegistro}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1288,7 +1405,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                           </td>
                           <td style={{ textAlign: 'center', padding: '0.28rem 0.4rem' }}>m²</td>
                           <td style={{ textAlign: 'right', padding: '0.28rem 0.4rem' }}>-</td>
-                          <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.28rem 0.4rem' }}>{formatQ(totalTerrenoSubtotal * 0.8)}</td>
+                          <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.28rem 0.4rem' }}>{formatQ(parseFloat((totalTerrenoSubtotal * 0.8).toFixed(2)))}</td>
                         </tr>
                       )}
                     </tbody>
@@ -1330,7 +1447,7 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
                       <td style={{ textAlign: 'center', padding: '0.28rem 0.4rem' }}>{totalConstruccionArea.toFixed(2)}</td>
                       <td style={{ textAlign: 'center', padding: '0.28rem 0.4rem' }}>m²</td>
                       <td style={{ textAlign: 'right', padding: '0.28rem 0.4rem' }}>-</td>
-                      <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.28rem 0.4rem' }}>{formatQ(totalConstruccionTotal * 0.8)}</td>
+                      <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.28rem 0.4rem' }}>{formatQ(parseFloat((totalConstruccionTotal * 0.8).toFixed(2)))}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1361,10 +1478,10 @@ export default function OfficialReportPrintView({ avaluo, onClose, config = {} }
 
         {/* ==============================================================
             PÁGINAS DE FOTOGRAFÍAS (ENTORNO, INGRESO, INTERIOR, UBICACIÓN, CROQUIS)
-            Solo se imprimen si el avalúo cuenta con registro fotográfico para evitar páginas en blanco.
+            Sección oficial del informe de avalúos. Muestra el registro fotográfico o los recuadros oficiales cerrados.
             Soporta múltiples fotos por sección distribuidas dinámicamente en páginas sin desbordamiento.
             ============================================================== */}
-        {hasAnyPhoto && photoPages.map((pageCards, pIdx) => (
+        {photoPages.map((pageCards, pIdx) => (
           <section key={`photo-page-${pIdx}`} className="pdf-sheet-page">
             <PageHeader />
 
