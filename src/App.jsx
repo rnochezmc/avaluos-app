@@ -10,7 +10,7 @@ import OfficialReportPrintView from './components/OfficialReportPrintView';
 import MobileBottomNav from './components/MobileBottomNav';
 import LoginScreen from './components/LoginScreen';
 import UserManagementModal from './components/UserManagementModal';
-import { initialAvaluos } from './data/mockAvaluos';
+import { initialAvaluos, DEFAULT_DICTAMEN_GARANTIA } from './data/mockAvaluos';
 import { getTenantConfig, DEFAULT_TENANT_ID } from './data/tenantsConfig';
 import { 
   subscribeToAvaluos, 
@@ -119,6 +119,12 @@ const repairAndEnrichAvaluo = (avaluoItem) => {
   }
   if (!item.firmaRevisorImg) {
     item.firmaRevisorImg = '/signatures/firma_edgar_martinez.png';
+    changed = true;
+  }
+
+  // 6. Normalización del dictamen oficial de garantía al nuevo formato predeterminado
+  if (!item.dictamenGarantia || item.dictamenGarantia.includes('condiciones técnicas, físicas y de mercado')) {
+    item.dictamenGarantia = DEFAULT_DICTAMEN_GARANTIA;
     changed = true;
   }
 

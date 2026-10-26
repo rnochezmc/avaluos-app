@@ -60,7 +60,7 @@ export const TENANTS = {
     codigoPrefix: 'CV-2026-',
     email: 'oruiz@cverde.com.gt / jmmorales@cverde.com.gt',
     emails: 'oruiz@cverde.com.gt / jmmorales@cverde.com.gt',
-    telefono: '+502 2472-8503 / +502 5413-5106',
+    telefono: '+502 6203 0795',
     sitioWeb: 'https://cverde.com.gt',
     direccion: '15 Avenida "A" 12-73, Colonia Miraflores II, Zona 11, Ciudad de Guatemala',
     
@@ -91,7 +91,7 @@ export const TENANTS = {
     requiereRevisorPorDefecto: true,
 
     // Dictamen
-    dictamenPredeterminado: '“El inmueble reúne las condiciones técnicas, físicas y de mercado requeridas para constituir garantía fiduciaria o hipotecaria ante entidades del sistema bancario nacional, según las normativas y políticas crediticias vigentes.”'
+    dictamenPredeterminado: '“El inmueble evaluado reúne las condiciones necesarias para ser aceptado como garantía. La entidad financiera determinará los términos y políticas aplicables al otorgamiento del crédito correspondiente.” Tomar en cuenta: observaciones, notas y recomendaciones.'
   }
 };
 

@@ -36,8 +36,8 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
     name: config.name || avaluoTenant.nombreCorto || "LEX ROSAM",
     fullName: config.fullName || avaluoTenant.nombre || "LEX ROSAM, S.A.",
     tagline: config.tagline || avaluoTenant.tagline || "SOCIEDAD ANÓNIMA — AVALÚOS",
-    phone: config.phone || avaluoTenant.telefono || "+502 6203-0795",
-    emails: config.emails || avaluoTenant.email || "solicituddeavaluos@lexrosam.com",
+    phone: avaluo?.telefonoContacto || config.phone || avaluoTenant.telefono || (avaluoTenant.id === 'lex-rosam' ? "+502 6203-0795" : ""),
+    emails: avaluo?.emailContacto || config.emails || avaluoTenant.email || (avaluoTenant.id === 'cverde' ? "oruiz@cverde.com.gt / jmmorales@cverde.com.gt" : "solicituddeavaluos@lexrosam.com"),
     website: config.website || avaluoTenant.sitioWeb || "https://lexrosam.com/",
     logoUrl: avaluoTenant.logoUrl || "/lex-rosam-logo.png",
     navyColor: avaluoTenant.colores?.primary || "#0d2847",
@@ -173,15 +173,21 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
         </div>
       )}
       <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span>📞 WhatsApp:</span> <strong>{company.phone}</strong>
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span>✉️ Correo:</span> <strong>{company.emails}</strong>
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span>🌐</span> <strong>{company.website}</strong>
-        </span>
+        {company.phone && company.phone.trim() !== '' && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span>📞 WhatsApp:</span> <strong>{company.phone}</strong>
+          </span>
+        )}
+        {company.emails && company.emails.trim() !== '' && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span>✉️ Correo:</span> <strong>{company.emails}</strong>
+          </span>
+        )}
+        {company.website && company.website.trim() !== '' && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span>🌐</span> <strong>{company.website}</strong>
+          </span>
+        )}
       </div>
     </div>
   );
@@ -571,21 +577,21 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
         <section className="pdf-sheet-page">
           <PageHeader />
 
-          <div className="pdf-sheet-content">
+          <div className="pdf-sheet-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div className="pdf-boxed-table">
-              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.4rem' }}>
+              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.35rem' }}>
                 LIMITACIONES
               </div>
               <div className="pdf-data-row">
-                <span className="pdf-data-label">Anotaciones y gravámenes:</span>
+                <span className="pdf-data-label" style={{ width: '190px' }}>Anotaciones y gravámenes:</span>
                 <span className="pdf-data-value">{avaluo.gravamenes || 'Libre de gravámenes hipotecarios.'}</span>
               </div>
               <div className="pdf-data-row">
-                <span className="pdf-data-label">Servidumbres:</span>
-                <span className="pdf-data-value">{avaluo.servidumbres || 'Sin servidumbres activas.'}</span>
+                <span className="pdf-data-label" style={{ width: '190px' }}>Servidumbres:</span>
+                <span className="pdf-data-value" style={{ textAlign: 'justify', lineHeight: 1.35 }}>{avaluo.servidumbres || 'Sin servidumbres activas.'}</span>
               </div>
               <div className="pdf-data-row">
-                <span className="pdf-data-label">Áreas comunes:</span>
+                <span className="pdf-data-label" style={{ width: '190px' }}>Áreas comunes:</span>
                 <span className="pdf-data-value">
                   {((!avaluo.areasComunes || avaluo.areasComunes === 'No aplica') && avaluo.desmembracion && (/elementos comunes|areas comunes|áreas comunes|comunes|finca 500|finca 1334/i.test(avaluo.desmembracion)))
                     ? avaluo.desmembracion
@@ -593,7 +599,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 </span>
               </div>
               <div className="pdf-data-row">
-                <span className="pdf-data-label">Desmembración:</span>
+                <span className="pdf-data-label" style={{ width: '190px' }}>Desmembración:</span>
                 <span className="pdf-data-value">
                   {((!avaluo.areasComunes || avaluo.areasComunes === 'No aplica') && avaluo.desmembracion && (/elementos comunes|areas comunes|áreas comunes|comunes|finca 500|finca 1334/i.test(avaluo.desmembracion)))
                     ? 'No aplica'
@@ -641,97 +647,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
             </div>
 
-            {/* Firmas en Página 2: Desactivadas según indicación del usuario ("creo que estas firmas no van") */}
-            {avaluo.mostrarFirmasEnPagina2 === true && (
-              <div className="pdf-signatures-container" style={{ marginTop: '4rem', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around' }}>
-                {avaluo.incluirFirmaRevisor !== false && (
-                  <div className="pdf-signature-block" style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    {getFirmaRevisorSrc() ? (
-                      <div style={{ minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img 
-                          src={getFirmaRevisorSrc()} 
-                          alt="Firma y Sello Oficial Valuador Revisor" 
-                          style={{ maxHeight: '115px', maxWidth: '230px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <div className="pdf-signature-line"></div>
-                        <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
-                          {valRevisorNombre}
-                        </div>
-                        <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          {valRevisorRegistro}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                <div className="pdf-signature-block" style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  {getFirmaPrincipalSrc() ? (
-                    <div style={{ minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <img 
-                        src={getFirmaPrincipalSrc()} 
-                        alt="Firma y Sello Oficial Valuador Principal" 
-                        style={{ maxHeight: '115px', maxWidth: '230px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="pdf-signature-line"></div>
-                      <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
-                        {valPrincipalNombre}
-                      </div>
-                      <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                        {valPrincipalRegistro}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <PageFooter pageNum={2} />
-        </section>
-
-        {/* ==============================================================
-            PÁGINA 3: CALIFICACIÓN DE LA GARANTÍA Y CONSIDERACIONES GENERALES
-            (Página exclusiva e independiente a solicitud de Aroldo Ruiz)
-            ============================================================== */}
-        <section className="pdf-sheet-page">
-          <PageHeader />
-
-          <div className="pdf-sheet-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.4rem', marginBottom: '1.25rem' }}>
-              CALIFICACION DE GARANTIA Y CONSIDERACIONES GENERALES DEL PRESENTE INFORME
-            </div>
-
-            <ol className="pdf-legal-considerations" style={{ lineHeight: 1.6, fontSize: '0.82rem', textAlign: 'justify', display: 'flex', flexDirection: 'column', gap: '0.9rem', flex: 1 }}>
-              <li style={{ display: 'flex', gap: '8px' }}>
-                <strong style={{ minWidth: '24px' }}>I.</strong>
-                <span>El bien valuado puede ser considerado como sujeto de garantía. La institución financiera correspondiente definirá las condiciones de crédito y los riesgos a asumir. Se recomienda revisar los aspectos negativos y riesgos señalados en los anexos.</span>
-              </li>
-              <li style={{ display: 'flex', gap: '8px' }}>
-                <strong style={{ minWidth: '24px' }}>II.</strong>
-                <span>El presente avalúo se emite como una opinión técnica fundamentada en criterios profesionales y de buena fe, circunscrita a las condiciones específicas detalladas en el informe y al marco de mercado vigente al momento de su elaboración. Se advierte que los valores y conclusiones aquí expresados están sujetos a variaciones futuras derivadas de cambios en las dinámicas del mercado, modificaciones en la situación legal del inmueble o actualizaciones en los registros públicos que puedan incidir en su valoración.</span>
-              </li>
-              <li style={{ display: 'flex', gap: '8px' }}>
-                <strong style={{ minWidth: '24px' }}>III.</strong>
-                <span>El presente avalúo se emite únicamente con fines informativos y no genera obligación alguna, ni confiere autorización o prohibición respecto de operaciones o transacciones. Las decisiones que se adopten a partir de este documento serán responsabilidad exclusiva del solicitante, del propietario y de las demás partes que intervengan en dichas gestiones.</span>
-              </li>
-              <li style={{ display: 'flex', gap: '8px' }}>
-                <strong style={{ minWidth: '24px' }}>IV.</strong>
-                <span>Los datos registrales que sustentan este avalúo fueron obtenidos a través de la consulta realizada en la plataforma electrónica del Registro de la Propiedad, y su validez se circunscribe exclusivamente a la fecha consignada en el presente informe. En consecuencia, cualquier verificación o contraste de la información aquí contenida deberá efectuarse directamente en el Registro de la Propiedad, como fuente oficial y competente para certificar la situación jurídica del inmueble.</span>
-              </li>
-              <li style={{ display: 'flex', gap: '8px' }}>
-                <strong style={{ minWidth: '24px' }}>V.</strong>
-                <span>{company.name} S.A. es una entidad independiente y no mantiene vínculo alguno con las personas físicas o jurídicas que solicitan el presente informe.</span>
-              </li>
-            </ol>
-
-            {/* Firmas de los Valuadores Autorizados ratificando la calificación de garantía */}
+            {/* Firmas en Página 2 oficiales */}
             <div className="pdf-signatures-container" style={{ marginTop: 'auto', paddingTop: '2.5rem', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around' }}>
               {avaluo.incluirFirmaRevisor !== false && (
                 <div className="pdf-signature-block" style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -781,6 +697,47 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
             </div>
           </div>
 
+          <PageFooter pageNum={2} />
+        </section>
+
+        {/* ==============================================================
+            PÁGINA 3: CALIFICACIÓN DE LA GARANTÍA Y CONSIDERACIONES GENERALES
+            (Página exclusiva e independiente a solicitud de Aroldo Ruiz)
+            ============================================================== */}
+        <section className="pdf-sheet-page">
+          <PageHeader />
+
+          <div className="pdf-sheet-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.4rem', marginBottom: '1.25rem' }}>
+              CALIFICACION DE GARANTIA Y CONSIDERACIONES GENERALES DEL PRESENTE INFORME
+            </div>
+
+            <ol className="pdf-legal-considerations" style={{ lineHeight: 1.6, fontSize: '0.82rem', textAlign: 'justify', display: 'flex', flexDirection: 'column', gap: '0.9rem', flex: 1 }}>
+              <li style={{ display: 'flex', gap: '8px' }}>
+                <strong style={{ minWidth: '24px' }}>I.</strong>
+                <span>El bien valuado puede ser considerado como sujeto de garantía. La institución financiera correspondiente definirá las condiciones de crédito y los riesgos a asumir. Se recomienda revisar los aspectos negativos, notas y recomendaciones.</span>
+              </li>
+              <li style={{ display: 'flex', gap: '8px' }}>
+                <strong style={{ minWidth: '24px' }}>II.</strong>
+                <span>El presente avalúo se emite como una opinión técnica fundamentada en criterios profesionales y de buena fe, circunscrita a las condiciones específicas detalladas en el informe y al marco de mercado vigente al momento de su elaboración. Se advierte que los valores y conclusiones aquí expresados están sujetos a variaciones futuras derivadas de cambios en las dinámicas del mercado, modificaciones en la situación legal del inmueble o actualizaciones en los registros públicos que puedan incidir en su valoración.</span>
+              </li>
+              <li style={{ display: 'flex', gap: '8px' }}>
+                <strong style={{ minWidth: '24px' }}>III.</strong>
+                <span>El presente avalúo se emite únicamente con fines informativos y no genera obligación alguna, ni confiere autorización o prohibición respecto de operaciones o transacciones. Las decisiones que se adopten a partir de este documento serán responsabilidad exclusiva del solicitante, del propietario y de las demás partes que intervengan en dichas gestiones.</span>
+              </li>
+              <li style={{ display: 'flex', gap: '8px' }}>
+                <strong style={{ minWidth: '24px' }}>IV.</strong>
+                <span>Los datos registrales que sustentan este avalúo fueron obtenidos a través de la consulta realizada en la plataforma electrónica del Registro de la Propiedad, y su validez se circunscribe exclusivamente a la fecha consignada en el presente informe. En consecuencia, cualquier verificación o contraste de la información aquí contenida deberá efectuarse directamente en el Registro de la Propiedad, como fuente oficial y competente para certificar la situación jurídica del inmueble.</span>
+              </li>
+              <li style={{ display: 'flex', gap: '8px' }}>
+                <strong style={{ minWidth: '24px' }}>V.</strong>
+                <span>{company.name} S.A. es una entidad independiente y no mantiene vínculo alguno con las personas físicas o jurídicas que solicitan el presente informe.</span>
+              </li>
+            </ol>
+
+
+          </div>
+
           <PageFooter pageNum={3} />
         </section>
 
@@ -817,7 +774,9 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
 
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Fecha de consulta a distancia:</span>
-                <span className="pdf-data-value">{avaluo.fechaActualizacion || '-'}</span>
+                <span className="pdf-data-value">
+                  {formatDateDisplay(avaluo.fechaConsultaDistancia) || avaluo.fechaConsultaDistancia || formatDateDisplay(avaluo.fechaActualizacion) || avaluo.fechaActualizacion || '-'}
+                </span>
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Propietario:</span>
@@ -890,21 +849,21 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
             </table>
 
             {/* ASPECTOS LEGALES */}
-            <div className="pdf-section-title-bar" style={{ background: company.navyColor, color: '#ffffff', marginTop: '0.65rem', padding: '0.25rem', fontWeight: 700, fontSize: '0.82rem' }}>
-              ASPECTOS LEGALES
-            </div>
-            <div className="pdf-boxed-table" style={{ marginTop: '0.35rem' }}>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '160px', fontWeight: 600 }}>Limitaciones / serv.:</span>
-                <span className="pdf-data-value">{avaluo.limitaciones || avaluo.servidumbres || 'Sin servidumbres'}</span>
+            <div className="pdf-boxed-table" style={{ marginTop: '0.65rem' }}>
+              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.35rem' }}>
+                ASPECTOS LEGALES
               </div>
               <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '160px', fontWeight: 600 }}>Anotación:</span>
-                <span className="pdf-data-value">{avaluo.anotaciones || 'Ninguna vigente'}</span>
+                <span className="pdf-data-label" style={{ width: '190px' }}>Limitaciones o servidumbres:</span>
+                <span className="pdf-data-value">{avaluo.limitaciones || avaluo.servidumbres || 'Sin limitaciones vigentes inscritas.'}</span>
               </div>
               <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '160px', fontWeight: 600 }}>Gravámenes:</span>
-                <span className="pdf-data-value">{avaluo.gravamenes || 'Libre de gravámenes'}</span>
+                <span className="pdf-data-label" style={{ width: '190px' }}>Anotación:</span>
+                <span className="pdf-data-value">{avaluo.anotaciones || 'Ninguna vigente según consulta electrónica del RGP.'}</span>
+              </div>
+              <div className="pdf-data-row">
+                <span className="pdf-data-label" style={{ width: '190px' }}>Gravámenes:</span>
+                <span className="pdf-data-value">{avaluo.gravamenes || 'NINGUNA'}</span>
               </div>
             </div>
 

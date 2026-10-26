@@ -36,7 +36,9 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
     solicitante: avaluo?.solicitante || (tenantConfig.id === 'cverde' ? 'BANCO INDUSTRIAL, S.A.' : 'BANCO G&T CONTINENTAL'),
     fechaSolicitud: avaluo?.fechaSolicitud || new Date().toISOString().slice(0, 10),
     fechaInspeccion: avaluo ? (avaluo.fechaInspeccion || '') : new Date().toISOString().slice(0, 10),
-    fechaActualizacion: avaluo ? (avaluo.fechaInspeccion ? '' : (avaluo.fechaActualizacion || '')) : '',
+    fechaActualizacion: avaluo?.fechaActualizacion || '',
+    fechaConsultaDistancia: avaluo?.fechaConsultaDistancia || avaluo?.fechaActualizacion || '',
+    telefonoContacto: avaluo?.telefonoContacto || '',
     bienMostradoPor: avaluo?.bienMostradoPor || '',
     direccion: avaluo?.direccion || '',
     coordenadas: avaluo?.coordenadas || '',
@@ -288,7 +290,9 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
     incluirFirmaRevisor: avaluo?.incluirFirmaRevisor !== false,
 
     // Dictamen Oficial de Garantía Crediticia (Pág. 6 del reporte PDF)
-    dictamenGarantia: avaluo?.dictamenGarantia !== undefined ? avaluo.dictamenGarantia : (tenantConfig.dictamenPredeterminado || DEFAULT_DICTAMEN_GARANTIA),
+    dictamenGarantia: (avaluo?.dictamenGarantia && !avaluo.dictamenGarantia.includes('condiciones técnicas, físicas y de mercado'))
+      ? avaluo.dictamenGarantia 
+      : (tenantConfig.dictamenPredeterminado || DEFAULT_DICTAMEN_GARANTIA),
 
     // Fotos optimizadas (soporta múltiples fotos por categoría)
     fotos: (() => {
@@ -859,20 +863,17 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
   };
 
   // Compresión fotográfica optimizada (evita bug de cuotas móviles y Firestore)
-  // Regla de Aroldo: Fecha de Inspección o Fecha de Actualización (mutuamente excluyentes)
   const handleFechaInspeccionChange = (val) => {
     setFormData(prev => ({
       ...prev,
-      fechaInspeccion: val,
-      fechaActualizacion: val.trim() ? '' : prev.fechaActualizacion
+      fechaInspeccion: val
     }));
   };
 
   const handleFechaActualizacionChange = (val) => {
     setFormData(prev => ({
       ...prev,
-      fechaActualizacion: val,
-      fechaInspeccion: val.trim() ? '' : prev.fechaInspeccion
+      fechaActualizacion: val
     }));
   };
 
@@ -1273,7 +1274,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
 
                 <div className="form-grid-3">
                   <div className="form-field">
-                    <label className="form-label">Fecha de Solicitud</label>
+                    <label className="form-label">Fecha de Solicitud *</label>
                     <input
                       type="date"
                       className="form-input"
@@ -1295,25 +1296,60 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                       onChange={(e) => handleFechaInspeccionChange(e.target.value)}
                       placeholder="Ej: 17 de julio de 2026 y 23 de julio de 2026"
                     />
-                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '3px' }}>
-                      Si se llena, la fecha de actualización queda en blanco.
-                    </div>
                   </div>
                   <div className="form-field">
                     <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>Fecha de Actualización / Emisión</span>
+                      <span>Fecha de Consulta a Distancia (RGP)</span>
+                      {formData.fechaConsultaDistancia ? (
+                        <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600 }}>● Activa</span>
+                      ) : null}
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.fechaConsultaDistancia}
+                      onChange={(e) => setFormData({ ...formData, fechaConsultaDistancia: e.target.value })}
+                      placeholder="Ej: 24 de julio de 2026 o 2026-07-24"
+                    />
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '3px' }}>
+                      Reflejada en Información de la Propiedad (Página 4 del reporte).
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-grid-2" style={{ marginTop: '0.5rem' }}>
+                  <div className="form-field">
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Fecha de Actualización / Revaluación (Opcional)</span>
                       {formData.fechaActualizacion ? (
                         <span style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 600 }}>● Activa</span>
                       ) : null}
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       className="form-input"
                       value={formData.fechaActualizacion}
                       onChange={(e) => handleFechaActualizacionChange(e.target.value)}
+                      placeholder="Ej: 2026-07-27 o fecha de revaluación"
                     />
                     <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '3px' }}>
-                      Solo para revaluaciones (deja en blanco la fecha de inspección).
+                      Solo para casos donde se realice una actualización de un avalúo anterior.
+                    </div>
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Teléfono / WhatsApp de Contacto (Pie de página)</span>
+                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Opcional</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.telefonoContacto}
+                      onChange={(e) => setFormData({ ...formData, telefonoContacto: e.target.value })}
+                      placeholder={activeTenantConfig.telefono ? `Predeterminado: ${activeTenantConfig.telefono}` : 'Ej: +502 5555-5555 (Dejar en blanco para no mostrar)'}
+                    />
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '3px' }}>
+                      Número de contacto para el pie de página del reporte.
                     </div>
                   </div>
                 </div>
@@ -1603,15 +1639,35 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                   </button>
                 </div>
 
-                <div className="form-field" style={{ marginBottom: '1.25rem' }}>
-                  <label className="form-label">Propietario Principal del Inmueble</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={formData.propietarioPrincipal}
-                    onChange={(e) => setFormData({ ...formData, propietarioPrincipal: e.target.value })}
-                    placeholder="Nombre completo del propietario o empresa titular"
-                  />
+                <div className="form-grid-2" style={{ marginBottom: '1.25rem' }}>
+                  <div className="form-field">
+                    <label className="form-label">Propietario Principal del Inmueble</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.propietarioPrincipal}
+                      onChange={(e) => setFormData({ ...formData, propietarioPrincipal: e.target.value })}
+                      placeholder="Nombre completo del propietario o empresa titular"
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Fecha de Consulta a Distancia (RGP)</span>
+                      {formData.fechaConsultaDistancia ? (
+                        <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600 }}>● Registrada</span>
+                      ) : null}
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.fechaConsultaDistancia}
+                      onChange={(e) => setFormData({ ...formData, fechaConsultaDistancia: e.target.value })}
+                      placeholder="Ej: 24 de julio de 2026 o 2026-07-24"
+                    />
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '3px' }}>
+                      Fecha de emisión de la consulta electrónica del RGP reflejada en la Información de la Propiedad.
+                    </div>
+                  </div>
                 </div>
 
                 {/* Lista de Fincas con campos individuales */}

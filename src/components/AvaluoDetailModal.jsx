@@ -529,18 +529,24 @@ export default function AvaluoDetailModal({
                 </div>
               </div>
 
-              <div className="form-grid-3" style={{ marginTop: '0.75rem' }}>
+              <div className="form-grid-4" style={{ marginTop: '0.75rem' }}>
                 <div className="form-field">
                   <label className="form-label">Fecha de Solicitud</label>
                   <div>{formatDateDisplay(avaluo.fechaSolicitud) || 'N/A'}</div>
                 </div>
                 <div className="form-field">
                   <label className="form-label">Fecha de Inspección Física</label>
-                  <div style={{ fontWeight: 600, color: '#0d2847' }}>{avaluo.fechaInspeccion ? (formatDateDisplay(avaluo.fechaInspeccion) || '-') : '-'}</div>
+                  <div style={{ fontWeight: 600, color: '#0d2847' }}>{avaluo.fechaInspeccion ? (formatDateDisplay(avaluo.fechaInspeccion) || avaluo.fechaInspeccion) : '-'}</div>
+                </div>
+                <div className="form-field">
+                  <label className="form-label">Fecha de Consulta a Distancia</label>
+                  <div style={{ fontWeight: 600, color: '#16a34a' }}>
+                    {formatDateDisplay(avaluo.fechaConsultaDistancia) || avaluo.fechaConsultaDistancia || formatDateDisplay(avaluo.fechaActualizacion) || avaluo.fechaActualizacion || '-'}
+                  </div>
                 </div>
                 <div className="form-field">
                   <label className="form-label">Fecha de Actualización</label>
-                  <div>{(!avaluo.fechaInspeccion && avaluo.fechaActualizacion) ? (formatDateDisplay(avaluo.fechaActualizacion) || '-') : '-'}</div>
+                  <div>{avaluo.fechaActualizacion ? (formatDateDisplay(avaluo.fechaActualizacion) || avaluo.fechaActualizacion) : '-'}</div>
                 </div>
               </div>
 
@@ -565,9 +571,14 @@ export default function AvaluoDetailModal({
               )}
 
               {/* Fincas Registradas con Áreas Individuales */}
-              <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
-                <Building size={16} />
-                <span>Información Registral y Desglose de Fincas</span>
+              <div className="form-section-title" style={{ marginTop: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Building size={16} />
+                  <span>Información Registral y Desglose de Fincas</span>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
+                  Consulta a distancia: <span style={{ color: '#0d2847' }}>{formatDateDisplay(avaluo.fechaConsultaDistancia) || avaluo.fechaConsultaDistancia || formatDateDisplay(avaluo.fechaActualizacion) || avaluo.fechaActualizacion || 'Pendiente'}</span>
+                </div>
               </div>
               <div className="table-container">
                 <table className="data-table">
