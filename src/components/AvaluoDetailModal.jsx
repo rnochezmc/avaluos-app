@@ -32,25 +32,27 @@ export default function AvaluoDetailModal({
   const [hydratedConsultasPdfs, setHydratedConsultasPdfs] = useState(avaluo?.consultasPdfs || []);
   const fileInputRef = useRef(null);
 
-  const getInitialTieneLimitaciones = (av) => {
-    if (av?.tieneLimitaciones === 'Si' || av?.tieneLimitaciones === 'Sí' || av?.tieneLimitaciones === true) return 'Si';
-    if (av?.tieneLimitaciones === 'No' || av?.tieneLimitaciones === false) return 'No';
-    if (av?.limitaciones && !/^no\b|sin limitaciones|ningun/i.test(av.limitaciones.trim())) return 'Si';
-    return 'No';
-  };
+  const getInitialLimitacionesCheck = (av) => ({
+    gravamenes: av?.limitacionesCheck?.gravamenes || (av?.gravamenes && !/libre|ningun/i.test(av.gravamenes.trim()) ? 'Si' : 'Si'),
+    servidumbres: av?.limitacionesCheck?.servidumbres || (av?.servidumbres && !/sin servidumbres|no aplica|ningun/i.test(av.servidumbres.trim()) ? 'Si' : 'Si'),
+    areasComunes: av?.limitacionesCheck?.areasComunes || (av?.areasComunes && !/no aplica|sin areas|ningun/i.test(av.areasComunes.trim()) ? 'Si' : 'Si'),
+    desmembracion: av?.limitacionesCheck?.desmembracion || (av?.desmembracion && !/sin desmembracion|no aplica|ningun/i.test(av.desmembracion.trim()) && !/elementos comunes|areas comunes/i.test(av.desmembracion.trim()) ? 'Si' : 'No'),
+    copropiedad: av?.limitacionesCheck?.copropiedad || ((av?.tipoAvaluo === 'Apartamento / PH' || av?.tipoAvaluo === 'Apartamento' || (av?.limitaciones && /copropiedad|propiedad horizontal/i.test(av.limitaciones))) ? 'Si' : 'Si')
+  });
 
-  const [localTieneLimitaciones, setLocalTieneLimitaciones] = useState(() => getInitialTieneLimitaciones(avaluo));
+  const [localLimitacionesCheck, setLocalLimitacionesCheck] = useState(() => getInitialLimitacionesCheck(avaluo));
 
   useEffect(() => {
-    if (avaluo?.tieneLimitaciones) {
-      setLocalTieneLimitaciones(avaluo.tieneLimitaciones === 'No' ? 'No' : 'Si');
+    if (avaluo) {
+      setLocalLimitacionesCheck(getInitialLimitacionesCheck(avaluo));
     }
-  }, [avaluo?.tieneLimitaciones]);
+  }, [avaluo]);
 
-  const handleToggleLimitaciones = (val) => {
-    setLocalTieneLimitaciones(val);
+  const handleToggleLimitacionItem = (key, val) => {
+    const updated = { ...localLimitacionesCheck, [key]: val };
+    setLocalLimitacionesCheck(updated);
     if (onUpdateField && avaluo?.id) {
-      onUpdateField(avaluo.id, { tieneLimitaciones: val });
+      onUpdateField(avaluo.id, { limitacionesCheck: updated });
     }
   };
 
@@ -680,52 +682,63 @@ export default function AvaluoDetailModal({
                 </div>
                 <div style={{ 
                   gridColumn: '1 / -1', 
-                  borderTop: '1px solid #e2e8f0', 
-                  paddingTop: '0.75rem', 
-                  paddingBottom: '0.25rem', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between', 
-                  flexWrap: 'wrap', 
-                  gap: '8px' 
+                  padding: '0.65rem 0.85rem', 
+                  background: '#f8fafc', 
+                  borderRadius: '6px', 
+                  border: '1px solid #cbd5e1',
+                  marginTop: '0.75rem'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <strong style={{ fontSize: '0.85rem', color: '#334155' }}>Tiene limitaciones:</strong>
-                    <div style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleLimitaciones('Si')}
-                        style={{
-                          padding: '4px 16px',
-                          fontSize: '0.82rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          border: 'none',
-                          background: localTieneLimitaciones === 'Si' ? '#0d2847' : '#ffffff',
-                          color: localTieneLimitaciones === 'Si' ? '#ffffff' : '#64748b',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        Si
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleLimitaciones('No')}
-                        style={{
-                          padding: '4px 16px',
-                          fontSize: '0.82rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          border: 'none',
-                          borderLeft: '1px solid #cbd5e1',
-                          background: localTieneLimitaciones === 'No' ? '#0d2847' : '#ffffff',
-                          color: localTieneLimitaciones === 'No' ? '#ffffff' : '#64748b',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        No
-                      </button>
-                    </div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0d2847', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                    📋 Limitaciones Oficiales (Página 2):
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem' }}>
+                    {[
+                      { key: 'gravamenes', label: 'Anotaciones y gravámenes' },
+                      { key: 'servidumbres', label: 'Servidumbres' },
+                      { key: 'areasComunes', label: 'Áreas comunes' },
+                      { key: 'desmembracion', label: 'Desmembración' },
+                      { key: 'copropiedad', label: 'Régimen de copropiedad' }
+                    ].map(item => {
+                      const currentVal = localLimitacionesCheck[item.key] || 'No';
+                      return (
+                        <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '0.35rem 0.6rem', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#334155' }}>{item.label}:</span>
+                          <div style={{ display: 'inline-flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleLimitacionItem(item.key, 'Si')}
+                              style={{
+                                padding: '2px 8px',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: currentVal === 'Si' ? '#0d2847' : '#ffffff',
+                                color: currentVal === 'Si' ? '#ffffff' : '#64748b'
+                              }}
+                            >
+                              Si
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleLimitacionItem(item.key, 'No')}
+                              style={{
+                                padding: '2px 8px',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                borderLeft: '1px solid #cbd5e1',
+                                cursor: 'pointer',
+                                background: currentVal === 'No' ? '#0d2847' : '#ffffff',
+                                color: currentVal === 'No' ? '#ffffff' : '#64748b'
+                              }}
+                            >
+                              No
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

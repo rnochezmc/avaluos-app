@@ -90,6 +90,13 @@ export const initialAvaluos = [
     areaValuada: 136.77,
     
     tieneLimitaciones: "Si",
+    limitacionesCheck: {
+      gravamenes: "Si",
+      servidumbres: "Si",
+      areasComunes: "Si",
+      desmembracion: "No",
+      copropiedad: "Si"
+    },
     limitaciones: "Sometido al régimen de propiedad horizontal y reglamento de copropiedad y administración del Edificio Vantier.",
     anotaciones: "Ninguna vigente según certificación electrónica del Registro General de la Propiedad.",
     gravamenes: "Libre de gravámenes hipotecarios.",

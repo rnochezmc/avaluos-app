@@ -133,6 +133,13 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
 
     // Aspectos Legales (textos amplios)
     tieneLimitaciones: avaluo?.tieneLimitaciones || (avaluo?.limitaciones && !/^no\b|sin limitaciones|ningun/i.test(avaluo.limitaciones.trim()) ? 'Si' : 'No'),
+    limitacionesCheck: avaluo?.limitacionesCheck || {
+      gravamenes: avaluo?.limitacionesCheck?.gravamenes || (avaluo?.gravamenes && !/libre|ningun/i.test(avaluo.gravamenes.trim()) ? 'Si' : 'Si'),
+      servidumbres: avaluo?.limitacionesCheck?.servidumbres || (avaluo?.servidumbres && !/sin servidumbres|no aplica|ningun/i.test(avaluo.servidumbres.trim()) ? 'Si' : 'Si'),
+      areasComunes: avaluo?.limitacionesCheck?.areasComunes || (avaluo?.areasComunes && !/no aplica|sin areas|ningun/i.test(avaluo.areasComunes.trim()) ? 'Si' : 'Si'),
+      desmembracion: avaluo?.limitacionesCheck?.desmembracion || (avaluo?.desmembracion && !/sin desmembracion|no aplica|ningun/i.test(avaluo.desmembracion.trim()) && !/elementos comunes|areas comunes/i.test(avaluo.desmembracion.trim()) ? 'Si' : 'No'),
+      copropiedad: avaluo?.limitacionesCheck?.copropiedad || ((avaluo?.tipoAvaluo === 'Apartamento / PH' || avaluo?.tipoAvaluo === 'Apartamento' || (avaluo?.limitaciones && /copropiedad|propiedad horizontal/i.test(avaluo.limitaciones))) ? 'Si' : 'Si')
+    },
     limitaciones: avaluo?.limitaciones || 'Sin limitaciones vigentes inscritas.',
     anotaciones: avaluo?.anotaciones || 'Ninguna vigente según consulta electrónica del RGP.',
     gravamenes: avaluo?.gravamenes || 'Libre de gravámenes hipotecarios.',
@@ -1947,42 +1954,65 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                   </div>
                 </div>
 
-                <div style={{ marginTop: '0.85rem', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <label className="form-label" style={{ margin: 0, fontWeight: 700, color: '#334155' }}>Tiene limitaciones:</label>
-                  <div style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, tieneLimitaciones: 'Si' })}
-                      style={{
-                        padding: '4px 16px',
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        border: 'none',
-                        background: (formData.tieneLimitaciones === 'Si' || formData.tieneLimitaciones === 'Sí' || formData.tieneLimitaciones === true) ? '#0d2847' : '#ffffff',
-                        color: (formData.tieneLimitaciones === 'Si' || formData.tieneLimitaciones === 'Sí' || formData.tieneLimitaciones === true) ? '#ffffff' : '#64748b',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      Si
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, tieneLimitaciones: 'No' })}
-                      style={{
-                        padding: '4px 16px',
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        border: 'none',
-                        borderLeft: '1px solid #cbd5e1',
-                        background: (formData.tieneLimitaciones === 'No' || formData.tieneLimitaciones === false) ? '#0d2847' : '#ffffff',
-                        color: (formData.tieneLimitaciones === 'No' || formData.tieneLimitaciones === false) ? '#ffffff' : '#64748b',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      No
-                    </button>
+                {/* Cuadro de Limitaciones Oficiales (Página 2 del Reporte) */}
+                <div style={{ marginTop: '0.85rem', marginBottom: '0.85rem', padding: '0.75rem', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0d2847', textTransform: 'uppercase', marginBottom: '0.55rem', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.25rem' }}>
+                    📋 Conceptos de Limitaciones (Página 2 del Reporte Oficial)
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.65rem' }}>
+                    {[
+                      { key: 'gravamenes', label: 'Anotaciones y gravámenes' },
+                      { key: 'servidumbres', label: 'Servidumbres' },
+                      { key: 'areasComunes', label: 'Áreas comunes' },
+                      { key: 'desmembracion', label: 'Desmembración' },
+                      { key: 'copropiedad', label: 'Régimen de copropiedad' }
+                    ].map(item => {
+                      const currentVal = formData.limitacionesCheck?.[item.key] || 'No';
+                      return (
+                        <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#334155' }}>{item.label}:</span>
+                          <div style={{ display: 'inline-flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({
+                                ...prev,
+                                limitacionesCheck: { ...prev.limitacionesCheck, [item.key]: 'Si' }
+                              }))}
+                              style={{
+                                padding: '2px 10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: currentVal === 'Si' ? '#0d2847' : '#ffffff',
+                                color: currentVal === 'Si' ? '#ffffff' : '#64748b'
+                              }}
+                            >
+                              Si
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({
+                                ...prev,
+                                limitacionesCheck: { ...prev.limitacionesCheck, [item.key]: 'No' }
+                              }))}
+                              style={{
+                                padding: '2px 10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                borderLeft: '1px solid #cbd5e1',
+                                cursor: 'pointer',
+                                background: currentVal === 'No' ? '#0d2847' : '#ffffff',
+                                color: currentVal === 'No' ? '#ffffff' : '#64748b'
+                              }}
+                            >
+                              No
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

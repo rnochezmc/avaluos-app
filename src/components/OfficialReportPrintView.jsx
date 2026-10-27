@@ -148,12 +148,35 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
     return null;
   };
 
-  const tieneLimitacionesDisplay = (() => {
-    if (avaluo?.tieneLimitaciones === 'Si' || avaluo?.tieneLimitaciones === 'Sí' || avaluo?.tieneLimitaciones === true) return 'Si';
-    if (avaluo?.tieneLimitaciones === 'No' || avaluo?.tieneLimitaciones === false) return 'No';
-    if (avaluo?.limitaciones && !/^no\b|sin limitaciones|ningun/i.test(avaluo.limitaciones.trim())) return 'Si';
-    return 'No';
-  })();
+  const getLimitacionVal = (val, defaultVal) => {
+    if (val === 'Si' || val === 'Sí' || val === true) return 'Si';
+    if (val === 'No' || val === false) return 'No';
+    return defaultVal;
+  };
+
+  const limitacionesCheck = {
+    gravamenes: getLimitacionVal(
+      avaluo?.limitacionesCheck?.gravamenes ?? avaluo?.limitacionGravamenes,
+      (avaluo?.gravamenes && !/libre|ningun|sin grav/i.test(avaluo.gravamenes.trim())) ? 'Si' : 'Si'
+    ),
+    servidumbres: getLimitacionVal(
+      avaluo?.limitacionesCheck?.servidumbres ?? avaluo?.limitacionServidumbres,
+      (avaluo?.servidumbres && !/sin servidumbres|no aplica|ningun/i.test(avaluo.servidumbres.trim())) ? 'Si' : 'Si'
+    ),
+    areasComunes: getLimitacionVal(
+      avaluo?.limitacionesCheck?.areasComunes ?? avaluo?.limitacionAreasComunes,
+      (avaluo?.areasComunes && !/no aplica|sin areas|ningun/i.test(avaluo.areasComunes.trim())) ? 'Si' : 
+        (avaluo?.desmembracion && /elementos comunes|areas comunes/i.test(avaluo.desmembracion.trim()) ? 'Si' : 'Si')
+    ),
+    desmembracion: getLimitacionVal(
+      avaluo?.limitacionesCheck?.desmembracion ?? avaluo?.limitacionDesmembracion,
+      (avaluo?.desmembracion && !/sin desmembracion|no aplica|ningun/i.test(avaluo.desmembracion.trim()) && !/elementos comunes|areas comunes/i.test(avaluo.desmembracion.trim())) ? 'Si' : 'No'
+    ),
+    copropiedad: getLimitacionVal(
+      avaluo?.limitacionesCheck?.copropiedad ?? avaluo?.limitacionCopropiedad,
+      (avaluo?.tipoAvaluo === 'Apartamento / PH' || avaluo?.tipoAvaluo === 'Apartamento' || (avaluo?.limitaciones && /copropiedad|propiedad horizontal/i.test(avaluo.limitaciones))) ? 'Si' : 'Si'
+    )
+  };
 
   // Reusable Page Header with Official Lex Rosam Logo
   const PageHeader = () => (
@@ -573,16 +596,30 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
           <PageHeader />
 
           <div className="pdf-sheet-content">
-            {/* Sección Tiene Limitaciones */}
+            {/* Sección Limitaciones (conceptos oficiales) */}
             <div className="pdf-boxed-table" style={{ marginBottom: '0.85rem' }}>
               <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.35rem' }}>
-                TIENE LIMITACIONES
+                LIMITACIONES
               </div>
-              <div className="pdf-data-row" style={{ padding: '0.45rem 0.75rem', display: 'flex', alignItems: 'center' }}>
-                <span className="pdf-data-label" style={{ width: '190px', fontWeight: 700, color: '#1e293b' }}>Tiene limitaciones:</span>
-                <span className="pdf-data-value" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem' }}>
-                  {tieneLimitacionesDisplay}
-                </span>
+              <div className="pdf-data-row" style={{ padding: '0.22rem 0.65rem' }}>
+                <span className="pdf-data-label" style={{ width: '240px' }}>Anotaciones y gravámenes:</span>
+                <span className="pdf-data-value" style={{ fontWeight: 700, color: '#0f172a' }}>{limitacionesCheck.gravamenes}</span>
+              </div>
+              <div className="pdf-data-row" style={{ padding: '0.22rem 0.65rem' }}>
+                <span className="pdf-data-label" style={{ width: '240px' }}>Servidumbres:</span>
+                <span className="pdf-data-value" style={{ fontWeight: 700, color: '#0f172a' }}>{limitacionesCheck.servidumbres}</span>
+              </div>
+              <div className="pdf-data-row" style={{ padding: '0.22rem 0.65rem' }}>
+                <span className="pdf-data-label" style={{ width: '240px' }}>Áreas comunes:</span>
+                <span className="pdf-data-value" style={{ fontWeight: 700, color: '#0f172a' }}>{limitacionesCheck.areasComunes}</span>
+              </div>
+              <div className="pdf-data-row" style={{ padding: '0.22rem 0.65rem' }}>
+                <span className="pdf-data-label" style={{ width: '240px' }}>Desmembración:</span>
+                <span className="pdf-data-value" style={{ fontWeight: 700, color: '#0f172a' }}>{limitacionesCheck.desmembracion}</span>
+              </div>
+              <div className="pdf-data-row" style={{ padding: '0.22rem 0.65rem' }}>
+                <span className="pdf-data-label" style={{ width: '240px' }}>Régimen de copropiedad:</span>
+                <span className="pdf-data-value" style={{ fontWeight: 700, color: '#0f172a' }}>{limitacionesCheck.copropiedad}</span>
               </div>
             </div>
 
