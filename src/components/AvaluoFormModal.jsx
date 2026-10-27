@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, Save, MapPin, Camera, Building, DollarSign, FileText, Plus, 
   Trash2, Crosshair, FileUp, CheckSquare, Square, Check, RefreshCw, Copy,
-  ShieldCheck
+  ShieldCheck, Layers
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST, getDefaultServicios } from '../data/serviciosConstants';
 import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
@@ -2163,6 +2163,112 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
 
                 {formData.aplicaTerreno !== false && (
                   <>
+                    {/* DETALLES DEL TERRENO (SECTOR Y CARACTERÍSTICAS) */}
+                    <div 
+                      style={{ 
+                        background: '#ffffff', 
+                        border: '1px solid #cbd5e1', 
+                        borderRadius: '8px', 
+                        overflow: 'hidden', 
+                        marginBottom: '1.25rem', 
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)' 
+                      }}
+                    >
+                      <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.45rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', fontWeight: 700 }}>
+                        <Layers size={15} />
+                        <span>DETALLES DEL TERRENO</span>
+                      </div>
+
+                      <div style={{ padding: '0.85rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
+                          {/* Panel Sector */}
+                          <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase', marginBottom: '0.6rem', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.3rem' }}>
+                              🏙️ Sector
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                              <div className="form-field" style={{ margin: 0 }}>
+                                <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Uso</label>
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  style={{ fontSize: '0.82rem' }}
+                                  value={formData.usoSuelo || ''}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, usoSuelo: e.target.value }))}
+                                  placeholder="Ej: Comercial / Residencial"
+                                />
+                              </div>
+                              <div className="form-field" style={{ margin: 0 }}>
+                                <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Nivel socio económico</label>
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  style={{ fontSize: '0.82rem' }}
+                                  value={formData.nivelSocioeconomico || ''}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, nivelSocioeconomico: e.target.value }))}
+                                  placeholder="Ej: Medio-Alto"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Panel Características */}
+                          <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase', marginBottom: '0.6rem', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.3rem' }}>
+                              📐 Características
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                              <div className="form-field" style={{ margin: 0 }}>
+                                <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Forma</label>
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  style={{ fontSize: '0.82rem' }}
+                                  value={formData.formaTerreno || ''}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, formaTerreno: e.target.value }))}
+                                  placeholder="Ej: Regular / Rectangular"
+                                />
+                              </div>
+                              <div className="form-field" style={{ margin: 0 }}>
+                                <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Pendiente</label>
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  style={{ fontSize: '0.82rem' }}
+                                  value={formData.pendiente || ''}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, pendiente: e.target.value }))}
+                                  placeholder="Ej: Plana (1%)"
+                                />
+                              </div>
+                              <div className="form-field" style={{ margin: 0 }}>
+                                <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Esquina</label>
+                                <select
+                                  className="form-select"
+                                  style={{ fontSize: '0.82rem' }}
+                                  value={formData.esquina || 'No'}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, esquina: e.target.value }))}
+                                >
+                                  <option value="No">No</option>
+                                  <option value="Sí">Sí</option>
+                                  <option value="Manzana completa">Manzana completa</option>
+                                </select>
+                              </div>
+                              <div className="form-field" style={{ margin: 0 }}>
+                                <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Acceso</label>
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  style={{ fontSize: '0.82rem' }}
+                                  value={formData.accesoCalle || ''}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, accesoCalle: e.target.value }))}
+                                  placeholder="Ej: Calle asfaltada con acera y bordillo"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <div className="form-section-title" style={{ margin: 0 }}>
                         <MapPin size={16} />
