@@ -56,6 +56,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
           folio: f.folio || '',
           libro: f.libro || '',
           propietario: f.propietario || avaluo?.propietarioPrincipal || '',
+          direccionRgp: f.direccionRgp || f.direccionRegistral || '',
           areaRegistrada: f.areaRegistrada !== undefined ? f.areaRegistrada : 0,
           areaDesmembrada: f.areaDesmembrada !== undefined ? f.areaDesmembrada : 0,
           areaActualRegistrada: f.areaActualRegistrada !== undefined ? f.areaActualRegistrada : (f.areaRegistrada || 0),
@@ -101,6 +102,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
           folio: avaluo?.folio || '', 
           libro: avaluo?.libro || '', 
           propietario: avaluo?.propietarioPrincipal || '',
+          direccionRgp: avaluo?.fincas?.[0]?.direccionRgp || avaluo?.direccionRgp || '',
           areaRegistrada: avaluo?.areaRegistrada || 0,
           areaDesmembrada: avaluo?.areaDesmembrada || 0,
           areaActualRegistrada: avaluo?.areaActualRegistrada || 0,
@@ -130,6 +132,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
     areaValuada: avaluo?.areaValuada || 0,
 
     // Aspectos Legales (textos amplios)
+    tieneLimitaciones: avaluo?.tieneLimitaciones || (avaluo?.limitaciones && !/^no\b|sin limitaciones|ningun/i.test(avaluo.limitaciones.trim()) ? 'Si' : 'No'),
     limitaciones: avaluo?.limitaciones || 'Sin limitaciones vigentes inscritas.',
     anotaciones: avaluo?.anotaciones || 'Ninguna vigente según consulta electrónica del RGP.',
     gravamenes: avaluo?.gravamenes || 'Libre de gravámenes hipotecarios.',
@@ -413,6 +416,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
           folio: '', 
           libro: '', 
           propietario: prev.propietarioPrincipal || '',
+          direccionRgp: '',
           areaRegistrada: 0,
           areaDesmembrada: 0,
           areaActualRegistrada: 0,
@@ -1396,7 +1400,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                 </div>
 
                 <div className="form-field">
-                  <label className="form-label">Dirección Completa del Inmueble</label>
+                  <label className="form-label">Dirección Física o Catastral del Inmueble</label>
                   <input
                     type="text"
                     className="form-input"
@@ -1404,6 +1408,9 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                     onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
                     placeholder="Ej: Lote en 1ra. Calle número 3-71 zona 2, Tecpán Guatemala, Chimaltenango"
                   />
+                  <span className="text-xs text-gray-500 mt-1 block">
+                    Dirección física y de inspección en campo. Las direcciones registrales según el RGP para cada finca se configuran individualmente en el <strong>Paso 2 (Fincas &amp; DICABI)</strong>.
+                  </span>
                 </div>
 
                 <div className="form-grid-2">
@@ -1746,6 +1753,31 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                       </div>
                     </div>
 
+                    {/* Dirección o Descripción Registral según el RGP para esta finca */}
+                    <div className="form-field" style={{ marginTop: '0.65rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                        <label className="form-label" style={{ margin: 0, fontWeight: 600 }}>
+                          Dirección según el RGP (Finca {fincaItem.finca ? `#${fincaItem.finca}` : (index + 1)})
+                        </label>
+                        {formData.direccion && (
+                          <button
+                            type="button"
+                            onClick={() => updateFinca(index, 'direccionRgp', formData.direccion)}
+                            style={{ fontSize: '0.72rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
+                          >
+                            + Usar dirección general
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        rows={2}
+                        className="form-input"
+                        value={fincaItem.direccionRgp || ''}
+                        onChange={(e) => updateFinca(index, 'direccionRgp', e.target.value)}
+                        placeholder="Ej: APARTAMENTO DOSCIENTOS CUATRO (204), NIVEL DOS, EDIFICIO DE APARTAMENTOS VANTIER ubicado en 18 avenida A 8-33 zona 15..."
+                      />
+                    </div>
+
                     {/* Desglose de Áreas Individuales para esta finca */}
                     <div style={{ marginTop: '0.75rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
@@ -1820,14 +1852,14 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                   </div>
                 </div>
 
-                {/* Aspectos Legales y Gravámenes - Cuadro Oficial LIMITACIONES (Página 2 del Reporte) */}
+                {/* Aspectos Legales y Gravámenes - Cuadro Oficial LIMITACIONES (Página 4 del Reporte) */}
                 <div className="form-section-title" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FileText size={16} />
-                    <span>Aspectos Legales y Gravámenes (Cuadro Oficial LIMITACIONES Página 2)</span>
+                    <span>Aspectos Legales y Gravámenes (Cuadro Oficial LIMITACIONES Página 4)</span>
                   </div>
                   <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 'normal' }}>
-                    Se imprime directamente en la Página 2 del Formato Oficial
+                    Se imprime directamente en la Página 4 del Formato Oficial (entre Aspectos Legales y DICABI)
                   </span>
                 </div>
 
@@ -1912,6 +1944,45 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                       onChange={(e) => setFormData({ ...formData, desmembracion: e.target.value })}
                       placeholder="Ej: Sin desmembraciones pendientes / Desmembraciones de fracciones autorizadas / No aplica..."
                     />
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '0.85rem', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <label className="form-label" style={{ margin: 0, fontWeight: 700, color: '#334155' }}>Tiene limitaciones:</label>
+                  <div style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, tieneLimitaciones: 'Si' })}
+                      style={{
+                        padding: '4px 16px',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        border: 'none',
+                        background: (formData.tieneLimitaciones === 'Si' || formData.tieneLimitaciones === 'Sí' || formData.tieneLimitaciones === true) ? '#0d2847' : '#ffffff',
+                        color: (formData.tieneLimitaciones === 'Si' || formData.tieneLimitaciones === 'Sí' || formData.tieneLimitaciones === true) ? '#ffffff' : '#64748b',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      Si
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, tieneLimitaciones: 'No' })}
+                      style={{
+                        padding: '4px 16px',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        border: 'none',
+                        borderLeft: '1px solid #cbd5e1',
+                        background: (formData.tieneLimitaciones === 'No' || formData.tieneLimitaciones === false) ? '#0d2847' : '#ffffff',
+                        color: (formData.tieneLimitaciones === 'No' || formData.tieneLimitaciones === false) ? '#ffffff' : '#64748b',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      No
+                    </button>
                   </div>
                 </div>
 

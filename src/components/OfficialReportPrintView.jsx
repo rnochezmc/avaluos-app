@@ -148,6 +148,13 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
     return null;
   };
 
+  const tieneLimitacionesDisplay = (() => {
+    if (avaluo?.tieneLimitaciones === 'Si' || avaluo?.tieneLimitaciones === 'Sí' || avaluo?.tieneLimitaciones === true) return 'Si';
+    if (avaluo?.tieneLimitaciones === 'No' || avaluo?.tieneLimitaciones === false) return 'No';
+    if (avaluo?.limitaciones && !/^no\b|sin limitaciones|ningun/i.test(avaluo.limitaciones.trim())) return 'Si';
+    return 'No';
+  })();
+
   // Reusable Page Header with Official Lex Rosam Logo
   const PageHeader = () => (
     <div className="pdf-page-header" style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -159,7 +166,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
         />
       </div>
       <div className="pdf-header-code" style={{ fontSize: '0.95rem', fontWeight: 800, color: company.navyColor }}>
-        AVALÚO: {avaluo.codigo}
+        {avaluo.codigo?.toUpperCase().startsWith('AVALÚO:') ? avaluo.codigo : `AVALÚO: ${avaluo.codigo || ''}`}
       </div>
     </div>
   );
@@ -359,26 +366,14 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
       }
     });
 
+    // Paginación oficial: exactamente 2 fotografías por página máximo (tamaño media carta)
     const pages = [];
-    let currentPage = [];
-    let currentSlots = 0;
-
-    cards.forEach(card => {
-      const needed = card.span;
-      if (currentSlots + needed > 6 && currentPage.length > 0) {
-        pages.push(currentPage);
-        currentPage = [];
-        currentSlots = 0;
-      }
-      currentPage.push(card);
-      currentSlots += needed;
-    });
-
-    if (currentPage.length > 0) {
-      pages.push(currentPage);
+    const PHOTOS_PER_PAGE = 2;
+    for (let i = 0; i < cards.length; i += PHOTOS_PER_PAGE) {
+      pages.push(cards.slice(i, i + PHOTOS_PER_PAGE));
     }
 
-    return pages;
+    return pages.length > 0 ? pages : [[]];
   }, [normalizedFotos]);
 
   const totalPhotoPages = photoPages.length;
@@ -572,44 +567,27 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
         </section>
 
         {/* ==============================================================
-            PÁGINA 2: LIMITACIONES, VALORES Y FIRMAS DE VALUADORES
+            PÁGINA 2: VALORES Y FIRMAS DE VALUADORES
             ============================================================== */}
         <section className="pdf-sheet-page">
           <PageHeader />
 
-          <div className="pdf-sheet-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="pdf-boxed-table">
+          <div className="pdf-sheet-content">
+            {/* Sección Tiene Limitaciones */}
+            <div className="pdf-boxed-table" style={{ marginBottom: '0.85rem' }}>
               <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.35rem' }}>
-                LIMITACIONES
+                TIENE LIMITACIONES
               </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Anotaciones y gravámenes:</span>
-                <span className="pdf-data-value">{avaluo.gravamenes || 'Libre de gravámenes hipotecarios.'}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Servidumbres:</span>
-                <span className="pdf-data-value" style={{ textAlign: 'justify', lineHeight: 1.35 }}>{avaluo.servidumbres || 'Sin servidumbres activas.'}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Áreas comunes:</span>
-                <span className="pdf-data-value">
-                  {((!avaluo.areasComunes || avaluo.areasComunes === 'No aplica') && avaluo.desmembracion && (/elementos comunes|areas comunes|áreas comunes|comunes|finca 500|finca 1334/i.test(avaluo.desmembracion)))
-                    ? avaluo.desmembracion
-                    : (avaluo.areasComunes || 'No aplica')}
-                </span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Desmembración:</span>
-                <span className="pdf-data-value">
-                  {((!avaluo.areasComunes || avaluo.areasComunes === 'No aplica') && avaluo.desmembracion && (/elementos comunes|areas comunes|áreas comunes|comunes|finca 500|finca 1334/i.test(avaluo.desmembracion)))
-                    ? 'No aplica'
-                    : (avaluo.desmembracion || 'No aplica')}
+              <div className="pdf-data-row" style={{ padding: '0.45rem 0.75rem', display: 'flex', alignItems: 'center' }}>
+                <span className="pdf-data-label" style={{ width: '190px', fontWeight: 700, color: '#1e293b' }}>Tiene limitaciones:</span>
+                <span className="pdf-data-value" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.88rem' }}>
+                  {tieneLimitacionesDisplay}
                 </span>
               </div>
             </div>
 
             {/* Cuadro de Valores Oficiales */}
-            <div className="pdf-boxed-table" style={{ marginTop: '0.85rem' }}>
+            <div className="pdf-boxed-table">
               <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.35rem' }}>
                 VALORES
               </div>
@@ -647,8 +625,8 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
             </div>
 
-            {/* Firmas en Página 2 oficiales */}
-            <div className="pdf-signatures-container" style={{ marginTop: 'auto', paddingTop: '2.5rem', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around' }}>
+            {/* Firmas en Página 2 oficiales inmediatamente debajo del cuadro de valores por seguridad jurídica */}
+            <div className="pdf-signatures-container" style={{ marginTop: '1.75rem', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around' }}>
               {avaluo.incluirFirmaRevisor !== false && (
                 <div className="pdf-signature-block" style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   {getFirmaRevisorSrc() ? (
@@ -782,10 +760,37 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 <span className="pdf-data-label">Propietario:</span>
                 <span className="pdf-data-value"><strong>{avaluo.propietarioPrincipal}</strong></span>
               </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Dirección según el RGP:</span>
-                <span className="pdf-data-value">{avaluo.direccion}</span>
+
+              {/* Dirección según el RGP: Tabla desglosada por Finca (Formato Oficial Word) */}
+              <div style={{ marginTop: '0.45rem', marginBottom: '0.45rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.35rem' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.82rem', padding: '0.15rem 0.5rem 0.3rem 0.5rem', color: '#1e293b' }}>
+                  Dirección según el RGP:
+                </div>
+                <table className="pdf-inner-table" style={{ border: '1px solid #cbd5e1' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc' }}>
+                      <th style={{ width: '80px', textAlign: 'center', borderRight: '1px solid #cbd5e1' }}>FINCA</th>
+                      <th style={{ textAlign: 'left' }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fincas.map((f, i) => {
+                      const dirRgp = f.direccionRgp || f.direccionRegistral || (fincas.length === 1 ? avaluo.direccion : (f.dicabiDireccion || avaluo.direccion));
+                      return (
+                        <tr key={i} style={{ borderBottom: i === fincas.length - 1 ? 'none' : '1px solid #cbd5e1' }}>
+                          <td style={{ fontWeight: 700, textAlign: 'center', verticalAlign: 'top', width: '80px', borderRight: '1px solid #cbd5e1', padding: '0.35rem 0.5rem' }}>
+                            {f.finca}
+                          </td>
+                          <td style={{ textAlign: 'justify', lineHeight: 1.35, fontSize: '0.8rem', color: '#0f172a', padding: '0.35rem 0.6rem' }}>
+                            {dirRgp}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
+
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Dirección física o catastral:</span>
                 <span className="pdf-data-value">{avaluo.direccion}</span>
@@ -854,16 +859,49 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 ASPECTOS LEGALES
               </div>
               <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Limitaciones o servidumbres:</span>
-                <span className="pdf-data-value">{avaluo.limitaciones || avaluo.servidumbres || 'Sin limitaciones vigentes inscritas.'}</span>
-              </div>
-              <div className="pdf-data-row">
                 <span className="pdf-data-label" style={{ width: '190px' }}>Anotación:</span>
                 <span className="pdf-data-value">{avaluo.anotaciones || 'Ninguna vigente según consulta electrónica del RGP.'}</span>
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label" style={{ width: '190px' }}>Gravámenes:</span>
                 <span className="pdf-data-value">{avaluo.gravamenes || 'NINGUNA'}</span>
+              </div>
+            </div>
+
+            {/* LIMITACIONES */}
+            <div className="pdf-boxed-table" style={{ marginTop: '0.65rem' }}>
+              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.35rem' }}>
+                LIMITACIONES
+              </div>
+              {avaluo.limitaciones && (
+                <div className="pdf-data-row">
+                  <span className="pdf-data-label" style={{ width: '190px' }}>Limitaciones:</span>
+                  <span className="pdf-data-value" style={{ textAlign: 'justify', lineHeight: 1.35 }}>{avaluo.limitaciones}</span>
+                </div>
+              )}
+              <div className="pdf-data-row">
+                <span className="pdf-data-label" style={{ width: '190px' }}>Anotaciones y gravámenes:</span>
+                <span className="pdf-data-value">{avaluo.gravamenes || 'Libre de gravámenes hipotecarios.'}</span>
+              </div>
+              <div className="pdf-data-row">
+                <span className="pdf-data-label" style={{ width: '190px' }}>Servidumbres:</span>
+                <span className="pdf-data-value" style={{ textAlign: 'justify', lineHeight: 1.35 }}>{avaluo.servidumbres || 'Sin servidumbres activas.'}</span>
+              </div>
+              <div className="pdf-data-row">
+                <span className="pdf-data-label" style={{ width: '190px' }}>Áreas comunes:</span>
+                <span className="pdf-data-value">
+                  {((!avaluo.areasComunes || avaluo.areasComunes === 'No aplica') && avaluo.desmembracion && (/elementos comunes|areas comunes|áreas comunes|comunes|finca 500|finca 1334/i.test(avaluo.desmembracion)))
+                    ? avaluo.desmembracion
+                    : (avaluo.areasComunes || 'No aplica')}
+                </span>
+              </div>
+              <div className="pdf-data-row">
+                <span className="pdf-data-label" style={{ width: '190px' }}>Desmembración:</span>
+                <span className="pdf-data-value">
+                  {((!avaluo.areasComunes || avaluo.areasComunes === 'No aplica') && avaluo.desmembracion && (/elementos comunes|areas comunes|áreas comunes|comunes|finca 500|finca 1334/i.test(avaluo.desmembracion)))
+                    ? 'No aplica'
+                    : (avaluo.desmembracion || 'No aplica')}
+                </span>
               </div>
             </div>
 
@@ -1449,18 +1487,18 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 FOTOGRAFÍAS {photoPages.length > 1 ? `(PARTE ${pIdx + 1} DE ${photoPages.length})` : ''}
               </div>
 
-              {/* Visualización robusta de fotos con carga síncrona para PDF */}
-              <div className="pdf-photos-layout">
+              {/* Visualización robusta de fotos con carga síncrona para PDF - Tamaño Media Carta (máximo 2 por página) */}
+              <div className="pdf-photos-layout-media-carta">
                 {pageCards.map((card) => (
                   <div 
                     key={card.id} 
-                    className="pdf-photo-box" 
-                    style={card.span === 2 ? { gridColumn: 'span 2' } : {}}
+                    className="pdf-photo-box-media-carta"
                   >
-                    <div className="pdf-photo-num">{card.label}</div>
+                    <div className="pdf-photo-num" style={{ fontSize: '0.86rem', fontWeight: 700, color: '#1e293b' }}>
+                      {card.label}
+                    </div>
                     <div 
-                      className="pdf-photo-frame" 
-                      style={{ height: card.span === 2 ? '180px' : '140px' }}
+                      className="pdf-photo-frame-media-carta"
                     >
                       {card.src ? (
                         <img 
@@ -1477,8 +1515,8 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                         />
                       ) : (
                         <div className="pdf-photo-empty" style={{ background: '#f8fafc', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — SIN REGISTRO ]</span>
-                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Seguridad Contractual {company.name}</span>
+                          <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>[ RECUADRO CERRADO — SIN REGISTRO ]</span>
+                          <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>Seguridad Contractual {company.name}</span>
                         </div>
                       )}
                     </div>

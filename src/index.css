@@ -1467,7 +1467,41 @@ img {
   color: #475569;
 }
 
-/* Photos Layout on Page 8 */
+/* Photos Layout - Media Carta (2 fotos máximo por página) */
+.pdf-photos-layout-media-carta {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.pdf-photo-box-media-carta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.pdf-photo-frame-media-carta {
+  height: 365px;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.pdf-photo-frame-media-carta img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Photos Layout on Page 8 (Legacy grid) */
 .pdf-photos-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1600,6 +1634,26 @@ img {
   .pdf-photo-frame {
     border: 1px solid #000000 !important;
     background-color: #f8fafc !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .pdf-photo-frame-media-carta {
+    height: 98mm !important;
+    max-height: 98mm !important;
+    border: 1px solid #1e293b !important;
+    background-color: #f8fafc !important;
+    border-radius: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .pdf-photo-frame-media-carta img {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }

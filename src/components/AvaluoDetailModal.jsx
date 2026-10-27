@@ -20,7 +20,8 @@ export default function AvaluoDetailModal({
   currentRole = 'autorizador',
   onStatusChange,
   onRemovePdf,
-  onUploadPdf
+  onUploadPdf,
+  onUpdateField
 }) {
   const avaluoTenant = getTenantConfig(avaluo?.tenantId || (avaluo?.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam'));
   const [activeTab, setActiveTab] = useState('registral');
@@ -30,6 +31,28 @@ export default function AvaluoDetailModal({
   const [previewPageImage, setPreviewPageImage] = useState(null);
   const [hydratedConsultasPdfs, setHydratedConsultasPdfs] = useState(avaluo?.consultasPdfs || []);
   const fileInputRef = useRef(null);
+
+  const getInitialTieneLimitaciones = (av) => {
+    if (av?.tieneLimitaciones === 'Si' || av?.tieneLimitaciones === 'Sí' || av?.tieneLimitaciones === true) return 'Si';
+    if (av?.tieneLimitaciones === 'No' || av?.tieneLimitaciones === false) return 'No';
+    if (av?.limitaciones && !/^no\b|sin limitaciones|ningun/i.test(av.limitaciones.trim())) return 'Si';
+    return 'No';
+  };
+
+  const [localTieneLimitaciones, setLocalTieneLimitaciones] = useState(() => getInitialTieneLimitaciones(avaluo));
+
+  useEffect(() => {
+    if (avaluo?.tieneLimitaciones) {
+      setLocalTieneLimitaciones(avaluo.tieneLimitaciones === 'No' ? 'No' : 'Si');
+    }
+  }, [avaluo?.tieneLimitaciones]);
+
+  const handleToggleLimitaciones = (val) => {
+    setLocalTieneLimitaciones(val);
+    if (onUpdateField && avaluo?.id) {
+      onUpdateField(avaluo.id, { tieneLimitaciones: val });
+    }
+  };
 
   // Hidratar páginas y dataUrls de RGP desde la nube o IndexedDB si vienen compactadas
   useEffect(() => {
@@ -613,11 +636,29 @@ export default function AvaluoDetailModal({
                 </table>
               </div>
 
+              {/* Desglose de Direcciones según el RGP por Finca */}
+              <div style={{ marginTop: '0.85rem', background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0d2847', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Building size={14} />
+                  <span>Dirección según el RGP por Finca (Cuadro Oficial Página 4):</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                  {fincas.map((f, i) => (
+                    <div key={i} style={{ display: 'flex', gap: '8px', fontSize: '0.85rem', background: '#ffffff', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                      <span style={{ fontWeight: 700, color: '#0d2847', minWidth: '95px' }}>Finca {f.finca || (i + 1)}:</span>
+                      <span style={{ color: '#334155' }}>
+                        {f.direccionRgp || f.direccionRegistral || (fincas.length === 1 ? avaluo.direccion : (f.dicabiDireccion || avaluo.direccion || 'Sin dirección registral individual registrada.'))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Aspectos Legales con Textos Amplios */}
               <div className="form-section-title" style={{ marginTop: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Scale size={16} />
-                  <span>Aspectos Legales y Gravámenes (Cuadro Oficial LIMITACIONES Página 2)</span>
+                  <span>Aspectos Legales y Gravámenes (Cuadro Oficial LIMITACIONES Página 4)</span>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.85rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
@@ -637,8 +678,59 @@ export default function AvaluoDetailModal({
                   <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Desmembración:</strong>
                   <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.desmembracion || 'Sin desmembraciones pendientes.'}</div>
                 </div>
+                <div style={{ 
+                  gridColumn: '1 / -1', 
+                  borderTop: '1px solid #e2e8f0', 
+                  paddingTop: '0.75rem', 
+                  paddingBottom: '0.25rem', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between', 
+                  flexWrap: 'wrap', 
+                  gap: '8px' 
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <strong style={{ fontSize: '0.85rem', color: '#334155' }}>Tiene limitaciones:</strong>
+                    <div style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleLimitaciones('Si')}
+                        style={{
+                          padding: '4px 16px',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          border: 'none',
+                          background: localTieneLimitaciones === 'Si' ? '#0d2847' : '#ffffff',
+                          color: localTieneLimitaciones === 'Si' ? '#ffffff' : '#64748b',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        Si
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleLimitaciones('No')}
+                        style={{
+                          padding: '4px 16px',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          border: 'none',
+                          borderLeft: '1px solid #cbd5e1',
+                          background: localTieneLimitaciones === 'No' ? '#0d2847' : '#ffffff',
+                          color: localTieneLimitaciones === 'No' ? '#ffffff' : '#64748b',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        No
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {avaluo.limitaciones && (
-                  <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem' }}>
+                  <div style={{ gridColumn: '1 / -1', paddingTop: '0.25rem' }}>
                     <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Otras Limitaciones Registrales:</strong>
                     <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px' }}>{avaluo.limitaciones}</div>
                   </div>

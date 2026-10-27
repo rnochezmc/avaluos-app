@@ -60,9 +60,9 @@ La plataforma soporta la operación independiente de dos firmas con identidades,
 ### 4. Informe Oficial de Impresión Idéntico al Formato Físico
 * Vista previa de alta fidelidad que replica exactamente el estándar oficial de 9+ páginas:
   - **Página 1**: Identificación del inmueble, solicitante, coordenadas y cuadro de *RESÚMENES*.
-  - **Página 2**: Limitaciones, dictamen resumido, cuadro de valores y firmas autorizadas.
+  - **Página 2**: Dictamen resumido, cuadro de valores oficiales y firmas autorizadas de los valuadores.
   - **Página 3**: Calificación de garantía y consideraciones generales del informe.
-  - **Página 4**: Consulta a distancia, antecedentes registrales, desglose de áreas y aspectos legales.
+  - **Página 4**: Consulta a distancia, antecedentes registrales, desglose de áreas, aspectos legales, limitaciones y DICABI.
   - **Página 5**: Dirección de Catastro (DICABI), características del terreno y colindancias por rumbo cardinal (físicas y registrales).
   - **Página 6**: Servicios e infraestructura, características constructivas y **1. Valuación Comercial** (Terreno y Construcción).
   - **Página 7**: **2. Valuación Bancaria**, cuadros de liquidación bancaria (80%) y cláusula de cierre.

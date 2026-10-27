@@ -653,6 +653,38 @@ export default function App() {
     }
   };
 
+  // Actualizar un campo específico de un avalúo (ej: tieneLimitaciones)
+  const handleUpdateAvaluoField = async (id, fields) => {
+    if (!id || !fields) return;
+    let updatedItem = null;
+    setAvaluos((prev) => {
+      return prev.map((item) => {
+        if (item.id === id) {
+          const next = {
+            ...item,
+            ...fields,
+            updatedAt: new Date().toISOString()
+          };
+          updatedItem = next;
+          return next;
+        }
+        return item;
+      });
+    });
+
+    if (updatedItem) {
+      setViewingAvaluo((cur) => (cur?.id === id ? updatedItem : cur));
+      try {
+        await saveAvaluoToLocalDb(updatedItem);
+      } catch (_e) {}
+      try {
+        await saveAvaluoToCloud(updatedItem);
+      } catch (err) {
+        console.error('Error actualizando campo en Firebase:', err);
+      }
+    }
+  };
+
   // Adjuntar PDFs o imágenes directamente desde la Ficha
   const handleUploadPdfToAvaluo = async (avaluoId, newPdfItems) => {
     if (!avaluoId || !Array.isArray(newPdfItems) || newPdfItems.length === 0) return;
@@ -994,6 +1026,7 @@ export default function App() {
           }}
           onRemovePdf={handleRemovePdfFromAvaluo}
           onUploadPdf={handleUploadPdfToAvaluo}
+          onUpdateField={handleUpdateAvaluoField}
         />
       )}
 
