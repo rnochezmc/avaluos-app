@@ -866,13 +866,6 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 <span className="pdf-data-label" style={{ width: '190px' }}>Gravámenes:</span>
                 <span className="pdf-data-value">{avaluo.gravamenes || 'NINGUNA'}</span>
               </div>
-            </div>
-
-            {/* LIMITACIONES */}
-            <div className="pdf-boxed-table" style={{ marginTop: '0.65rem' }}>
-              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.35rem' }}>
-                LIMITACIONES
-              </div>
               {avaluo.limitaciones && (
                 <div className="pdf-data-row">
                   <span className="pdf-data-label" style={{ width: '190px' }}>Limitaciones:</span>
