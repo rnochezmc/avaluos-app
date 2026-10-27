@@ -180,12 +180,12 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
 
   // Reusable Page Header with Official Lex Rosam Logo
   const PageHeader = () => (
-    <div className="pdf-page-header" style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="pdf-page-header" style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '0.4rem', marginBottom: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <img 
           src={company.logoUrl} 
           alt={company.name} 
-          style={{ height: '42px', width: 'auto', objectFit: 'contain' }}
+          style={{ height: '65px', width: 'auto', objectFit: 'contain' }}
         />
       </div>
       <div className="pdf-header-code" style={{ fontSize: '0.95rem', fontWeight: 800, color: company.navyColor }}>
