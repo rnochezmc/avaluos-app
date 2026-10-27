@@ -873,10 +873,6 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 </div>
               )}
               <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Anotaciones y gravámenes:</span>
-                <span className="pdf-data-value">{avaluo.gravamenes || 'Libre de gravámenes hipotecarios.'}</span>
-              </div>
-              <div className="pdf-data-row">
                 <span className="pdf-data-label" style={{ width: '190px' }}>Servidumbres:</span>
                 <span className="pdf-data-value" style={{ textAlign: 'justify', lineHeight: 1.35 }}>{avaluo.servidumbres || 'Sin servidumbres activas.'}</span>
               </div>
