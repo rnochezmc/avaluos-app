@@ -29,7 +29,7 @@ import {
   getAllAvaluosFromLocalDb, 
   deleteAvaluoFromLocalDb 
 } from './utils/localDb';
-import { SearchX, Plus, Sparkles, ShieldAlert, LogOut, Loader2 } from 'lucide-react';
+import { SearchX, Plus, Sparkles, ShieldAlert, LogOut, Loader2, AlertTriangle, Trash2 } from 'lucide-react';
 
 const STORAGE_KEY = 'lexrosam_avaluos_db_v3';
 const LEGACY_STORAGE_KEY_V2 = 'lexrosam_avaluos_db_v2';
@@ -146,6 +146,7 @@ export default function App() {
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [currentRole, setCurrentRole] = useState('autorizador');
+  const [deletingAvaluo, setDeletingAvaluo] = useState(null);
 
   // Multi-tenant selection state (lex-rosam | cverde | todos)
   const [selectedTenantId, setSelectedTenantId] = useState(() => {
@@ -482,14 +483,47 @@ export default function App() {
       .replace(/[\u0300-\u036f]/g, '');
   };
 
+  // Identificar si el usuario actual es Aroldo Ruiz (o administrador maestro/soporte)
+  const isAroldo = !currentUser || 
+                   currentUser.rol === 'admin' || 
+                   currentUser.rol === 'soporte' || 
+                   currentUser.email === 'aroldoruiz100@gmail.com' || 
+                   currentUser.email === 'oruiz@cverde.com.gt' || 
+                   currentUser.email === 'cverdeavaluos@gmail.com' || 
+                   currentUser.email === 'rnochezmc@gmail.com';
+
+  // Verificar si un expediente fue creado por el usuario actual
+  const isCreatorOfItem = (item) => {
+    if (!currentUser) return false;
+    const userEmail = (currentUser.email || '').toLowerCase().trim();
+    const userUid = currentUser.uid || '';
+    const userNombre = (currentUser.nombre || '').toLowerCase().trim();
+
+    const itemEmail = (item.creadoPorEmail || item.creadoPor || item.usuarioEmail || '').toLowerCase().trim();
+    const itemUid = item.creadoPorUid || item.userId || '';
+    const itemNombre = (item.creadoPorNombre || '').toLowerCase().trim();
+
+    if (userEmail && itemEmail && userEmail === itemEmail) return true;
+    if (userUid && itemUid && userUid === itemUid) return true;
+    if (userNombre && itemNombre && userNombre === itemNombre) return true;
+    if (item.bienMostradoPor && userNombre && item.bienMostradoPor.toLowerCase().includes(userNombre)) return true;
+
+    return false;
+  };
+
   // Avaluos pertenecientes al tenant activo (para estadísticas globales sin verse afectadas por la barra de búsqueda)
   const tenantFilteredAvaluos = useMemo(() => {
-    if (selectedTenantId === 'todos') return avaluos;
-    return avaluos.filter((item) => {
+    let list = avaluos;
+    // Si no es Aroldo / Admin, sólo puede ver los expedientes que él creó
+    if (!isAroldo) {
+      list = list.filter(isCreatorOfItem);
+    }
+    if (selectedTenantId === 'todos') return list;
+    return list.filter((item) => {
       const itemTenant = item.tenantId || (item.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
       return itemTenant === selectedTenantId;
     });
-  }, [avaluos, selectedTenantId]);
+  }, [avaluos, selectedTenantId, isAroldo, currentUser]);
 
   // Filtered & Sorted Avaluos
   const filteredAvaluos = useMemo(() => {
@@ -497,6 +531,11 @@ export default function App() {
 
     return avaluos
       .filter((item) => {
+        // Los usuarios que no sean Aroldo solo pueden ver los expedientes que ellos crearon
+        if (!isAroldo && !isCreatorOfItem(item)) {
+          return false;
+        }
+
         // Multi-tenant company filter
         if (selectedTenantId !== 'todos') {
           const itemTenant = item.tenantId || (item.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
@@ -575,21 +614,30 @@ export default function App() {
 
   // Handlers
   const handleSaveAvaluo = async (savedItem) => {
+    // Asegurar metadata de autoría del expediente
+    const itemWithCreator = {
+      ...savedItem,
+      creadoPorEmail: savedItem.creadoPorEmail || currentUser?.email || '',
+      creadoPorUid: savedItem.creadoPorUid || currentUser?.uid || '',
+      creadoPorNombre: savedItem.creadoPorNombre || currentUser?.nombre || '',
+      creadoPor: savedItem.creadoPor || currentUser?.email || currentUser?.nombre || ''
+    };
+
     // 1. Actualización optimista en lista en memoria
     setAvaluos((prev) => {
-      const existsIndex = prev.findIndex((a) => a.id === savedItem.id);
+      const existsIndex = prev.findIndex((a) => a.id === itemWithCreator.id);
       if (existsIndex >= 0) {
         const updated = [...prev];
-        updated[existsIndex] = savedItem;
+        updated[existsIndex] = itemWithCreator;
         return updated;
       } else {
-        return [savedItem, ...prev];
+        return [itemWithCreator, ...prev];
       }
     });
 
     // 2. Si venía de la Ficha o se estaba visualizando, reabrir/actualizar de inmediato la Ficha
-    if (viewingAvaluo?.id === savedItem.id || lastFichaIdRef.current === savedItem.id) {
-      setViewingAvaluo(savedItem);
+    if (viewingAvaluo?.id === itemWithCreator.id || lastFichaIdRef.current === itemWithCreator.id) {
+      setViewingAvaluo(itemWithCreator);
       lastFichaIdRef.current = null;
     }
 
@@ -598,14 +646,14 @@ export default function App() {
 
     // 3. Persistir en IndexedDB de forma robusta e ilimitada (sin límite de 5MB de localStorage)
     try {
-      await saveAvaluoToLocalDb(savedItem);
+      await saveAvaluoToLocalDb(itemWithCreator);
     } catch (dbErr) {
       console.warn('Error guardando en IndexedDB:', dbErr);
     }
 
     // 4. Persistir en Firebase Cloud Firestore
     try {
-      await saveAvaluoToCloud(savedItem);
+      await saveAvaluoToCloud(itemWithCreator);
     } catch (err) {
       console.error('Error guardando en Firebase:', err);
     }
@@ -751,21 +799,31 @@ export default function App() {
     }
   };
 
-  const handleDeleteAvaluo = async (id) => {
+  // Solo Aroldo Ruiz (admin) y soporte tienen permiso para eliminar expedientes
+  const canDeleteExpedientes = isAroldo;
+
+  const handleDeleteAvaluoClick = (id) => {
+    if (!canDeleteExpedientes) {
+      alert('Permiso denegado: Los colaboradores técnicos pueden ver y trabajar expedientes, pero únicamente el administrador oficial (Lic. Aroldo Ruiz) puede eliminarlos.');
+      return;
+    }
     const target = avaluos.find((a) => a.id === id);
     if (!target) return;
-    const confirmed = window.confirm(`¿Está seguro de eliminar el expediente ${target.codigo} (${target.propietarioPrincipal})? Esta acción no se puede deshacer.`);
-    if (confirmed) {
-      setAvaluos((prev) => prev.filter((a) => a.id !== id));
-      if (viewingAvaluo?.id === id) setViewingAvaluo(null);
-      try {
-        await deleteAvaluoFromLocalDb(id);
-      } catch (_e) {}
-      try {
-        await deleteAvaluoFromCloud(id);
-      } catch (err) {
-        console.error('Error eliminando de Firebase:', err);
-      }
+    setDeletingAvaluo(target);
+  };
+
+  const executeDeleteAvaluo = async (id) => {
+    if (!canDeleteExpedientes) return;
+    setAvaluos((prev) => prev.filter((a) => a.id !== id));
+    if (viewingAvaluo?.id === id) setViewingAvaluo(null);
+    setDeletingAvaluo(null);
+    try {
+      await deleteAvaluoFromLocalDb(id);
+    } catch (_e) {}
+    try {
+      await deleteAvaluoFromCloud(id);
+    } catch (err) {
+      console.error('Error eliminando de Firebase:', err);
     }
   };
 
@@ -932,7 +990,7 @@ export default function App() {
         onSelectTenant={handleSelectTenant}
       />
 
-      <main className="main-wrapper">
+      <main className={`main-wrapper ${printingAvaluo ? 'no-print' : ''}`}>
         {/* KPI Stats Overview Bar */}
         <StatsOverview 
           avaluos={tenantFilteredAvaluos} 
@@ -992,7 +1050,7 @@ export default function App() {
                 avaluo={av}
                 onView={(item) => setViewingAvaluo(item)}
                 onEdit={(item) => setEditingAvaluo(item)}
-                onDelete={handleDeleteAvaluo}
+                onDelete={canDeleteExpedientes ? handleDeleteAvaluoClick : null}
                 onPrint={(item) => setPrintingAvaluo(item)}
               />
             ))}
@@ -1002,7 +1060,7 @@ export default function App() {
             avaluos={filteredAvaluos}
             onView={(item) => setViewingAvaluo(item)}
             onEdit={(item) => setEditingAvaluo(item)}
-            onDelete={handleDeleteAvaluo}
+            onDelete={canDeleteExpedientes ? handleDeleteAvaluoClick : null}
             onPrint={(item) => setPrintingAvaluo(item)}
           />
         )}
@@ -1043,6 +1101,7 @@ export default function App() {
         <AvaluoFormModal
           key={editingAvaluo?.id || (isCreatingNew ? 'new-avaluo' : 'none')}
           avaluo={editingAvaluo}
+          currentUser={currentUser}
           usuarios={usuarios}
           currentTenant={currentTenantConfig}
           onClose={() => {
@@ -1056,6 +1115,106 @@ export default function App() {
           }}
           onSave={handleSaveAvaluo}
         />
+      )}
+
+      {/* Ventana Emergente de Confirmación de Borrado para Aroldo Ruiz */}
+      {deletingAvaluo && (
+        <div 
+          className="modal-backdrop" 
+          onClick={() => setDeletingAvaluo(null)}
+          style={{ 
+            zIndex: 9999, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            background: 'rgba(15, 23, 42, 0.75)', 
+            backdropFilter: 'blur(4px)',
+            padding: '1rem'
+          }}
+        >
+          <div 
+            className="modal-window" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              maxWidth: '500px', 
+              width: '100%', 
+              borderRadius: '12px', 
+              overflow: 'hidden', 
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', 
+              background: '#ffffff', 
+              border: '1.5px solid #fecaca'
+            }}
+          >
+            <div style={{ background: '#fef2f2', padding: '1.25rem 1.5rem', borderBottom: '1px solid #fee2e2', display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#dc2626' }}>
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, color: '#991b1b', fontSize: '1.15rem', fontWeight: 800 }}>
+                  ¿Está seguro de borrar este registro?
+                </h3>
+                <span style={{ fontSize: '0.8rem', color: '#b91c1c', fontWeight: 600 }}>
+                  Atención Lic. Aroldo Ruiz • Acción Irreversible
+                </span>
+              </div>
+            </div>
+
+            <div style={{ padding: '1.5rem' }}>
+              <p style={{ color: '#334155', fontSize: '0.95rem', lineHeight: 1.55, margin: '0 0 1.25rem 0' }}>
+                Si lo confirma, <strong>se perderá su información definitivamente</strong>. Esta acción no se puede deshacer y el expediente será eliminado tanto de su equipo como de la base de datos central en la nube.
+              </p>
+
+              <div style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '0.85rem 1rem', fontSize: '0.85rem', color: '#1e293b' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                  <span style={{ color: '#64748b' }}>Expediente:</span>
+                  <strong style={{ color: '#0d2847', fontFamily: 'monospace', fontSize: '0.9rem' }}>{deletingAvaluo.codigo}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                  <span style={{ color: '#64748b' }}>Propietario:</span>
+                  <span style={{ fontWeight: 600 }}>{deletingAvaluo.propietarioPrincipal}</span>
+                </div>
+                {deletingAvaluo.direccion && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#475569' }}>
+                    <span style={{ color: '#64748b' }}>Dirección:</span>
+                    <span style={{ textAlign: 'right', maxWidth: '65%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{deletingAvaluo.direccion}</span>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setDeletingAvaluo(null)}
+                  style={{ padding: '0.6rem 1.35rem', fontWeight: 600, fontSize: '0.9rem' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => executeDeleteAvaluo(deletingAvaluo.id)}
+                  style={{
+                    background: '#dc2626',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '0.6rem 1.35rem',
+                    borderRadius: '6px',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 3px 8px rgba(220, 38, 38, 0.4)'
+                  }}
+                >
+                  <Trash2 size={16} />
+                  <span>Sí, borrar definitivamente</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Control de Usuarios y Roles (Aroldo Ruiz & Ramiro Nóchez) */}

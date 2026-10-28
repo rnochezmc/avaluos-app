@@ -575,10 +575,16 @@ export default function AvaluoDetailModal({
                 </div>
               </div>
 
-              <div className="form-grid-2" style={{ marginTop: '0.75rem' }}>
+              <div className="form-grid-3" style={{ marginTop: '0.75rem' }}>
                 <div className="form-field">
-                  <label className="form-label">Dirección Completa</label>
+                  <label className="form-label">Dirección Física o Catastral</label>
                   <div style={{ fontWeight: 500 }}>{avaluo.direccion || 'N/A'}</div>
+                </div>
+                <div className="form-field">
+                  <label className="form-label">Dirección según IUSI</label>
+                  <div style={{ fontWeight: 500, color: '#334155' }}>
+                    {avaluo.direccionIusi || avaluo.iusiDireccion || avaluo.direccion || 'N/A'}
+                  </div>
                 </div>
                 <div className="form-field">
                   <label className="form-label">Coordenadas GPS</label>

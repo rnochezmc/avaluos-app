@@ -151,15 +151,17 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint }
           <Edit3 size={14} />
           <span>Editar</span>
         </button>
-        <button
-          type="button"
-          className="card-action-btn"
-          onClick={() => onDelete(avaluo.id)}
-          title="Eliminar Expediente"
-          style={{ color: 'var(--status-danger)' }}
-        >
-          <Trash2 size={14} />
-        </button>
+        {onDelete && (
+          <button
+            type="button"
+            className="card-action-btn"
+            onClick={() => onDelete(avaluo.id)}
+            title="Eliminar Expediente"
+            style={{ color: 'var(--status-danger)' }}
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
     </div>
   );

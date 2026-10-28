@@ -359,7 +359,7 @@ export default function UserManagementModal({
                       background: '#ffffff'
                     }}
                   >
-                    <option value="valuador">Valuador Técnico / Ingreso (Crea y envía a revisión)</option>
+                    <option value="valuador">Valuador Técnico / Ingreso (Crea y edita expedientes, sin permiso de eliminar)</option>
                     <option value="admin">Aprobador / Autorizador (Aroldo Ruiz / Revisor oficial)</option>
                     <option value="lector">Consulta / Lector (Solo lectura e impresión)</option>
                     <option value="soporte">Soporte Técnico / Desarrollador</option>

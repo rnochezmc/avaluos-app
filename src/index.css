@@ -1570,7 +1570,7 @@ img {
    ========================================================================== */
 
 @media print {
-  /* Hide all interactive web elements */
+  /* Hide all interactive web elements and entire background app */
   .no-print,
   .top-navbar,
   .search-section,
@@ -1579,16 +1579,20 @@ img {
   .table-container,
   .mobile-bottom-nav,
   .modal-backdrop,
-  .print-control-bar {
+  .print-control-bar,
+  .main-wrapper,
+  .app-container > *:not(.print-modal-overlay) {
     display: none !important;
   }
 
-  body {
+  html, body {
     background: #ffffff !important;
     margin: 0 !important;
     padding: 0 !important;
     font-size: 11pt !important;
     color: #000000 !important;
+    height: auto !important;
+    min-height: 100% !important;
   }
 
   .print-modal-overlay {
@@ -1596,28 +1600,46 @@ img {
     background: transparent !important;
     overflow: visible !important;
     padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
   }
 
   .official-document-sheet-container {
     padding: 0 !important;
+    margin: 0 !important;
     gap: 0 !important;
     width: 100% !important;
+    display: block !important;
   }
 
   .pdf-sheet-page {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-height: 100vh !important;
-    height: auto !important;
+    width: 215.9mm !important;
+    max-width: 215.9mm !important;
+    min-height: 0 !important;
+    height: 279.4mm !important;
+    max-height: 279.4mm !important;
+    box-sizing: border-box !important;
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
-    padding: 12mm 15mm 10mm 15mm !important;
+    margin: 0 auto !important;
+    padding: 10mm 15mm 8mm 15mm !important;
     page-break-after: always !important;
     break-after: page !important;
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  /* Evitar página en blanco extra al final del documento */
+  .pdf-sheet-page:last-child,
+  .pdf-sheet-page:last-of-type {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   .pdf-blue-table th {

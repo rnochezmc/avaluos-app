@@ -140,15 +140,17 @@ export default function AvaluoTable({ avaluos = [], onView, onEdit, onDelete, on
                       >
                         <Edit3 size={14} />
                       </button>
-                      <button
-                        type="button"
-                        className="card-action-btn"
-                        onClick={() => onDelete(av.id)}
-                        title="Eliminar"
-                        style={{ padding: '0.35rem 0.5rem', color: 'var(--status-danger)' }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {onDelete && (
+                        <button
+                          type="button"
+                          className="card-action-btn"
+                          onClick={() => onDelete(av.id)}
+                          title="Eliminar"
+                          style={{ padding: '0.35rem 0.5rem', color: 'var(--status-danger)' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -160,6 +162,7 @@ export default function AvaluoTable({ avaluos = [], onView, onEdit, onDelete, on
 
       {/* Barra de Paginación */}
       <div 
+        className="no-print"
         style={{
           display: 'flex',
           justifyContent: 'space-between',

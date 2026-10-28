@@ -834,7 +834,9 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Dirección según IUSI:</span>
-                <span className="pdf-data-value">{avaluo.dicabiDireccion || 'N/A'}</span>
+                <span className="pdf-data-value">
+                  {avaluo.direccionIusi || avaluo.iusiDireccion || avaluo.direccion || 'N/A'}
+                </span>
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Nota:</span>

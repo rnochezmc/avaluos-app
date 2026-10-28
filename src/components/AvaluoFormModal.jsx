@@ -11,7 +11,7 @@ import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { DEFAULT_DICTAMEN_GARANTIA, DICTAMEN_PRESETS } from '../data/mockAvaluos';
 import { getTenantConfig } from '../data/tenantsConfig';
 
-export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave, currentTenant }) {
+export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], onClose, onSave, currentTenant }) {
   const isEditing = Boolean(avaluo?.id);
   const activeTenantId = avaluo?.tenantId || (avaluo?.codigo?.startsWith('CV-') ? 'cverde' : (currentTenant?.id || 'lex-rosam'));
   const tenantConfig = getTenantConfig(activeTenantId);
@@ -31,6 +31,10 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
   const [formData, setFormData] = useState({
     tenantId: activeTenantId,
     id: avaluo?.id || `${activeTenantId === 'cverde' ? 'cv' : 'lr'}-2026-${Date.now().toString().slice(-4)}`,
+    creadoPorEmail: avaluo?.creadoPorEmail || currentUser?.email || '',
+    creadoPorUid: avaluo?.creadoPorUid || currentUser?.uid || '',
+    creadoPorNombre: avaluo?.creadoPorNombre || currentUser?.nombre || '',
+    creadoPor: avaluo?.creadoPor || currentUser?.email || '',
     codigo: avaluo?.codigo || `${tenantConfig.codigoPrefix || 'LR-2026-'}0${Math.floor(Math.random() * 90) + 10}`,
     tipoAvaluo: avaluo?.tipoAvaluo || 'Comercial',
     solicitante: avaluo?.solicitante || (tenantConfig.id === 'cverde' ? 'BANCO INDUSTRIAL, S.A.' : 'BANCO G&T CONTINENTAL'),
@@ -41,6 +45,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
     telefonoContacto: avaluo?.telefonoContacto || '',
     bienMostradoPor: avaluo?.bienMostradoPor || '',
     direccion: avaluo?.direccion || '',
+    direccionIusi: avaluo?.direccionIusi || avaluo?.iusiDireccion || '',
     coordenadas: avaluo?.coordenadas || '',
     descripcionGeneral: avaluo?.descripcionGeneral || '',
     dpi: avaluo?.dpi || '',
@@ -110,6 +115,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
           areaValuada: avaluo?.areaValuada || 0,
           dicabiNombre: avaluo?.dicabiNombre || '',
           dicabiDireccion: avaluo?.dicabiDireccion || '',
+          direccionIusi: avaluo?.direccionIusi || avaluo?.iusiDireccion || '',
           dicabiMatricula: avaluo?.dicabiMatricula || '',
           dicabiArea: avaluo?.dicabiArea || '',
           dicabiObservaciones: avaluo?.dicabiObservaciones || '',
@@ -150,6 +156,7 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
     // DICABI (Independiente del RGP)
     dicabiNombre: avaluo?.dicabiNombre || '',
     dicabiDireccion: avaluo?.dicabiDireccion || '',
+    direccionIusi: avaluo?.direccionIusi || avaluo?.iusiDireccion || '',
     dicabiMatricula: avaluo?.dicabiMatricula || '',
     dicabiArea: avaluo?.dicabiArea || '',
     dicabiObservaciones: avaluo?.dicabiObservaciones || '',
@@ -1406,18 +1413,47 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
                   </div>
                 </div>
 
-                <div className="form-field">
-                  <label className="form-label">Dirección Física o Catastral del Inmueble</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={formData.direccion}
-                    onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                    placeholder="Ej: Lote en 1ra. Calle número 3-71 zona 2, Tecpán Guatemala, Chimaltenango"
-                  />
-                  <span className="text-xs text-gray-500 mt-1 block">
-                    Dirección física y de inspección en campo. Las direcciones registrales según el RGP para cada finca se configuran individualmente en el <strong>Paso 2 (Fincas &amp; DICABI)</strong>.
-                  </span>
+                <div className="form-grid-2">
+                  <div className="form-field">
+                    <label className="form-label">Dirección Física o Catastral del Inmueble</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.direccion}
+                      onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                      placeholder="Ej: 19 avenida B 3-64 sector B 4 San Cristóbal 2..."
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      Dirección física y de inspección en campo.
+                    </span>
+                  </div>
+
+                  <div className="form-field">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label className="form-label" style={{ marginBottom: 0 }}>Dirección según IUSI</label>
+                      {formData.direccion && (
+                        <button
+                          type="button"
+                          className="btn-text"
+                          style={{ fontSize: '0.72rem', color: '#1e40af', background: '#eff6ff', padding: '0.15rem 0.45rem', borderRadius: '4px', border: '1px solid #bfdbfe', fontWeight: 600, cursor: 'pointer' }}
+                          onClick={() => setFormData({ ...formData, direccionIusi: formData.direccion })}
+                          title="Copiar dirección física como dirección de IUSI"
+                        >
+                          Copiar Dir. Física
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.direccionIusi ?? ''}
+                      onChange={(e) => setFormData({ ...formData, direccionIusi: e.target.value })}
+                      placeholder={formData.direccion ? `Misma que física (${formData.direccion.slice(0, 32)}...)` : "Dirección según boleta o padrón de IUSI (opcional)"}
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      Dirección según recibo/boleta municipal de IUSI (si se deja vacía, se usará la dirección física).
+                    </span>
+                  </div>
                 </div>
 
                 <div className="form-grid-2">
@@ -2128,13 +2164,13 @@ export default function AvaluoFormModal({ avaluo, usuarios = [], onClose, onSave
 
                         <div className="form-grid-2" style={{ marginTop: '0.5rem' }}>
                           <div className="form-field">
-                            <label className="form-label">Dirección según DICABI / IUSI</label>
+                            <label className="form-label">Dirección según DICABI</label>
                             <input
                               type="text"
                               className="form-input"
                               value={fincaItem.dicabiDireccion || ''}
                               onChange={(e) => updateFinca(fIndex, 'dicabiDireccion', e.target.value)}
-                              placeholder="Dirección catastral municipal (opcional)"
+                              placeholder="Dirección catastral según padrón fiscal DICABI (opcional)"
                             />
                           </div>
                           <div className="form-field">
