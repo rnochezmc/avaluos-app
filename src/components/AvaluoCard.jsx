@@ -33,9 +33,11 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint }
     return null;
   };
 
-  const cardImage = getFirstPhoto(avaluo.fotos?.ingreso) || 
+  const cardImage = avaluo.fotoPortada ||
+                    getFirstPhoto(avaluo.fotos?.ingreso) || 
                     getFirstPhoto(avaluo.fotos?.entorno) || 
                     getFirstPhoto(avaluo.fotos?.interior) || 
+                    getFirstPhoto(avaluo.fotos?.ubicacion) ||
                     'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80';
 
   const firstFinca = avaluo.fincas?.[0] || { finca: 'S/N', folio: '-', libro: '-' };

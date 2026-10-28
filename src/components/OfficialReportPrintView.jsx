@@ -5,6 +5,7 @@ import { extractAllRgpPages } from '../utils/pdfHelper';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
 import { getTenantConfig } from '../data/tenantsConfig';
 import { getAvaluoFromLocalDb } from '../utils/localDb';
+import { fetchFotosFromCloud } from '../firebase';
 
 export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, config = {} }) {
   const [hydratedAvaluo, setHydratedAvaluo] = React.useState(propAvaluo);
@@ -12,19 +13,52 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
   React.useEffect(() => {
     setHydratedAvaluo(propAvaluo);
     if (propAvaluo?.id) {
+      // 1. Hidratación local desde IndexedDB
       getAvaluoFromLocalDb(propAvaluo.id).then(localItem => {
         if (localItem) {
           setHydratedAvaluo(prev => {
-            const localHasFotos = localItem.fotos && Object.values(localItem.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
+            const prevFotos = prev?.fotos || {};
+            const localFotos = localItem.fotos || {};
+            const mergedFotos = { ...prevFotos };
+            ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi'].forEach(cat => {
+              const lList = Array.isArray(localFotos[cat]) ? localFotos[cat] : (localFotos[cat] ? [localFotos[cat]] : []);
+              const pList = Array.isArray(mergedFotos[cat]) ? mergedFotos[cat] : (mergedFotos[cat] ? [mergedFotos[cat]] : []);
+              if (lList.length > 0 && pList.length === 0) {
+                mergedFotos[cat] = lList;
+              }
+            });
+
             return {
               ...prev,
               ...localItem,
-              fotos: localHasFotos ? localItem.fotos : prev.fotos,
+              fotos: mergedFotos,
               consultasPdfs: localItem.consultasPdfs || prev.consultasPdfs
             };
           });
         }
-      }).catch(err => console.warn('Error hydrating in print view:', err));
+      }).catch(err => console.warn('Error hydrating local in print view:', err));
+
+      // 2. Hidratación desde Firestore fotosGallery (sincronización entre dispositivos)
+      fetchFotosFromCloud(propAvaluo.id).then(cloudFotos => {
+        if (cloudFotos) {
+          setHydratedAvaluo(prev => {
+            const currentFotos = prev?.fotos || {};
+            const mergedFotos = { ...currentFotos };
+            ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi'].forEach(cat => {
+              const cList = Array.isArray(cloudFotos[cat]) ? cloudFotos[cat] : [];
+              const curList = Array.isArray(mergedFotos[cat]) ? mergedFotos[cat] : (mergedFotos[cat] ? [mergedFotos[cat]] : []);
+              if (cList.length > 0 && (curList.length === 0 || cList.length >= curList.length)) {
+                mergedFotos[cat] = cList;
+              }
+            });
+
+            return {
+              ...prev,
+              fotos: mergedFotos
+            };
+          });
+        }
+      }).catch(err => console.warn('Error fetching cloud fotos for print:', err));
     }
   }, [propAvaluo?.id]);
 
@@ -840,7 +874,9 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
               <div className="pdf-data-row">
                 <span className="pdf-data-label">Nota:</span>
-                <span className="pdf-data-value">Inmueble plenamente identificado en inspección física de campo.</span>
+                <span className="pdf-data-value">
+                  {avaluo.notaDireccion || avaluo.nota || 'Inmueble plenamente identificado en inspección física de campo.'}
+                </span>
               </div>
             </div>
 

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
-import { fetchRgpPagesFromCloud } from '../firebase';
+import { fetchRgpPagesFromCloud, fetchFotosFromCloud } from '../firebase';
 import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
 import { getTenantConfig } from '../data/tenantsConfig';
@@ -30,7 +30,14 @@ export default function AvaluoDetailModal({
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   const [previewPageImage, setPreviewPageImage] = useState(null);
   const [hydratedConsultasPdfs, setHydratedConsultasPdfs] = useState(avaluo?.consultasPdfs || []);
+  const [hydratedFotos, setHydratedFotos] = useState(avaluo?.fotos || {});
+  const [isEditingNota, setIsEditingNota] = useState(false);
+  const [notaText, setNotaText] = useState(avaluo?.notaDireccion || avaluo?.nota || 'Inmueble plenamente identificado en inspección física de campo.');
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    setNotaText(avaluo?.notaDireccion || avaluo?.nota || 'Inmueble plenamente identificado en inspección física de campo.');
+  }, [avaluo?.notaDireccion, avaluo?.nota]);
 
   const getInitialLimitacionesCheck = (av) => ({
     gravamenes: av?.limitacionesCheck?.gravamenes || (av?.gravamenes && !/libre|ningun/i.test(av.gravamenes.trim()) ? 'Si' : 'Si'),
@@ -116,6 +123,116 @@ export default function AvaluoDetailModal({
 
     return () => { isMounted = false; };
   }, [avaluo?.consultasPdfs, avaluo?.id]);
+
+  // Hidratar fotos desde Firestore fotosGallery y IndexedDB
+  useEffect(() => {
+    let isMounted = true;
+    setHydratedFotos(avaluo?.fotos || {});
+
+    if (avaluo?.id) {
+      // 1. IndexedDB local
+      getAvaluoFromLocalDb(avaluo.id).then(local => {
+        if (!isMounted || !local?.fotos) return;
+        setHydratedFotos(prev => {
+          const merged = { ...(prev || {}) };
+          ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi'].forEach(cat => {
+            const lList = Array.isArray(local.fotos[cat]) ? local.fotos[cat] : (local.fotos[cat] ? [local.fotos[cat]] : []);
+            const mList = Array.isArray(merged[cat]) ? merged[cat] : (merged[cat] ? [merged[cat]] : []);
+            if (lList.length > 0 && mList.length === 0) {
+              merged[cat] = lList;
+            }
+          });
+          return merged;
+        });
+      }).catch(() => {});
+
+      // 2. Subcolección fotosGallery en Firestore (fotos de otros dispositivos)
+      fetchFotosFromCloud(avaluo.id).then(cloudFotos => {
+        if (!isMounted || !cloudFotos) return;
+        setHydratedFotos(prev => {
+          const merged = { ...(prev || {}) };
+          ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi'].forEach(cat => {
+            const cList = Array.isArray(cloudFotos[cat]) ? cloudFotos[cat] : [];
+            const mList = Array.isArray(merged[cat]) ? merged[cat] : (merged[cat] ? [merged[cat]] : []);
+            if (cList.length > 0 && (mList.length === 0 || cList.length >= mList.length)) {
+              merged[cat] = cList;
+            }
+          });
+          return merged;
+        });
+      }).catch(err => console.warn('Error fetching cloud fotos in modal:', err));
+    }
+
+    return () => { isMounted = false; };
+  }, [avaluo?.fotos, avaluo?.id]);
+
+  const handlePhotoUploadFromModal = (category, e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 800;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.65);
+
+          setHydratedFotos(prev => {
+            const currentList = Array.isArray(prev?.[category])
+              ? prev[category]
+              : (prev?.[category] ? [prev[category]] : []);
+            const updatedCategory = [...currentList, compressedDataUrl];
+            const updatedFotos = {
+              ...prev,
+              [category]: updatedCategory
+            };
+            if (onUpdateField && avaluo?.id) {
+              onUpdateField(avaluo.id, { fotos: updatedFotos });
+            }
+            return updatedFotos;
+          });
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+    if (e.target) e.target.value = '';
+  };
+
+  const handleRemovePhotoFromModal = (category, index) => {
+    if (!window.confirm('¿Está seguro de eliminar esta fotografía?')) return;
+    setHydratedFotos(prev => {
+      const currentList = Array.isArray(prev?.[category])
+        ? prev[category]
+        : (prev?.[category] ? [prev[category]] : []);
+      const updatedCategory = currentList.filter((_, i) => i !== index);
+      const updatedFotos = {
+        ...prev,
+        [category]: updatedCategory
+      };
+      if (onUpdateField && avaluo?.id) {
+        onUpdateField(avaluo.id, { fotos: updatedFotos });
+      }
+      return updatedFotos;
+    });
+  };
 
   const handlePdfUpload = async (e) => {
     const files = Array.from(e.target.files || []);
@@ -590,6 +707,61 @@ export default function AvaluoDetailModal({
                   <label className="form-label">Coordenadas GPS</label>
                   <div style={{ fontFamily: 'monospace', color: '#1e293b' }}>{avaluo.coordenadas || 'N/A'}</div>
                 </div>
+              </div>
+
+              {/* Campo oficial NOTA de Identificación Física */}
+              <div className="form-field" style={{ marginTop: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="form-label" style={{ marginBottom: 0, fontWeight: 700, color: '#0d2847' }}>
+                    Nota
+                  </label>
+                  {onUpdateField && !isEditingNota && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingNota(true);
+                        setNotaText(avaluo.notaDireccion || avaluo.nota || 'Inmueble plenamente identificado en inspección física de campo.');
+                      }}
+                      style={{ fontSize: '0.72rem', color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', padding: '0.15rem 0.45rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}
+                    >
+                      <Edit3 size={11} /> Editar Nota
+                    </button>
+                  )}
+                </div>
+                {isEditingNota ? (
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={notaText}
+                      onChange={(e) => setNotaText(e.target.value)}
+                      style={{ flex: 1, fontSize: '0.85rem' }}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await onUpdateField(avaluo.id, { notaDireccion: notaText, nota: notaText });
+                        setIsEditingNota(false);
+                      }}
+                      style={{ background: '#0d2847', color: '#ffffff', border: 'none', borderRadius: '4px', padding: '0 12px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Guardar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingNota(false)}
+                      style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '0.78rem', cursor: 'pointer' }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ fontWeight: 500, color: '#1e293b', background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <FileText size={15} style={{ color: '#2563eb', flexShrink: 0 }} />
+                    <span>{avaluo.notaDireccion || avaluo.nota || 'Inmueble plenamente identificado en inspección física de campo.'}</span>
+                  </div>
+                )}
               </div>
 
               {avaluo.descripcionGeneral && (
@@ -1239,21 +1411,34 @@ export default function AvaluoDetailModal({
                   { key: 'croquis', label: '5. Croquis / Plano Catastral' },
                   { key: 'dicabi', label: '6. Boleta o Matrícula DICABI' }
                 ].map(({ key, label }) => {
-                  const raw = avaluo.fotos?.[key];
+                  const raw = hydratedFotos?.[key] || avaluo.fotos?.[key];
                   const photoList = Array.isArray(raw)
                     ? raw.filter(u => u && typeof u === 'string' && u.trim().length > 0)
                     : (typeof raw === 'string' && raw.trim().length > 0 ? [raw] : []);
 
                   return (
                     <div key={key} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <Camera size={16} style={{ color: '#0d2847' }} />
                           <strong style={{ fontSize: '0.9rem', color: '#0d2847' }}>{label}</strong>
                         </div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: '12px', background: photoList.length > 0 ? '#dcfce7' : '#f1f5f9', color: photoList.length > 0 ? '#166534' : '#64748b' }}>
-                          {photoList.length} {photoList.length === 1 ? 'foto' : 'fotos'}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: '12px', background: photoList.length > 0 ? '#dcfce7' : '#f1f5f9', color: photoList.length > 0 ? '#166534' : '#64748b' }}>
+                            {photoList.length} {photoList.length === 1 ? 'foto' : 'fotos'}
+                          </span>
+                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600, background: '#0d2847', color: '#ffffff', padding: '0.25rem 0.65rem', borderRadius: '5px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                            <Camera size={12} />
+                            <span>+ Subir Foto</span>
+                            <input 
+                              type="file" 
+                              multiple 
+                              accept="image/*" 
+                              onChange={(e) => handlePhotoUploadFromModal(key, e)} 
+                              style={{ display: 'none' }} 
+                            />
+                          </label>
+                        </div>
                       </div>
 
                       {photoList.length > 0 ? (
@@ -1267,9 +1452,19 @@ export default function AvaluoDetailModal({
                               />
                               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0.25rem 0.5rem', background: 'rgba(13,40,71,0.85)', color: '#ffffff', fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span>Foto #{idx + 1}</span>
-                                <a href={src} target="_blank" rel="noreferrer" style={{ color: '#93c5fd', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                                  <ExternalLink size={11} /> Ver
-                                </a>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <a href={src} target="_blank" rel="noreferrer" style={{ color: '#93c5fd', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                    <ExternalLink size={11} /> Ver
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemovePhotoFromModal(key, idx)}
+                                    style={{ background: 'transparent', border: 'none', color: '#fca5a5', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.7rem' }}
+                                    title="Eliminar foto"
+                                  >
+                                    <Trash2 size={11} /> Borrar
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))}

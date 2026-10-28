@@ -76,8 +76,9 @@ function removeUndefined(obj) {
 
 /**
  * Guarda o actualiza un expediente de avalúo en Firestore.
- * Si el avalúo contiene certificaciones RGP pesadas que superan el límite de 1MB de Firestore,
- * almacena las páginas individualmente en la subcolección 'rgpPages' para garantizar que nunca se rechace.
+ * - Almacena cada fotografía en la subcolección 'fotosGallery' para que el avalúo admita fotos ilimitadas sin topar nunca el límite de 1MB de Firestore.
+ * - Almacena las páginas de certificaciones RGP en la subcolección 'rgpPages'.
+ * - Mantiene el documento principal ultra-ligero y rápido con fotoPortada y resúmenes.
  */
 export async function saveAvaluoToCloud(avaluo) {
   if (!avaluo || !avaluo.id) {
@@ -85,20 +86,81 @@ export async function saveAvaluoToCloud(avaluo) {
   }
 
   const cleanData = removeUndefined(avaluo);
-  let totalBytes = 0;
-  try {
-    totalBytes = new Blob([JSON.stringify(cleanData)]).size;
-  } catch (e) {
-    totalBytes = 0;
+  const categories = ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi'];
+
+  // 1. Extraer primera foto válida como fotoPortada para tarjetas rápidas
+  let coverPhoto = cleanData.fotoPortada || null;
+  if (!coverPhoto && cleanData.fotos && typeof cleanData.fotos === 'object') {
+    for (const pref of ['ingreso', 'entorno', 'interior', 'ubicacion']) {
+      const val = cleanData.fotos[pref];
+      if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'string' && val[0].trim()) {
+        coverPhoto = val[0];
+        break;
+      } else if (typeof val === 'string' && val.trim()) {
+        coverPhoto = val;
+        break;
+      }
+    }
   }
 
-  // Límite de seguridad de Firestore: 850 KB (el límite duro es 1,048,576 bytes)
-  if (totalBytes > 850000 && Array.isArray(cleanData.consultasPdfs) && cleanData.consultasPdfs.length > 0) {
-    // 1. Guardar cada página individualmente en la subcolección 'rgpPages' (cada una ~40-100KB)
+  // 2. Guardar fotos individuales en la subcolección 'fotosGallery'
+  let hasPhotosSavedInSub = false;
+  const fotosSummary = {};
+
+  if (cleanData.fotos && typeof cleanData.fotos === 'object') {
+    const subColRef = collection(db, AVALUOS_COLLECTION, String(avaluo.id), 'fotosGallery');
+    const photoPromises = [];
+    const savedDocIds = new Set();
+
+    for (const cat of categories) {
+      const raw = cleanData.fotos[cat];
+      const list = Array.isArray(raw)
+        ? raw.filter(u => u && typeof u === 'string' && u.trim().length > 0)
+        : (typeof raw === 'string' && raw.trim().length > 0 ? [raw] : []);
+
+      fotosSummary[cat] = list.length;
+
+      list.forEach((url, idx) => {
+        const docId = `${cat}_${idx}`;
+        savedDocIds.add(docId);
+        const pRef = doc(subColRef, docId);
+        photoPromises.push(
+          setDoc(pRef, {
+            category: cat,
+            index: idx,
+            dataUrl: url,
+            updatedAt: new Date().toISOString()
+          }, { merge: true })
+        );
+      });
+    }
+
+    if (photoPromises.length > 0) {
+      hasPhotosSavedInSub = true;
+      try {
+        await Promise.all(photoPromises);
+        // Limpieza de documentos huérfanos si se borraron fotos
+        try {
+          const currentSnap = await getDocs(subColRef);
+          currentSnap.forEach(snapDoc => {
+            if (!savedDocIds.has(snapDoc.id)) {
+              deleteDoc(snapDoc.ref).catch(() => {});
+            }
+          });
+        } catch (_cleanupErr) {}
+      } catch (fErr) {
+        console.warn('Error guardando fotos en subcolección fotosGallery:', fErr);
+      }
+    }
+  }
+
+  // 3. Guardar páginas RGP en la subcolección 'rgpPages'
+  let hasPagesSavedInSub = false;
+  if (Array.isArray(cleanData.consultasPdfs) && cleanData.consultasPdfs.length > 0) {
     for (const docItem of cleanData.consultasPdfs) {
       if (Array.isArray(docItem.pages)) {
         for (const page of docItem.pages) {
-          if (!page.dataUrl) continue; // Proteger: no sobreescribir páginas existentes si dataUrl no viene en memoria
+          if (!page.dataUrl) continue;
           try {
             const pageDocId = `${docItem.id || 'doc'}_p${page.pageIndex}`;
             const pageDocRef = doc(db, AVALUOS_COLLECTION, String(avaluo.id), 'rgpPages', pageDocId);
@@ -111,15 +173,19 @@ export async function saveAvaluoToCloud(avaluo) {
               dataUrl: page.dataUrl,
               updatedAt: new Date().toISOString()
             }, { merge: true });
+            hasPagesSavedInSub = true;
           } catch (pErr) {
             console.warn('Error guardando página en subcolección rgpPages:', pErr);
           }
         }
       }
     }
+  }
 
-    // 2. Guardar el documento principal con los metadatos pero sin los dataUrl pesados de cada página
-    const lightConsultasPdfs = cleanData.consultasPdfs.map(d => ({
+  // 4. Compactar consultasPdfs para el documento principal
+  let leanConsultasPdfs = cleanData.consultasPdfs;
+  if (Array.isArray(cleanData.consultasPdfs) && cleanData.consultasPdfs.length > 0) {
+    leanConsultasPdfs = cleanData.consultasPdfs.map(d => ({
       id: d.id,
       name: d.name,
       size: d.size,
@@ -132,18 +198,94 @@ export async function saveAvaluoToCloud(avaluo) {
         fileName: p.fileName
       }))
     }));
+  }
 
-    const lightData = {
-      ...cleanData,
-      consultasPdfs: lightConsultasPdfs
+  // 5. Preparar documento principal ultra-ligero (siempre < 200KB)
+  const finalData = {
+    ...cleanData,
+    fotoPortada: coverPhoto || cleanData.fotoPortada || null,
+    hasPhotosInCloud: hasPhotosSavedInSub || Boolean(cleanData.hasPhotosInCloud),
+    fotosSummary: Object.keys(fotosSummary).length > 0 ? fotosSummary : cleanData.fotosSummary
+  };
+
+  if (leanConsultasPdfs) {
+    finalData.consultasPdfs = leanConsultasPdfs;
+  }
+
+  // En el documento principal se mantiene fotoPortada y arrays limpios para no exceder 1MB
+  if (hasPhotosSavedInSub) {
+    finalData.fotos = {
+      entorno: [],
+      ingreso: coverPhoto ? [coverPhoto] : [],
+      interior: [],
+      ubicacion: [],
+      croquis: [],
+      dicabi: []
+    };
+  }
+
+  const docRef = doc(db, AVALUOS_COLLECTION, String(avaluo.id));
+  await setDoc(docRef, finalData, { merge: true });
+}
+
+/**
+ * Recupera todas las fotografías desde la subcolección 'fotosGallery' de Firestore
+ */
+export async function fetchFotosFromCloud(avaluoId) {
+  if (!avaluoId) return null;
+  try {
+    let colRef = collection(db, AVALUOS_COLLECTION, String(avaluoId), 'fotosGallery');
+    let snap = await getDocs(colRef);
+    if (snap.empty && typeof avaluoId === 'string') {
+      const lower = avaluoId.toLowerCase();
+      if (lower !== avaluoId) {
+        colRef = collection(db, AVALUOS_COLLECTION, lower, 'fotosGallery');
+        snap = await getDocs(colRef);
+      }
+    }
+    // Fallback: si no encuentra por ID directo, buscar por código de avalúo
+    if (snap.empty) {
+      const colAvaluos = collection(db, AVALUOS_COLLECTION);
+      const avaluosSnap = await getDocs(colAvaluos);
+      const matchedDoc = avaluosSnap.docs.find(d => {
+        const data = d.data();
+        return data.codigo === avaluoId || d.id === avaluoId || data.id === avaluoId;
+      });
+      if (matchedDoc) {
+        colRef = collection(db, AVALUOS_COLLECTION, matchedDoc.id, 'fotosGallery');
+        snap = await getDocs(colRef);
+      }
+    }
+
+    if (snap.empty) return null;
+
+    const result = {
+      entorno: [],
+      ingreso: [],
+      interior: [],
+      ubicacion: [],
+      croquis: [],
+      dicabi: []
     };
 
-    const docRef = doc(db, AVALUOS_COLLECTION, String(avaluo.id));
-    await setDoc(docRef, lightData, { merge: true });
-  } else {
-    // Si cabe cómodamente en el documento principal, se guarda íntegro con páginas
-    const docRef = doc(db, AVALUOS_COLLECTION, String(avaluo.id));
-    await setDoc(docRef, cleanData, { merge: true });
+    const docsData = [];
+    snap.forEach((d) => docsData.push(d.data()));
+
+    // Ordenar de manera estable por índice numérico
+    docsData.sort((a, b) => (Number(a.index) || 0) - (Number(b.index) || 0));
+
+    docsData.forEach((item) => {
+      const cat = item.category;
+      if (cat && result[cat] && item.dataUrl) {
+        result[cat].push(item.dataUrl);
+      }
+    });
+
+    const hasAny = Object.values(result).some(list => list.length > 0);
+    return hasAny ? result : null;
+  } catch (err) {
+    console.warn('Error fetching fotos from cloud:', err);
+    return null;
   }
 }
 
@@ -186,11 +328,23 @@ export async function fetchRgpPagesFromCloud(avaluoId) {
 }
 
 /**
- * Elimina un avalúo de la nube.
+ * Elimina un avalúo de la nube y sus subcolecciones asociadas.
  */
 export async function deleteAvaluoFromCloud(id) {
   if (!id) return;
   const docRef = doc(db, AVALUOS_COLLECTION, String(id));
+  
+  // Limpiar subcolecciones fotosGallery y rgpPages
+  try {
+    const fotosSnap = await getDocs(collection(db, AVALUOS_COLLECTION, String(id), 'fotosGallery'));
+    fotosSnap.forEach(d => deleteDoc(d.ref).catch(() => {}));
+  } catch (_e) {}
+
+  try {
+    const rgpSnap = await getDocs(collection(db, AVALUOS_COLLECTION, String(id), 'rgpPages'));
+    rgpSnap.forEach(d => deleteDoc(d.ref).catch(() => {}));
+  } catch (_e) {}
+
   await deleteDoc(docRef);
   if (typeof id === 'string') {
     const lowerId = id.toLowerCase();

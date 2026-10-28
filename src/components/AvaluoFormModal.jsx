@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST, getDefaultServicios } from '../data/serviciosConstants';
 import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
-import { fetchRgpPagesFromCloud } from '../firebase';
+import { fetchRgpPagesFromCloud, fetchFotosFromCloud } from '../firebase';
 import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { DEFAULT_DICTAMEN_GARANTIA, DICTAMEN_PRESETS } from '../data/mockAvaluos';
 import { getTenantConfig } from '../data/tenantsConfig';
@@ -46,6 +46,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
     bienMostradoPor: avaluo?.bienMostradoPor || '',
     direccion: avaluo?.direccion || '',
     direccionIusi: avaluo?.direccionIusi || avaluo?.iusiDireccion || '',
+    notaDireccion: avaluo?.notaDireccion || avaluo?.nota || 'Inmueble plenamente identificado en inspección física de campo.',
     coordenadas: avaluo?.coordenadas || '',
     descripcionGeneral: avaluo?.descripcionGeneral || '',
     dpi: avaluo?.dpi || '',
@@ -337,10 +338,44 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
     consultasPdfs: avaluo?.consultasPdfs || []
   });
 
-  // Hidratar páginas y dataUrls de RGP desde la nube o IndexedDB si faltan al editar
+  // Hidratar páginas y dataUrls de RGP y fotos desde la nube o IndexedDB si faltan al editar
   useEffect(() => {
     let isMounted = true;
     if (avaluo?.id) {
+      // 1. Hidratación de fotos desde IndexedDB y subcolección fotosGallery
+      getAvaluoFromLocalDb(avaluo.id).then(local => {
+        if (!isMounted) return;
+        if (local?.fotos) {
+          setFormData(prev => {
+            const mergedFotos = { ...(prev.fotos || {}) };
+            ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi'].forEach(cat => {
+              const lList = Array.isArray(local.fotos[cat]) ? local.fotos[cat] : (local.fotos[cat] ? [local.fotos[cat]] : []);
+              const curList = Array.isArray(mergedFotos[cat]) ? mergedFotos[cat] : (mergedFotos[cat] ? [mergedFotos[cat]] : []);
+              if (lList.length > 0 && curList.length === 0) {
+                mergedFotos[cat] = lList;
+              }
+            });
+            return { ...prev, fotos: mergedFotos };
+          });
+        }
+      }).catch(() => {});
+
+      fetchFotosFromCloud(avaluo.id).then(cloudFotos => {
+        if (!isMounted || !cloudFotos) return;
+        setFormData(prev => {
+          const mergedFotos = { ...(prev.fotos || {}) };
+          ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi'].forEach(cat => {
+            const cList = Array.isArray(cloudFotos[cat]) ? cloudFotos[cat] : [];
+            const curList = Array.isArray(mergedFotos[cat]) ? mergedFotos[cat] : (mergedFotos[cat] ? [mergedFotos[cat]] : []);
+            if (cList.length > 0 && (curList.length === 0 || cList.length >= curList.length)) {
+              mergedFotos[cat] = cList;
+            }
+          });
+          return { ...prev, fotos: mergedFotos };
+        });
+      }).catch(err => console.warn('Error hydrating cloud fotos in form modal:', err));
+
+      // 2. Hidratación de RGP
       const rawList = avaluo.consultasPdfs || [];
       const needsData = rawList.length === 0 || rawList.some(d => Array.isArray(d.pages) && d.pages.some(p => !p.dataUrl));
       if (needsData) {
@@ -1454,6 +1489,31 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       Dirección según recibo/boleta municipal de IUSI (si se deja vacía, se usará la dirección física).
                     </span>
                   </div>
+                </div>
+
+                <div className="form-field" style={{ marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label className="form-label" style={{ marginBottom: 0 }}>Nota de Identificación Física (Oficial)</label>
+                    <button
+                      type="button"
+                      className="btn-text"
+                      style={{ fontSize: '0.72rem', color: '#1e40af', background: '#eff6ff', padding: '0.15rem 0.45rem', borderRadius: '4px', border: '1px solid #bfdbfe', fontWeight: 600, cursor: 'pointer' }}
+                      onClick={() => setFormData({ ...formData, notaDireccion: 'Inmueble plenamente identificado en inspección física de campo.' })}
+                      title="Restablecer texto oficial predeterminado"
+                    >
+                      Texto Predeterminado
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.notaDireccion !== undefined ? formData.notaDireccion : 'Inmueble plenamente identificado en inspección física de campo.'}
+                    onChange={(e) => setFormData({ ...formData, notaDireccion: e.target.value })}
+                    placeholder="Inmueble plenamente identificado en inspección física de campo."
+                  />
+                  <span className="text-xs text-gray-500 mt-1 block">
+                    Nota visible en la Ficha y en la portada del informe oficial debajo de la dirección IUSI.
+                  </span>
                 </div>
 
                 <div className="form-grid-2">

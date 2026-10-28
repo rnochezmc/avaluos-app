@@ -203,10 +203,20 @@ export default function App() {
     }
   }, [avaluos]);
 
-  // Carga inicial y respaldo desde IndexedDB local (soporta almacenamiento ilimitado de PDFs)
+  // Carga inicial y respaldo desde IndexedDB local (soporta almacenamiento ilimitado de PDFs y fotos)
   useEffect(() => {
     getAllAvaluosFromLocalDb().then((localList) => {
       if (Array.isArray(localList) && localList.length > 0) {
+        // Auto-sincronizar a la nube avalúos que tengan fotos locales en IndexedDB pendientes de subir
+        localList.forEach(localItem => {
+          if (localItem && localItem.fotos && typeof localItem.fotos === 'object') {
+            const hasAnyLocalPhoto = Object.values(localItem.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
+            if (hasAnyLocalPhoto) {
+              saveAvaluoToCloud(localItem).catch(e => console.warn('Background sync local photos to cloud error:', e));
+            }
+          }
+        });
+
         setAvaluos((prev) => {
           return prev.map((item) => {
             const local = localList.find(l => l.id === item.id);
@@ -222,10 +232,18 @@ export default function App() {
             }
 
             if (local.fotos && typeof local.fotos === 'object') {
-              const localHasFotos = Object.values(local.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
-              const curHasFotos = updated.fotos && Object.values(updated.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
-              if (localHasFotos && !curHasFotos) {
-                updated = { ...updated, fotos: local.fotos };
+              const updatedFotos = { ...(updated.fotos || {}) };
+              let changedFotos = false;
+              ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi'].forEach(cat => {
+                const lList = Array.isArray(local.fotos[cat]) ? local.fotos[cat] : (local.fotos[cat] ? [local.fotos[cat]] : []);
+                const uList = Array.isArray(updatedFotos[cat]) ? updatedFotos[cat] : (updatedFotos[cat] ? [updatedFotos[cat]] : []);
+                if (lList.length > 0 && uList.length === 0) {
+                  updatedFotos[cat] = lList;
+                  changedFotos = true;
+                }
+              });
+              if (changedFotos) {
+                updated = { ...updated, fotos: updatedFotos };
               }
             }
 
@@ -262,7 +280,7 @@ export default function App() {
               return repaired;
             });
 
-            // Sincronizar avaluos preservando páginas locales de PDFs y fotos con dataUrl
+            // Sincronizar avaluos preservando páginas locales de PDFs y fotos con dataUrl por categoría
             setAvaluos((prevList) => {
               return enrichedCloud.map((cloudItem) => {
                 const prevItem = prevList.find(p => p.id === cloudItem.id);
@@ -270,11 +288,23 @@ export default function App() {
 
                 let mergedItem = { ...cloudItem };
 
-                // Preservar fotos si el cloud viene sin fotos pero localmente sí existen
-                const prevHasFotos = prevItem.fotos && Object.values(prevItem.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
-                const cloudHasFotos = cloudItem.fotos && Object.values(cloudItem.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
-                if (prevHasFotos && !cloudHasFotos) {
-                  mergedItem.fotos = prevItem.fotos;
+                // Preservar fotos localmente por categoría si el cloud viene vacío en esa sección
+                const prevFotos = prevItem.fotos || {};
+                const cloudFotos = cloudItem.fotos || {};
+                const mergedFotos = { ...cloudFotos };
+                let fotosMerged = false;
+
+                ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi'].forEach(cat => {
+                  const pList = Array.isArray(prevFotos[cat]) ? prevFotos[cat] : (prevFotos[cat] ? [prevFotos[cat]] : []);
+                  const cList = Array.isArray(cloudFotos[cat]) ? cloudFotos[cat] : (cloudFotos[cat] ? [cloudFotos[cat]] : []);
+                  if (pList.length > 0 && cList.length === 0) {
+                    mergedFotos[cat] = pList;
+                    fotosMerged = true;
+                  }
+                });
+
+                if (fotosMerged) {
+                  mergedItem.fotos = mergedFotos;
                 }
 
                 if (Array.isArray(prevItem.consultasPdfs) && prevItem.consultasPdfs.length > 0) {
@@ -303,10 +333,22 @@ export default function App() {
 
               let mergedViewing = { ...cloudMatch };
 
-              const viewHasFotos = currentViewing.fotos && Object.values(currentViewing.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
-              const cloudHasFotos = cloudMatch.fotos && Object.values(cloudMatch.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
-              if (viewHasFotos && !cloudHasFotos) {
-                mergedViewing.fotos = currentViewing.fotos;
+              const viewFotos = currentViewing.fotos || {};
+              const cloudFotos = cloudMatch.fotos || {};
+              const mergedFotos = { ...cloudFotos };
+              let fotosMerged = false;
+
+              ['entorno', 'ingreso', 'interior', 'ubicacion', 'croquis', 'dicabi'].forEach(cat => {
+                const vList = Array.isArray(viewFotos[cat]) ? viewFotos[cat] : (viewFotos[cat] ? [viewFotos[cat]] : []);
+                const cList = Array.isArray(cloudFotos[cat]) ? cloudFotos[cat] : (cloudFotos[cat] ? [cloudFotos[cat]] : []);
+                if (vList.length > 0 && cList.length === 0) {
+                  mergedFotos[cat] = vList;
+                  fotosMerged = true;
+                }
+              });
+
+              if (fotosMerged) {
+                mergedViewing.fotos = mergedFotos;
               }
 
               if (Array.isArray(currentViewing.consultasPdfs) && currentViewing.consultasPdfs.length > 0) {
