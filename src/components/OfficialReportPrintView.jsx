@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Printer, ArrowLeft, FileText } from 'lucide-react';
+import { X, Printer, ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 import { extractAllRgpPages } from '../utils/pdfHelper';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
@@ -96,7 +96,18 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
   };
 
   const [imagesLoaded, setImagesLoaded] = React.useState(false);
+  const [isPreparingPrint, setIsPreparingPrint] = React.useState(false);
   const [rgpPages, setRgpPages] = React.useState([]);
+
+  React.useEffect(() => {
+    const handleAfterPrint = () => {
+      setIsPreparingPrint(false);
+    };
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => {
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, []);
 
   // Extracción de páginas de consultas electrónicas RGP para visualización nítida
   React.useEffect(() => {
@@ -148,7 +159,13 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
   }, [avaluo]);
 
   const handlePrint = () => {
-    window.print();
+    setIsPreparingPrint(true);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        setIsPreparingPrint(false);
+      }, 1000);
+    }, 100);
   };
 
   // Nombres y registros oficiales de los valuadores
@@ -462,11 +479,32 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
             type="button" 
             className="print-btn-primary" 
             onClick={handlePrint} 
-            style={{ background: '#2563eb', display: 'flex', alignItems: 'center', gap: '8px' }}
-            disabled={!imagesLoaded && hasAnyPhoto}
+            style={{ 
+              background: isPreparingPrint ? '#1d4ed8' : '#2563eb', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              cursor: (isPreparingPrint || (!imagesLoaded && hasAnyPhoto)) ? 'wait' : 'pointer',
+              opacity: (isPreparingPrint || (!imagesLoaded && hasAnyPhoto)) ? 0.9 : 1
+            }}
+            disabled={(!imagesLoaded && hasAnyPhoto) || isPreparingPrint}
           >
-            <Printer size={18} />
-            <span>{!imagesLoaded && hasAnyPhoto ? 'Cargando Fotos para PDF...' : 'Imprimir / Exportar PDF'}</span>
+            {isPreparingPrint ? (
+              <>
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Generando vista previa ({totalPages} págs)...</span>
+              </>
+            ) : (!imagesLoaded && hasAnyPhoto) ? (
+              <>
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Cargando Fotos para PDF...</span>
+              </>
+            ) : (
+              <>
+                <Printer size={18} />
+                <span>Imprimir / Exportar PDF</span>
+              </>
+            )}
           </button>
           <button type="button" className="modal-close-btn" onClick={onClose} title="Cerrar">
             <X size={20} />
