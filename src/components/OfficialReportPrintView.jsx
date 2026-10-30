@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Printer, ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
-import { extractAllRgpPages } from '../utils/pdfHelper';
+import { extractAllRgpPages, numeroALetras, formatFechaEnLetras } from '../utils/pdfHelper';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
 import { getTenantConfig } from '../data/tenantsConfig';
 import { getAvaluoFromLocalDb } from '../utils/localDb';
@@ -722,14 +722,9 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 </tbody>
               </table>
 
-              <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', lineHeight: 1.45 }}>
+              <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', lineHeight: 1.45, textAlign: 'justify' }}>
                 <p style={{ margin: 0 }}>
-                  <strong>Tipo de cambio {avaluo.tipoCambio || '7.62581'}</strong>, según Banco de Guatemala.
-                </p>
-                {/* CORRECCIÓN FOTO 66: Se eliminó el texto entre paréntesis a petición de Aroldo */}
-                <p style={{ marginTop: '0.35rem', marginBottom: 0, textAlign: 'justify' }}>
-                  A juicio del suscrito valuador con fecha {avaluo.fechaActualizacion || avaluo.fechaInspeccion || '2026'}, el inmueble descrito tiene un valor comercial 
-                  de <strong>{formatQ(computedComercialGTQ)}</strong> o al cambio en dólares al <strong>{formatUSD(computedComercialUSD)}</strong>.
+                  Tipo de cambio {avaluo.tipoCambio || '7.62581'}, según Banco de Guatemala. A juicio del suscrito valuador el {formatFechaEnLetras(avaluo.fechaInspeccion || avaluo.fechaActualizacion || avaluo.fechaSolicitud)}, el inmueble descrito tiene un valor comercial de {numeroALetras(computedComercialGTQ, 'QUETZALES')} O LO EQUIVALENTE EN {numeroALetras(computedComercialUSD, 'DÓLARES')}.
                 </p>
               </div>
             </div>
