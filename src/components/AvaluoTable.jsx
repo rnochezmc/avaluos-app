@@ -78,6 +78,11 @@ export default function AvaluoTable({ avaluos = [], onView, onEdit, onDelete, on
                       )}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>{av.tipoAvaluo}</div>
+                    {av.asignadoANombre && (
+                      <div style={{ fontSize: '0.67rem', color: '#166534', background: '#dcfce7', display: 'inline-block', padding: '1px 5px', borderRadius: '3px', marginTop: '3px', fontWeight: 600 }}>
+                        👤 {av.asignadoANombre.split(' ')[0]}
+                      </div>
+                    )}
                   </td>
                   <td>
                     <div style={{ fontWeight: 600 }}>{av.propietarioPrincipal || av.fincas?.[0]?.propietario || av.bienMostradoPor || 'No asignado'}</div>

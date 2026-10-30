@@ -121,9 +121,14 @@ export default function SearchAndFilters({
           >
             <option value="todos">Todos los Tipos</option>
             <option value="Comercial">Comercial</option>
+            <option value="Bancario">Bancario</option>
+            <option value="Fiscal">Fiscal</option>
+            <option value="Certificación">Certificación</option>
             <option value="Residencial">Residencial</option>
+            <option value="Apartamento / PH">Apartamento / PH</option>
             <option value="Industrial">Industrial</option>
             <option value="Terreno / Rústico">Terreno / Rústico</option>
+            <option value="Finca Agrícola">Finca Agrícola</option>
           </select>
         </div>
 

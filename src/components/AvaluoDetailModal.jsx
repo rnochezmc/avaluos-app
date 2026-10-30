@@ -3,7 +3,7 @@ import {
   X, Printer, Edit3, MapPin, Building, Calendar, Sparkles, 
   CheckCircle, FileText, Camera, DollarSign, Scale, ExternalLink,
   ShieldCheck, AlertTriangle, ArrowRight, CornerDownLeft, Download, Trash2,
-  Upload, Loader, ZoomIn
+  Upload, Loader, ZoomIn, Layers
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
@@ -24,7 +24,7 @@ export default function AvaluoDetailModal({
   onUpdateField
 }) {
   const avaluoTenant = getTenantConfig(avaluo?.tenantId || (avaluo?.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam'));
-  const [activeTab, setActiveTab] = useState('registral');
+  const [activeTab, setActiveTab] = useState('solicitud');
   const [isRejecting, setIsRejecting] = useState(false);
   const [rejectionComment, setRejectionComment] = useState('');
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
@@ -354,7 +354,7 @@ export default function AvaluoDetailModal({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-window" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '980px' }}>
+      <div className="modal-window" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 'min(1280px, 96vw)', width: '100%' }}>
         
         {/* Modal Top Header with Tenant Branding */}
         <div className="modal-header" style={{ background: avaluoTenant.colores?.gradientModal || 'linear-gradient(135deg, #07172b 0%, #0d2847 100%)' }}>
@@ -576,55 +576,61 @@ export default function AvaluoDetailModal({
         )}
 
         {/* Modal Tabs Navigation */}
-        <div style={{ padding: '0 1.5rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
-          <div className="modal-tabs" style={{ marginBottom: 0 }}>
+        <div style={{ padding: '0 1rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
+          <div className="modal-tabs" style={{ marginBottom: 0, gap: '0.35rem', display: 'flex', overflowX: 'auto' }}>
             <button
               type="button"
-              className={`modal-tab-btn ${activeTab === 'registral' ? 'active' : ''}`}
-              onClick={() => setActiveTab('registral')}
+              className={`modal-tab-btn ${activeTab === 'solicitud' ? 'active' : ''}`}
+              onClick={() => setActiveTab('solicitud')}
+              style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
             >
-              <FileText size={16} />
-              <span>1. Solicitud & Fincas</span>
+              <FileText size={15} />
+              <span>1. Solicitud</span>
             </button>
             <button
               type="button"
               className={`modal-tab-btn ${activeTab === 'valores' ? 'active' : ''}`}
               onClick={() => setActiveTab('valores')}
+              style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
             >
-              <DollarSign size={16} />
+              <DollarSign size={15} />
               <span>2. Valores & Firmas</span>
+            </button>
+            <button
+              type="button"
+              className={`modal-tab-btn ${activeTab === 'propiedad' ? 'active' : ''}`}
+              onClick={() => setActiveTab('propiedad')}
+              style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
+            >
+              <Building size={15} />
+              <span>3. Propiedad & DICABI</span>
             </button>
             <button
               type="button"
               className={`modal-tab-btn ${activeTab === 'terreno' ? 'active' : ''}`}
               onClick={() => setActiveTab('terreno')}
+              style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
             >
-              <MapPin size={16} />
-              <span>3. Terreno & Colindancias</span>
+              <MapPin size={15} />
+              <span>4. Terreno & Servicios</span>
             </button>
             <button
               type="button"
               className={`modal-tab-btn ${activeTab === 'construccion' ? 'active' : ''}`}
               onClick={() => setActiveTab('construccion')}
+              style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
             >
-              <Building size={16} />
-              <span>4. Construcción & Servicios</span>
+              <Layers size={15} />
+              <span>5. Construcción & Dictamen</span>
             </button>
             <button
               type="button"
               className={`modal-tab-btn ${activeTab === 'fotos' ? 'active' : ''}`}
               onClick={() => setActiveTab('fotos')}
+              style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
             >
-              <Camera size={16} />
-              <span>5. Fotos & PDFs RGP</span>
-            </button>
-            <button
-              type="button"
-              className={`modal-tab-btn ${activeTab === 'legal' ? 'active' : ''}`}
-              onClick={() => setActiveTab('legal')}
-            >
-              <Scale size={16} />
-              <span>6. Dictamen {avaluoTenant.nombreCorto}</span>
+              <Camera size={15} />
+              <span>6. Fotos & Anexos RGP</span>
             </button>
           </div>
         </div>
@@ -633,7 +639,7 @@ export default function AvaluoDetailModal({
         <div className="modal-body" style={{ padding: '1.5rem', overflowY: 'auto' }}>
           
           {/* TAB 1: INFORMACIÓN GENERAL Y REGISTRAL */}
-          {activeTab === 'registral' && (
+          {activeTab === 'solicitud' && (
             <div>
               <div className="form-section-title">
                 <FileText size={16} />
@@ -670,6 +676,13 @@ export default function AvaluoDetailModal({
                   <div>{avaluo.dpi || 'N/A'}</div>
                 </div>
               </div>
+
+              {avaluo.asignadoANombre && (
+                <div style={{ marginTop: '0.65rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '0.45rem 0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                  <span style={{ color: '#166534', fontWeight: 600 }}>👤 Técnico Asignado / Delegado:</span>
+                  <strong style={{ color: '#15803d' }}>{avaluo.asignadoANombre} {avaluo.asignadoAEmail ? `(${avaluo.asignadoAEmail})` : ''}</strong>
+                </div>
+              )}
 
               <div className="form-grid-4" style={{ marginTop: '0.75rem' }}>
                 <div className="form-field">
@@ -815,133 +828,78 @@ export default function AvaluoDetailModal({
                   </tbody>
                 </table>
               </div>
-
-              {/* Desglose de Direcciones según el RGP por Finca */}
-              <div style={{ marginTop: '0.85rem', background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0d2847', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Building size={14} />
-                  <span>Dirección según el RGP por Finca (Cuadro Oficial Página 4):</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                  {fincas.map((f, i) => (
-                    <div key={i} style={{ display: 'flex', gap: '8px', fontSize: '0.85rem', background: '#ffffff', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                      <span style={{ fontWeight: 700, color: '#0d2847', minWidth: '95px' }}>Finca {f.finca || (i + 1)}:</span>
-                      <span style={{ color: '#334155' }}>
-                        {f.direccionRgp || f.direccionRegistral || (fincas.length === 1 ? avaluo.direccion : (f.dicabiDireccion || avaluo.direccion || 'Sin dirección registral individual registrada.'))}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Aspectos Legales con Textos Amplios */}
-              <div className="form-section-title" style={{ marginTop: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Scale size={16} />
-                  <span>Aspectos Legales y Gravámenes (Cuadro Oficial LIMITACIONES Página 4)</span>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.85rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div>
-                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Anotaciones y Gravámenes:</strong>
-                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.gravamenes || 'Libre de gravámenes vigentes.'}</div>
-                </div>
-                <div>
-                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Servidumbres:</strong>
-                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.servidumbres || 'Sin servidumbres activas.'}</div>
-                </div>
-                <div>
-                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Áreas Comunes:</strong>
-                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.areasComunes || 'No aplica'}</div>
-                </div>
-                <div>
-                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Desmembración:</strong>
-                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.desmembracion || 'Sin desmembraciones pendientes.'}</div>
-                </div>
-                <div style={{ 
-                  gridColumn: '1 / -1', 
-                  padding: '0.65rem 0.85rem', 
-                  background: '#f8fafc', 
-                  borderRadius: '6px', 
-                  border: '1px solid #cbd5e1',
-                  marginTop: '0.75rem'
-                }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0d2847', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-                    📋 Limitaciones Oficiales (Página 2):
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem' }}>
-                    {[
-                      { key: 'gravamenes', label: 'Anotaciones y gravámenes' },
-                      { key: 'servidumbres', label: 'Servidumbres' },
-                      { key: 'areasComunes', label: 'Áreas comunes' },
-                      { key: 'desmembracion', label: 'Desmembración' },
-                      { key: 'copropiedad', label: 'Régimen de copropiedad' }
-                    ].map(item => {
-                      const currentVal = localLimitacionesCheck[item.key] || 'No';
-                      return (
-                        <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '0.35rem 0.6rem', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#334155' }}>{item.label}:</span>
-                          <div style={{ display: 'inline-flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleToggleLimitacionItem(item.key, 'Si')}
-                              style={{
-                                padding: '2px 8px',
-                                fontSize: '0.72rem',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: 'pointer',
-                                background: currentVal === 'Si' ? '#0d2847' : '#ffffff',
-                                color: currentVal === 'Si' ? '#ffffff' : '#64748b'
-                              }}
-                            >
-                              Si
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleToggleLimitacionItem(item.key, 'No')}
-                              style={{
-                                padding: '2px 8px',
-                                fontSize: '0.72rem',
-                                fontWeight: 700,
-                                border: 'none',
-                                borderLeft: '1px solid #cbd5e1',
-                                cursor: 'pointer',
-                                background: currentVal === 'No' ? '#0d2847' : '#ffffff',
-                                color: currentVal === 'No' ? '#ffffff' : '#64748b'
-                              }}
-                            >
-                              No
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {avaluo.limitaciones && (
-                  <div style={{ gridColumn: '1 / -1', paddingTop: '0.25rem' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Otras Limitaciones Registrales:</strong>
-                    <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px' }}>{avaluo.limitaciones}</div>
-                  </div>
-                )}
-                {avaluo.anotaciones && (
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Anotaciones de Demanda o Embargo:</strong>
-                    <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px' }}>{avaluo.anotaciones}</div>
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
-          {/* TAB 2: VALORES & FIRMAS */}
+          {/* TAB 2: VALORES, LIMITACIONES & FIRMAS */}
           {activeTab === 'valores' && (
             <div>
+              {/* LIMITACIONES (Página 2 del PDF) */}
+              <div className="form-section-title">
+                <Scale size={16} />
+                <span>LIMITACIONES</span>
+              </div>
+              <div style={{ 
+                padding: '0.85rem 1rem', 
+                background: '#f8fafc', 
+                borderRadius: '8px', 
+                border: '1px solid #cbd5e1',
+                marginBottom: '1.5rem'
+              }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem' }}>
+                  {[
+                    { key: 'gravamenes', label: 'Anotaciones y gravámenes' },
+                    { key: 'servidumbres', label: 'Servidumbres' },
+                    { key: 'areasComunes', label: 'Áreas comunes' },
+                    { key: 'desmembracion', label: 'Desmembración' },
+                    { key: 'copropiedad', label: 'Régimen de copropiedad' }
+                  ].map(item => {
+                    const currentVal = localLimitacionesCheck[item.key] || 'No';
+                    return (
+                      <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '0.35rem 0.6rem', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#334155' }}>{item.label}:</span>
+                        <div style={{ display: 'inline-flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleLimitacionItem(item.key, 'Si')}
+                            style={{
+                              padding: '2px 8px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              border: 'none',
+                              cursor: 'pointer',
+                              background: currentVal === 'Si' ? '#0d2847' : '#ffffff',
+                              color: currentVal === 'Si' ? '#ffffff' : '#64748b'
+                            }}
+                          >
+                            Si
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleLimitacionItem(item.key, 'No')}
+                            style={{
+                              padding: '2px 8px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              border: 'none',
+                              borderLeft: '1px solid #cbd5e1',
+                              cursor: 'pointer',
+                              background: currentVal === 'No' ? '#0d2847' : '#ffffff',
+                              color: currentVal === 'No' ? '#ffffff' : '#64748b'
+                            }}
+                          >
+                            No
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="form-section-title">
                 <DollarSign size={16} />
-                <span>Valores Comerciales y Bancarios Certificados</span>
+                <span>VALORES</span>
               </div>
 
               <div className="form-grid-2">
@@ -1010,185 +968,97 @@ export default function AvaluoDetailModal({
             </div>
           )}
 
-          {/* TAB 3: TERRENO & COLINDANCIAS */}
-          {activeTab === 'terreno' && (
+          {/* TAB 3: PROPIEDAD, GRAVÁMENES & DICABI */}
+          {activeTab === 'propiedad' && (
             <div>
-              {avaluo.aplicaTerreno === false && (
-                <div style={{ marginBottom: '1.25rem', padding: '0.85rem 1rem', background: '#fef2f2', borderRadius: '8px', border: '1.5px solid #ef4444', color: '#991b1b', fontSize: '0.88rem' }}>
-                  🏢 <strong>Terreno Omitido (No Aplica):</strong> Este avalúo fue configurado sin terreno independiente (Régimen de Propiedad Horizontal). Las secciones de terreno y colindancias se omiten en el informe oficial PDF y su valor es Q. 0.00.
+              {/* INFORMACION DE LA PROPIEDAD */}
+              <div className="form-section-title">
+                <Building size={16} />
+                <span>INFORMACION DE LA PROPIEDAD</span>
+              </div>
+              <div className="form-grid-2" style={{ marginBottom: '1.25rem' }}>
+                <div style={{ background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <strong style={{ fontSize: '0.8rem', color: '#475569', display: 'block' }}>Fecha de Consulta a Distancia (RGP):</strong>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#0d2847', marginTop: '2px' }}>
+                    {avaluo.fechaConsultaDistancia || avaluo.fechaConsulta || 'No especificada'}
+                  </div>
                 </div>
-              )}
-              <div className="form-section-title">
-                <MapPin size={16} />
-                <span>Valoración de Terreno con Fincas y Varas Cuadradas</span>
-              </div>
-
-              <div className="table-container" style={{ marginBottom: '1.5rem' }}>
-                <table className="data-table">
-                  <thead>
-                    <tr style={{ background: '#0d2847', color: '#ffffff' }}>
-                      <th style={{ color: '#ffffff' }}>FINCA</th>
-                      <th style={{ color: '#ffffff' }}>ÁREA (m²)</th>
-                      <th style={{ color: '#ffffff' }}>EQUIV. VARAS² (v²)</th>
-                      <th style={{ color: '#ffffff' }}>UNIDAD</th>
-                      <th style={{ color: '#ffffff' }}>VALOR UNITARIO</th>
-                      <th style={{ color: '#ffffff' }}>SUBTOTAL</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {terrainItems.map((item, i) => {
-                      const area = Number(item.area || 0);
-                      const varas = Number(item.varasCuadradas || (area * 1.43115));
-                      const unit = Number(item.valorUnitario || 0);
-                      const subtotal = item.total != null ? Number(item.total) : (area * unit);
-                      return (
-                        <tr key={i}>
-                          <td style={{ fontWeight: 700 }}>{item.finca || `Finca ${i + 1}`}</td>
-                          <td>{area.toFixed(2)}</td>
-                          <td style={{ fontWeight: 600, color: '#1e40af' }}>
-                            {varas.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </td>
-                          <td>{item.unidad || 'm²'}</td>
-                          <td>{formatQ(unit)}</td>
-                          <td style={{ fontWeight: 700 }}>{formatQ(subtotal)}</td>
-                        </tr>
-                      );
-                    })}
-                    {terrainItems.length > 1 && (
-                      <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
-                        <td>TOTAL:</td>
-                        <td>{totalTerrenoArea.toFixed(2)}</td>
-                        <td style={{ color: '#1e40af' }}>
-                          {totalTerrenoVaras.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
-                        <td>m²</td>
-                        <td>-</td>
-                        <td style={{ color: '#1e40af' }}>{formatQ(totalTerrenoSubtotal)}</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Valoración Bancaria de Terreno (80% Máximo de Garantía) */}
-              {avaluo.aplicaTerreno !== false && (
-                <>
-                  <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
-                    <DollarSign size={16} />
-                    <span>Valoración Bancaria de Terreno</span>
+                <div style={{ background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <strong style={{ fontSize: '0.8rem', color: '#475569', display: 'block' }}>Propietario:</strong>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0d2847', marginTop: '2px' }}>
+                    {avaluo.propietarioPrincipal || avaluo.propietario || '-'}
                   </div>
-                  <div className="table-container" style={{ marginBottom: '1.5rem' }}>
-                    <table className="data-table">
-                      <thead>
-                        <tr style={{ background: '#1e3a8a', color: '#ffffff' }}>
-                          <th style={{ color: '#ffffff' }}>FINCA</th>
-                          <th style={{ color: '#ffffff' }}>ÁREA (m²)</th>
-                          <th style={{ color: '#ffffff' }}>EQUIV. VARAS² (v²)</th>
-                          <th style={{ color: '#ffffff' }}>UNIDAD</th>
-                          <th style={{ color: '#ffffff' }}>VALOR UNITARIO (80%)</th>
-                          <th style={{ color: '#ffffff' }}>SUBTOTAL (80%)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {terrainItems.map((item, i) => {
-                          const area = Number(item.area || 0);
-                          const varas = Number(item.varasCuadradas || (area * 1.43115));
-                          const unit80 = parseFloat((Number(item.valorUnitario || 0) * 0.8).toFixed(2));
-                          const subtotal80 = parseFloat(((item.total != null ? Number(item.total) : (area * Number(item.valorUnitario || 0))) * 0.8).toFixed(2));
-                          return (
-                            <tr key={i}>
-                              <td style={{ fontWeight: 700 }}>{item.finca || `Finca ${i + 1}`}</td>
-                              <td>{area.toFixed(2)}</td>
-                              <td style={{ fontWeight: 600, color: '#1e40af' }}>
-                                {varas.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </td>
-                              <td>{item.unidad || 'm²'}</td>
-                              <td>{formatQ(unit80)}</td>
-                              <td style={{ fontWeight: 700 }}>{formatQ(subtotal80)}</td>
-                            </tr>
-                          );
-                        })}
-                        {terrainItems.length > 1 && (
-                          <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
-                            <td>TOTAL BANCARIO:</td>
-                            <td>{totalTerrenoArea.toFixed(2)}</td>
-                            <td style={{ color: '#1e40af' }}>
-                              {totalTerrenoVaras.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </td>
-                            <td>m²</td>
-                            <td>-</td>
-                            <td style={{ color: '#1e40af' }}>{formatQ(totalTerrenoSubtotal * 0.8)}</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-
-              {/* Colindancias según cantidad de fincas con Registral y Física */}
-              <div className="form-section-title">
-                <MapPin size={16} />
-                <span>Colindancias Registrales y Físicas — {fincas.length} {fincas.length === 1 ? 'Cuadro' : 'Cuadros según fincas'}</span>
+                </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: fincas.length > 1 ? 'repeat(auto-fit, minmax(320px, 1fr))' : '1fr', gap: '1rem' }}>
-                {fincas.map((f, i) => {
-                  const col = f.colindancias || (i === 0 ? avaluo.colindancias : {}) || {};
-                  const rootCol = avaluo.colindancias || {};
 
-                  const rNorte = col.norte || (i === 0 ? rootCol.norte : '') || 'S/D';
-                  const rSur = col.sur || (i === 0 ? rootCol.sur : '') || 'S/D';
-                  const rEste = col.este || (i === 0 ? rootCol.este : '') || 'S/D';
-                  const rOeste = col.oeste || (i === 0 ? rootCol.oeste : '') || 'S/D';
-
-                  const fNorte = col.norteFisica || (i === 0 ? rootCol.norteFisica : '') || rNorte || 'S/D';
-                  const fSur = col.surFisica || (i === 0 ? rootCol.surFisica : '') || rSur || 'S/D';
-                  const fEste = col.esteFisica || (i === 0 ? rootCol.esteFisica : '') || rEste || 'S/D';
-                  const fOeste = col.oesteFisica || (i === 0 ? rootCol.oesteFisica : '') || rOeste || 'S/D';
-
-                  return (
-                    <div key={i} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
-                      <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.4rem 0.75rem', fontWeight: 700, fontSize: '0.8rem', textAlign: 'center' }}>
-                        COLINDANCIAS{fincas.length > 1 ? ` — FINCA: ${f.finca || (i + 1)}` : ''}
+              {/* Desglose de Direcciones según el RGP e IUSI por Finca */}
+              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0d2847', marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Building size={14} />
+                  <span>Dirección según el RGP e IUSI por Finca (Cuadro Oficial Página 4):</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                  {fincas.map((f, i) => (
+                    <div key={i} style={{ background: '#ffffff', padding: '0.55rem 0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      <div style={{ display: 'flex', gap: '8px', fontSize: '0.85rem' }}>
+                        <span style={{ fontWeight: 700, color: '#0d2847', minWidth: '150px' }}>Dirección RGP (Finca {f.finca || (i + 1)}):</span>
+                        <span style={{ color: '#334155' }}>
+                          {f.direccionRgp || f.direccionRegistral || (fincas.length === 1 ? avaluo.direccion : (f.dicabiDireccion || avaluo.direccion || 'Sin dirección registral individual registrada.'))}
+                        </span>
                       </div>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                        <thead>
-                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                            <th style={{ width: '65px', padding: '0.35rem 0.5rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0' }}>Rumbo</th>
-                            <th style={{ padding: '0.35rem 0.5rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0' }}>Registral (RGP)</th>
-                            <th style={{ padding: '0.35rem 0.5rem', textAlign: 'left', fontWeight: 700, color: '#1e40af' }}>Física (In Situ)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Norte:</td>
-                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rNorte}</td>
-                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fNorte}</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Sur:</td>
-                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rSur}</td>
-                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fSur}</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Este:</td>
-                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rEste}</td>
-                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fEste}</td>
-                          </tr>
-                          <tr>
-                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Oeste:</td>
-                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rOeste}</td>
-                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fOeste}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      {(f.direccionIusi || avaluo.direccionIusi) && (
+                        <div style={{ display: 'flex', gap: '8px', fontSize: '0.83rem', borderTop: '1px dashed #f1f5f9', paddingTop: '0.25rem' }}>
+                          <span style={{ fontWeight: 600, color: '#64748b', minWidth: '150px' }}>Dirección según IUSI:</span>
+                          <span style={{ color: '#0f172a' }}>
+                            {f.direccionIusi || avaluo.direccionIusi}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+              </div>
+
+              {/* Aspectos Legales con Textos Amplios */}
+              <div className="form-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Scale size={16} />
+                  <span>Aspectos Legales y Gravámenes (Cuadro Oficial LIMITACIONES Página 4 y 5)</span>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.85rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '1.75rem' }}>
+                <div>
+                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Anotaciones y Gravámenes:</strong>
+                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.gravamenes || 'Libre de gravámenes vigentes.'}</div>
+                </div>
+                <div>
+                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Servidumbres:</strong>
+                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.servidumbres || 'Sin servidumbres activas.'}</div>
+                </div>
+                <div>
+                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Áreas Comunes:</strong>
+                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.areasComunes || 'No aplica'}</div>
+                </div>
+                <div>
+                  <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Desmembración:</strong>
+                  <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px', fontWeight: 500 }}>{avaluo.desmembracion || 'Sin desmembraciones pendientes.'}</div>
+                </div>
+                {avaluo.limitaciones && (
+                  <div style={{ gridColumn: '1 / -1', paddingTop: '0.25rem' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Otras Limitaciones Registrales:</strong>
+                    <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px' }}>{avaluo.limitaciones}</div>
+                  </div>
+                )}
+                {avaluo.anotaciones && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#475569' }}>Anotaciones de Demanda o Embargo:</strong>
+                    <div style={{ fontSize: '0.88rem', color: '#0f172a', marginTop: '2px' }}>{avaluo.anotaciones}</div>
+                  </div>
+                )}
               </div>
 
               {/* DICABI Independiente - Formato Oficial Aroldo según cantidad de fincas */}
-              <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
+              <div className="form-section-title">
                 <Building size={16} />
                 <span>Dirección de Catastro y Avalúo de Bienes Inmuebles (DICABI) — {fincas.length} {fincas.length === 1 ? 'Cuadro' : 'Cuadros'}</span>
               </div>
@@ -1259,99 +1129,147 @@ export default function AvaluoDetailModal({
             </div>
           )}
 
-          {/* TAB 4: CONSTRUCCIÓN & SERVICIOS */}
+          {/* TAB 4: TERRENO, COLINDANCIAS & SERVICIOS */}
+          {activeTab === 'terreno' && (
+            <div>
+              {avaluo.aplicaTerreno === false && (
+                <div style={{ marginBottom: '1.25rem', padding: '0.85rem 1rem', background: '#fef2f2', borderRadius: '8px', border: '1.5px solid #ef4444', color: '#991b1b', fontSize: '0.88rem' }}>
+                  🏢 <strong>Terreno Omitido (No Aplica):</strong> Este avalúo fue configurado sin terreno independiente (Régimen de Propiedad Horizontal). Las secciones de terreno y colindancias se omiten en el informe oficial PDF y su valor es Q. 0.00.
+                </div>
+              )}
+
+              {/* DETALLES DEL TERRENO (SECTOR Y CARACTERÍSTICAS) */}
+              <div className="form-section-title">
+                <MapPin size={16} />
+                <span>Detalles del Terreno (Sector y Características)</span>
+              </div>
+              <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', marginBottom: '1.5rem' }}>
+                <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.45rem 0.85rem', fontWeight: 700, fontSize: '0.82rem', textAlign: 'center', letterSpacing: '0.04em' }}>
+                  DETALLES DEL TERRENO
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ width: '160px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        Uso:
+                      </td>
+                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>
+                        {avaluo.usoSuelo || avaluo.terreno?.uso || 'Comercial / Residencial'}
+                      </td>
+                      <td style={{ width: '160px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        Forma / Pendiente:
+                      </td>
+                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                        {[avaluo.formaTerreno || 'Regular / Rectangular', avaluo.pendiente || 'Plana (1%)'].filter(Boolean).join(' / ')}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: '160px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        Nivel socio económico:
+                      </td>
+                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>
+                        {avaluo.nivelSocioeconomico || avaluo.terreno?.nivelSocioEconomico || 'Medio-Alto'}
+                      </td>
+                      <td style={{ width: '160px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        Esquina / Acceso:
+                      </td>
+                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                        {[avaluo.esquina || 'No', avaluo.accesoCalle || 'Calle asfaltada con acera y bordillo'].filter(Boolean).join(' / ')}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Colindancias según cantidad de fincas con Registral y Física */}
+              <div className="form-section-title">
+                <MapPin size={16} />
+                <span>COLINDANCIAS</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: fincas.length > 1 ? 'repeat(auto-fit, minmax(320px, 1fr))' : '1fr', gap: '1rem' }}>
+                {fincas.map((f, i) => {
+                  const col = f.colindancias || (i === 0 ? avaluo.colindancias : {}) || {};
+                  const rootCol = avaluo.colindancias || {};
+
+                  const rNorte = col.norte || (i === 0 ? rootCol.norte : '') || 'S/D';
+                  const rSur = col.sur || (i === 0 ? rootCol.sur : '') || 'S/D';
+                  const rEste = col.este || (i === 0 ? rootCol.este : '') || 'S/D';
+                  const rOeste = col.oeste || (i === 0 ? rootCol.oeste : '') || 'S/D';
+
+                  const fNorte = col.norteFisica || (i === 0 ? rootCol.norteFisica : '') || rNorte || 'S/D';
+                  const fSur = col.surFisica || (i === 0 ? rootCol.surFisica : '') || rSur || 'S/D';
+                  const fEste = col.esteFisica || (i === 0 ? rootCol.esteFisica : '') || rEste || 'S/D';
+                  const fOeste = col.oesteFisica || (i === 0 ? rootCol.oesteFisica : '') || rOeste || 'S/D';
+
+                  return (
+                    <div key={i} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
+                      <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.4rem 0.75rem', fontWeight: 700, fontSize: '0.8rem', textAlign: 'center' }}>
+                        COLINDANCIAS{fincas.length > 1 ? ` — FINCA: ${f.finca || (i + 1)}` : ''}
+                      </div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                        <thead>
+                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                            <th style={{ width: '65px', padding: '0.35rem 0.5rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0' }}>Rumbo</th>
+                            <th style={{ padding: '0.35rem 0.5rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0' }}>Registral (RGP)</th>
+                            <th style={{ padding: '0.35rem 0.5rem', textAlign: 'left', fontWeight: 700, color: '#1e40af' }}>Física (In Situ)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Norte:</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rNorte}</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fNorte}</td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Sur:</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rSur}</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fSur}</td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Este:</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rEste}</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fEste}</td>
+                          </tr>
+                          <tr>
+                            <td style={{ padding: '0.35rem 0.5rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>Oeste:</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>{rOeste}</td>
+                            <td style={{ padding: '0.35rem 0.5rem', color: '#0f172a' }}>{fOeste}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* SERVICIOS */}
+              <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
+                <FileText size={16} />
+                <span>Servicios</span>
+              </div>
+              <div className="form-grid-3" style={{ fontSize: '0.82rem', gap: '0.6rem' }}>
+                {SERVICIOS_INFRAESTRUCTURA_LIST.map(srv => (
+                  <div key={srv.key} style={{ background: '#f8fafc', padding: '0.45rem 0.6rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ color: '#64748b', fontSize: '0.73rem', display: 'block', fontWeight: 600 }}>{srv.label}:</span>
+                    <strong style={{ color: '#0d2847', fontSize: '0.82rem' }}>
+                      {avaluo.servicios?.[srv.key] !== undefined && avaluo.servicios?.[srv.key] !== '' ? avaluo.servicios[srv.key] : srv.defaultVal}
+                    </strong>
+                  </div>
+                ))}
+              </div>
+
+              {avaluo.serviciosAdicionales?.length > 0 && (
+                <div style={{ marginTop: '0.75rem', fontSize: '0.82rem' }}>
+                  <strong>Servicios Adicionales:</strong> {avaluo.serviciosAdicionales.join(', ')}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 5: CONSTRUCCIÓN, DESGLOSE & DICTAMEN */}
           {activeTab === 'construccion' && (
             <div>
-              {/* Desglose Matricial de Construcción */}
-              <div className="form-section-title">
-                <Building size={16} />
-                <span>Valoración Matricial de Construcción</span>
-              </div>
-              <div className="table-container" style={{ marginBottom: '1.5rem' }}>
-                <table className="data-table">
-                  <thead>
-                    <tr style={{ background: '#0d2847', color: '#ffffff' }}>
-                      <th style={{ color: '#ffffff', textAlign: 'left' }}>DESCRIPCIÓN</th>
-                      <th style={{ color: '#ffffff', textAlign: 'center' }}>ÁREA (m²)</th>
-                      <th style={{ color: '#ffffff', textAlign: 'center' }}>UNIDAD</th>
-                      <th style={{ color: '#ffffff', textAlign: 'right' }}>VALOR UNITARIO</th>
-                      <th style={{ color: '#ffffff', textAlign: 'right' }}>SUBTOTAL</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(avaluo.desgloseConstruccion?.items && avaluo.desgloseConstruccion.items.length > 0 ? avaluo.desgloseConstruccion.items : [{
-                      descripcion: 'Construcción Principal',
-                      area: avaluo.desgloseConstruccion?.area || 0,
-                      unidad: avaluo.desgloseConstruccion?.unidad || 'm²',
-                      valorUnitario: avaluo.desgloseConstruccion?.valorUnitario || 0,
-                      total: avaluo.desgloseConstruccion?.total || 0
-                    }]).map((c, i) => (
-                      <tr key={i}>
-                        <td style={{ fontWeight: 600 }}>{c.descripcion || 'Construcción'}</td>
-                        <td style={{ textAlign: 'center' }}>{Number(c.area || 0).toFixed(2)}</td>
-                        <td style={{ textAlign: 'center' }}>{c.unidad || 'm²'}</td>
-                        <td style={{ textAlign: 'right' }}>{formatQ(c.valorUnitario)}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(c.total != null ? c.total : (Number(c.area || 0) * Number(c.valorUnitario || 0)))}</td>
-                      </tr>
-                    ))}
-                    <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
-                      <td>TOTAL CONSTRUCCIÓN:</td>
-                      <td style={{ textAlign: 'center' }}>{Number(avaluo.desgloseConstruccion?.area || 0).toFixed(2)} m²</td>
-                      <td style={{ textAlign: 'center' }}>m²</td>
-                      <td style={{ textAlign: 'right' }}>-</td>
-                      <td style={{ textAlign: 'right', color: '#1e40af' }}>{formatQ(avaluo.desgloseConstruccion?.total)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Desglose Bancario de Construcción al 80% */}
-              <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
-                <DollarSign size={16} />
-                <span>Valoración Bancaria de Construcción</span>
-              </div>
-              <div className="table-container" style={{ marginBottom: '1.5rem' }}>
-                <table className="data-table">
-                  <thead>
-                    <tr style={{ background: '#1e3a8a', color: '#ffffff' }}>
-                      <th style={{ color: '#ffffff', textAlign: 'left' }}>DESCRIPCIÓN</th>
-                      <th style={{ color: '#ffffff', textAlign: 'center' }}>ÁREA (m²)</th>
-                      <th style={{ color: '#ffffff', textAlign: 'center' }}>UNIDAD</th>
-                      <th style={{ color: '#ffffff', textAlign: 'right' }}>VALOR UNITARIO (80%)</th>
-                      <th style={{ color: '#ffffff', textAlign: 'right' }}>SUBTOTAL (80%)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(avaluo.desgloseConstruccion?.items && avaluo.desgloseConstruccion.items.length > 0 ? avaluo.desgloseConstruccion.items : [{
-                      descripcion: 'Construcción Principal',
-                      area: avaluo.desgloseConstruccion?.area || 0,
-                      unidad: avaluo.desgloseConstruccion?.unidad || 'm²',
-                      valorUnitario: avaluo.desgloseConstruccion?.valorUnitario || 0,
-                      total: avaluo.desgloseConstruccion?.total || 0
-                    }]).map((c, i) => {
-                      const unit80 = parseFloat((Number(c.valorUnitario || 0) * 0.8).toFixed(2));
-                      const subtotal80 = parseFloat(((c.total != null ? Number(c.total) : (Number(c.area || 0) * Number(c.valorUnitario || 0))) * 0.8).toFixed(2));
-                      return (
-                        <tr key={i}>
-                          <td style={{ fontWeight: 600 }}>{c.descripcion || 'Construcción'}</td>
-                          <td style={{ textAlign: 'center' }}>{Number(c.area || 0).toFixed(2)}</td>
-                          <td style={{ textAlign: 'center' }}>{c.unidad || 'm²'}</td>
-                          <td style={{ textAlign: 'right' }}>{formatQ(unit80)}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(subtotal80)}</td>
-                        </tr>
-                      );
-                    })}
-                    <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
-                      <td>TOTAL CONSTRUCCIÓN BANCARIA:</td>
-                      <td style={{ textAlign: 'center' }}>{Number(avaluo.desgloseConstruccion?.area || 0).toFixed(2)} m²</td>
-                      <td style={{ textAlign: 'center' }}>m²</td>
-                      <td style={{ textAlign: 'right' }}>-</td>
-                      <td style={{ textAlign: 'right', color: '#1e40af' }}>{formatQ(Number(avaluo.desgloseConstruccion?.total || 0) * 0.8)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
+              {/* Características Físicas de la Construcción */}
               <div className="form-section-title">
                 <Building size={16} />
                 <span>Características Físicas de la Construcción</span>
@@ -1367,31 +1285,223 @@ export default function AvaluoDetailModal({
               </div>
 
               <div className="form-grid-3" style={{ marginTop: '0.75rem' }}>
-                <div><strong>Estructura:</strong> {avaluo.construccion?.estructura}</div>
-                <div><strong>Paredes:</strong> {avaluo.construccion?.paredes}</div>
-                <div><strong>Techo:</strong> {avaluo.construccion?.techoEntrePiso}</div>
+                <div><strong>Estructura:</strong> {avaluo.construccion?.estructura || 'Concreto armado y mampostería reforzada'}</div>
+                <div><strong>Paredes:</strong> {avaluo.construccion?.paredes || 'Block pómez con repello y cernido'}</div>
+                <div><strong>Techo:</strong> {avaluo.construccion?.techoEntrePiso || 'Losa maciza de concreto'}</div>
+              </div>
+              <div className="form-grid-3" style={{ marginTop: '0.75rem' }}>
+                <div><strong>Piso:</strong> {avaluo.construccion?.piso || 'Cerámico'}</div>
+                <div><strong>Puertas:</strong> {avaluo.construccion?.puertas || 'Madera y metal'}</div>
+                <div><strong>Ventanas:</strong> {avaluo.construccion?.ventanas || 'Aluminio y vidrio'}</div>
+              </div>
+              <div className="form-grid-3" style={{ marginTop: '0.75rem' }}>
+                <div><strong>Instalación Sanitaria:</strong> {avaluo.construccion?.sanitaria || 'Artefactos estándar'}</div>
+                <div><strong>Instalación Eléctrica:</strong> {avaluo.construccion?.electrica || 'Instalación empotrada'}</div>
+                <div><strong>Factores Positivos / Negativos:</strong> {[avaluo.construccion?.factoresPositivos, avaluo.construccion?.factoresNegativos].filter(Boolean).join(' / ') || 'Ubicación y estado / Ninguno'}</div>
               </div>
 
+              {/* 1. VALUACIÓN COMERCIAL */}
               <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
-                <FileText size={16} />
-                <span>Servicios e Infraestructura (31 Elementos Oficiales)</span>
-              </div>
-              <div className="form-grid-3" style={{ fontSize: '0.82rem', gap: '0.6rem' }}>
-                {SERVICIOS_INFRAESTRUCTURA_LIST.map(srv => (
-                  <div key={srv.key} style={{ background: '#f8fafc', padding: '0.45rem 0.6rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                    <span style={{ color: '#64748b', fontSize: '0.73rem', display: 'block', fontWeight: 600 }}>{srv.label}:</span>
-                    <strong style={{ color: '#0d2847', fontSize: '0.82rem' }}>
-                      {avaluo.servicios?.[srv.key] !== undefined && avaluo.servicios?.[srv.key] !== '' ? avaluo.servicios[srv.key] : srv.defaultVal}
-                    </strong>
-                  </div>
-                ))}
+                <DollarSign size={16} />
+                <span>1. Valuación Comercial</span>
               </div>
 
-              {avaluo.serviciosAdicionales?.length > 0 && (
-                <div style={{ marginTop: '0.75rem' }}>
-                  <strong>Servicios Adicionales:</strong> {avaluo.serviciosAdicionales.join(', ')}
+              {/* Desglose Terreno Comercial (si aplica) */}
+              {avaluo.aplicaTerreno !== false && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0d2847', marginBottom: '0.35rem' }}>
+                    Valoración Comercial de Terreno
+                  </div>
+                  <div className="table-container">
+                    <table className="data-table">
+                      <thead>
+                        <tr style={{ background: '#0d2847', color: '#ffffff' }}>
+                          <th style={{ color: '#ffffff', textAlign: 'left' }}>FINCA</th>
+                          <th style={{ color: '#ffffff', textAlign: 'center' }}>ÁREA (m²)</th>
+                          <th style={{ color: '#ffffff', textAlign: 'center' }}>EQUIV. VARAS² (v²)</th>
+                          <th style={{ color: '#ffffff', textAlign: 'center' }}>UNIDAD</th>
+                          <th style={{ color: '#ffffff', textAlign: 'right' }}>VALOR UNITARIO</th>
+                          <th style={{ color: '#ffffff', textAlign: 'right' }}>SUBTOTAL</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {terrainItems.map((item, idx) => (
+                          <tr key={idx}>
+                            <td style={{ fontWeight: 600 }}>{item.finca}</td>
+                            <td style={{ textAlign: 'center' }}>{Number(item.area || 0).toFixed(2)}</td>
+                            <td style={{ textAlign: 'center', color: '#1e40af', fontWeight: 600 }}>{Number(item.varasCuadradas || 0).toFixed(2)}</td>
+                            <td style={{ textAlign: 'center' }}>{item.unidad || 'm²'}</td>
+                            <td style={{ textAlign: 'right' }}>{formatQ(item.valorUnitario)}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(item.total)}</td>
+                          </tr>
+                        ))}
+                        <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                          <td>TOTAL TERRENO:</td>
+                          <td style={{ textAlign: 'center' }}>{Number(totalTerrenoArea).toFixed(2)} m²</td>
+                          <td style={{ textAlign: 'center', color: '#1e40af' }}>{Number(totalTerrenoVaras).toFixed(2)} v²</td>
+                          <td style={{ textAlign: 'center' }}>m²</td>
+                          <td style={{ textAlign: 'right' }}>-</td>
+                          <td style={{ textAlign: 'right', color: '#1e40af' }}>{formatQ(totalTerrenoSubtotal)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
+
+              {/* Desglose Matricial de Construcción Comercial */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0d2847', marginBottom: '0.35rem' }}>
+                  Valoración Matricial de Construcción
+                </div>
+                <div className="table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr style={{ background: '#0d2847', color: '#ffffff' }}>
+                        <th style={{ color: '#ffffff', textAlign: 'left' }}>DESCRIPCIÓN</th>
+                        <th style={{ color: '#ffffff', textAlign: 'center' }}>ÁREA (m²)</th>
+                        <th style={{ color: '#ffffff', textAlign: 'center' }}>UNIDAD</th>
+                        <th style={{ color: '#ffffff', textAlign: 'right' }}>VALOR UNITARIO</th>
+                        <th style={{ color: '#ffffff', textAlign: 'right' }}>SUBTOTAL</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(avaluo.desgloseConstruccion?.items && avaluo.desgloseConstruccion.items.length > 0 ? avaluo.desgloseConstruccion.items : [{
+                        descripcion: 'Construcción Principal',
+                        area: avaluo.desgloseConstruccion?.area || 0,
+                        unidad: avaluo.desgloseConstruccion?.unidad || 'm²',
+                        valorUnitario: avaluo.desgloseConstruccion?.valorUnitario || 0,
+                        total: avaluo.desgloseConstruccion?.total || 0
+                      }]).map((c, i) => (
+                        <tr key={i}>
+                          <td style={{ fontWeight: 600 }}>{c.descripcion || 'Construcción'}</td>
+                          <td style={{ textAlign: 'center' }}>{Number(c.area || 0).toFixed(2)}</td>
+                          <td style={{ textAlign: 'center' }}>{c.unidad || 'm²'}</td>
+                          <td style={{ textAlign: 'right' }}>{formatQ(c.valorUnitario)}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(c.total != null ? c.total : (Number(c.area || 0) * Number(c.valorUnitario || 0)))}</td>
+                        </tr>
+                      ))}
+                      <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                        <td>TOTAL CONSTRUCCIÓN:</td>
+                        <td style={{ textAlign: 'center' }}>{Number(avaluo.desgloseConstruccion?.area || 0).toFixed(2)} m²</td>
+                        <td style={{ textAlign: 'center' }}>m²</td>
+                        <td style={{ textAlign: 'right' }}>-</td>
+                        <td style={{ textAlign: 'right', color: '#1e40af' }}>{formatQ(avaluo.desgloseConstruccion?.total)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 2. VALUACIÓN BANCARIA */}
+              <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
+                <DollarSign size={16} />
+                <span>2. Valuación Bancaria (80%)</span>
+              </div>
+
+              {/* Desglose Terreno Bancario (si aplica) */}
+              {avaluo.aplicaTerreno !== false && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e3a8a', marginBottom: '0.35rem' }}>
+                    Valoración Bancaria de Terreno (80%)
+                  </div>
+                  <div className="table-container">
+                    <table className="data-table">
+                      <thead>
+                        <tr style={{ background: '#1e3a8a', color: '#ffffff' }}>
+                          <th style={{ color: '#ffffff', textAlign: 'left' }}>FINCA</th>
+                          <th style={{ color: '#ffffff', textAlign: 'center' }}>ÁREA (m²)</th>
+                          <th style={{ color: '#ffffff', textAlign: 'center' }}>EQUIV. VARAS² (v²)</th>
+                          <th style={{ color: '#ffffff', textAlign: 'center' }}>UNIDAD</th>
+                          <th style={{ color: '#ffffff', textAlign: 'right' }}>VALOR UNITARIO (80%)</th>
+                          <th style={{ color: '#ffffff', textAlign: 'right' }}>SUBTOTAL (80%)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {terrainItems.map((item, idx) => {
+                          const unit80 = parseFloat((Number(item.valorUnitario || 0) * 0.8).toFixed(2));
+                          const subtotal80 = parseFloat((Number(item.total || 0) * 0.8).toFixed(2));
+                          return (
+                            <tr key={idx}>
+                              <td style={{ fontWeight: 600 }}>{item.finca}</td>
+                              <td style={{ textAlign: 'center' }}>{Number(item.area || 0).toFixed(2)}</td>
+                              <td style={{ textAlign: 'center', color: '#1e40af', fontWeight: 600 }}>{Number(item.varasCuadradas || 0).toFixed(2)}</td>
+                              <td style={{ textAlign: 'center' }}>{item.unidad || 'm²'}</td>
+                              <td style={{ textAlign: 'right' }}>{formatQ(unit80)}</td>
+                              <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(subtotal80)}</td>
+                            </tr>
+                          );
+                        })}
+                        <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                          <td>TOTAL TERRENO BANCARIO:</td>
+                          <td style={{ textAlign: 'center' }}>{Number(totalTerrenoArea).toFixed(2)} m²</td>
+                          <td style={{ textAlign: 'center', color: '#1e40af' }}>{Number(totalTerrenoVaras).toFixed(2)} v²</td>
+                          <td style={{ textAlign: 'center' }}>m²</td>
+                          <td style={{ textAlign: 'right' }}>-</td>
+                          <td style={{ textAlign: 'right', color: '#1e40af' }}>{formatQ(totalTerrenoSubtotal * 0.8)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Desglose Bancario de Construcción al 80% */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e3a8a', marginBottom: '0.35rem' }}>
+                  Valoración Bancaria de Construcción (80%)
+                </div>
+                <div className="table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr style={{ background: '#1e3a8a', color: '#ffffff' }}>
+                        <th style={{ color: '#ffffff', textAlign: 'left' }}>DESCRIPCIÓN</th>
+                        <th style={{ color: '#ffffff', textAlign: 'center' }}>ÁREA (m²)</th>
+                        <th style={{ color: '#ffffff', textAlign: 'center' }}>UNIDAD</th>
+                        <th style={{ color: '#ffffff', textAlign: 'right' }}>VALOR UNITARIO (80%)</th>
+                        <th style={{ color: '#ffffff', textAlign: 'right' }}>SUBTOTAL (80%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(avaluo.desgloseConstruccion?.items && avaluo.desgloseConstruccion.items.length > 0 ? avaluo.desgloseConstruccion.items : [{
+                        descripcion: 'Construcción Principal',
+                        area: avaluo.desgloseConstruccion?.area || 0,
+                        unidad: avaluo.desgloseConstruccion?.unidad || 'm²',
+                        valorUnitario: avaluo.desgloseConstruccion?.valorUnitario || 0,
+                        total: avaluo.desgloseConstruccion?.total || 0
+                      }]).map((c, i) => {
+                        const unit80 = parseFloat((Number(c.valorUnitario || 0) * 0.8).toFixed(2));
+                        const subtotal80 = parseFloat(((c.total != null ? Number(c.total) : (Number(c.area || 0) * Number(c.valorUnitario || 0))) * 0.8).toFixed(2));
+                        return (
+                          <tr key={i}>
+                            <td style={{ fontWeight: 600 }}>{c.descripcion || 'Construcción'}</td>
+                            <td style={{ textAlign: 'center' }}>{Number(c.area || 0).toFixed(2)}</td>
+                            <td style={{ textAlign: 'center' }}>{c.unidad || 'm²'}</td>
+                            <td style={{ textAlign: 'right' }}>{formatQ(unit80)}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(subtotal80)}</td>
+                          </tr>
+                        );
+                      })}
+                      <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                        <td>TOTAL CONSTRUCCIÓN BANCARIA:</td>
+                        <td style={{ textAlign: 'center' }}>{Number(avaluo.desgloseConstruccion?.area || 0).toFixed(2)} m²</td>
+                        <td style={{ textAlign: 'center' }}>m²</td>
+                        <td style={{ textAlign: 'right' }}>-</td>
+                        <td style={{ textAlign: 'right', color: '#1e40af' }}>{formatQ(Number(avaluo.desgloseConstruccion?.total || 0) * 0.8)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Dictamen Bancario de Garantía (Final del Paso 5) */}
+              <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
+                <ShieldCheck size={16} />
+                <span>Dictamen de Garantía y Calificación Bancaria</span>
+              </div>
+              <div style={{ padding: '0.85rem 1rem', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.85rem', fontStyle: 'italic', lineHeight: 1.5, color: '#1e293b' }}>
+                {avaluo.dictamenGarantia || DEFAULT_DICTAMEN_GARANTIA || 'El inmueble califica como garantía crediticia de primer orden tipo A-1.'}
+              </div>
             </div>
           )}
 
@@ -1692,45 +1802,6 @@ export default function AvaluoDetailModal({
                   )}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* TAB 6: DICTAMEN LEGAL TENANT */}
-          {activeTab === 'legal' && (
-            <div>
-              <div className="form-section-title">
-                <Scale size={16} />
-                <span>Dictamen Bancario y Consideraciones Generales {avaluoTenant.nombre}</span>
-              </div>
-
-              <div style={{ padding: '1.25rem', background: avaluoTenant.id === 'cverde' ? '#ecfdf5' : '#eff6ff', borderRadius: '8px', border: `1.5px solid ${avaluoTenant.colores?.primary || '#2563eb'}`, marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <strong style={{ color: avaluoTenant.colores?.primary || '#1e40af' }}>Dictamen de Garantía Oficial (Pág. 6):</strong>
-                  {onEdit && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        onEdit(avaluo);
-                      }}
-                      style={{ background: '#ffffff', color: avaluoTenant.colores?.primary || '#1e40af', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '3px 8px', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      <Edit3 size={13} /> Editar Dictamen
-                    </button>
-                  )}
-                </div>
-                <p style={{ marginTop: '0.4rem', color: '#0f172a', fontStyle: 'italic', lineHeight: 1.5 }}>
-                  {avaluo.dictamenGarantia || avaluoTenant.dictamenDefault || DEFAULT_DICTAMEN_GARANTIA}
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.86rem', color: '#334155', lineHeight: 1.6 }}>
-                <p><strong>I.</strong> El bien valuado puede ser considerado como sujeto de garantía.</p>
-                <p><strong>II.</strong> El presente avalúo se emite como una opinión técnica fundamentada en criterios profesionales y de buena fe.</p>
-                <p><strong>III.</strong> El informe se emite con fines informativos de garantía crediticia.</p>
-                <p><strong>IV.</strong> Datos registrales verificados mediante consulta electrónica oficial del Registro de la Propiedad.</p>
-                <p><strong>V.</strong> {avaluoTenant.nombre} es una entidad independiente y no mantiene vínculo con las partes intervinientes.</p>
-              </div>
             </div>
           )}
         </div>

@@ -35,6 +35,9 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
     creadoPorUid: avaluo?.creadoPorUid || currentUser?.uid || '',
     creadoPorNombre: avaluo?.creadoPorNombre || currentUser?.nombre || '',
     creadoPor: avaluo?.creadoPor || currentUser?.email || '',
+    asignadoAEmail: avaluo?.asignadoAEmail || avaluo?.asignadoA || '',
+    asignadoANombre: avaluo?.asignadoANombre || '',
+    asignadoAUid: avaluo?.asignadoAUid || '',
     codigo: avaluo?.codigo || `${tenantConfig.codigoPrefix || 'LR-2026-'}0${Math.floor(Math.random() * 90) + 10}`,
     tipoAvaluo: avaluo?.tipoAvaluo || 'Comercial',
     solicitante: avaluo?.solicitante || (tenantConfig.id === 'cverde' ? 'BANCO INDUSTRIAL, S.A.' : 'BANCO G&T CONTINENTAL'),
@@ -1122,7 +1125,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-window" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '1000px' }}>
+      <div className="modal-window" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 'min(1280px, 96vw)', width: '100%' }}>
         <form
           onSubmit={handleSubmit}
           onKeyDown={(e) => {
@@ -1141,7 +1144,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
               <div>
                 <h2 style={{ color: '#ffffff' }}>{isEditing ? `Editar Avalúo ${formData.codigo}` : `Nuevo Expediente — ${activeTenantConfig.nombreCorto}`}</h2>
                 <div className="modal-header-sub" style={{ color: '#cbd5e1' }}>
-                  Paso {activeStep} de 5 — Formato Oficial {activeTenantConfig.nombre}
+                  Paso {activeStep} de 6 — Formato Oficial {activeTenantConfig.nombre}
                 </div>
               </div>
             </div>
@@ -1161,42 +1164,55 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
           </div>
 
           {/* Form Step Indicator Tabs */}
-          <div style={{ padding: '0 1.5rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
-            <div className="modal-tabs" style={{ marginBottom: 0 }}>
+          <div style={{ padding: '0 1rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
+            <div className="modal-tabs" style={{ marginBottom: 0, gap: '0.35rem', display: 'flex', overflowX: 'auto' }}>
               <button
                 type="button"
                 className={`modal-tab-btn ${activeStep === 1 ? 'active' : ''}`}
                 onClick={() => setActiveStep(1)}
+                style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
               >
-                <span>1. Solicitud & Inspección</span>
+                <span>1. Solicitud</span>
               </button>
               <button
                 type="button"
                 className={`modal-tab-btn ${activeStep === 2 ? 'active' : ''}`}
                 onClick={() => setActiveStep(2)}
+                style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
               >
-                <span>2. Fincas & DICABI</span>
+                <span>2. Valores & Firmas</span>
               </button>
               <button
                 type="button"
                 className={`modal-tab-btn ${activeStep === 3 ? 'active' : ''}`}
                 onClick={() => setActiveStep(3)}
+                style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
               >
-                <span>3. Colindancias & Servicios</span>
+                <span>3. Propiedad & DICABI</span>
               </button>
               <button
                 type="button"
                 className={`modal-tab-btn ${activeStep === 4 ? 'active' : ''}`}
                 onClick={() => setActiveStep(4)}
+                style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
               >
-                <span>4. Valores & Dictamen</span>
+                <span>4. Terreno & Servicios</span>
               </button>
               <button
                 type="button"
                 className={`modal-tab-btn ${activeStep === 5 ? 'active' : ''}`}
                 onClick={() => setActiveStep(5)}
+                style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
               >
-                <span>5. Fotos & PDFs RGP</span>
+                <span>5. Construcción & Dictamen</span>
+              </button>
+              <button
+                type="button"
+                className={`modal-tab-btn ${activeStep === 6 ? 'active' : ''}`}
+                onClick={() => setActiveStep(6)}
+                style={{ padding: '0.55rem 0.75rem', fontSize: '0.82rem' }}
+              >
+                <span>6. Fotos & Anexos RGP</span>
               </button>
             </div>
           </div>
@@ -1306,6 +1322,9 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       }}
                     >
                       <option value="Comercial">Comercial</option>
+                      <option value="Bancario">Bancario</option>
+                      <option value="Fiscal">Fiscal</option>
+                      <option value="Certificación">Certificación</option>
                       <option value="Residencial">Residencial</option>
                       <option value="Apartamento / PH">Apartamento / PH (Propiedad Horizontal)</option>
                       <option value="Industrial">Industrial</option>
@@ -1448,6 +1467,56 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                   </div>
                 </div>
 
+                {/* Asignación y Delegación de Proyecto a Técnicos (Gestión de Aroldo / Admin) */}
+                {(!currentUser || currentUser.rol === 'admin' || currentUser.rol === 'soporte' || currentUser.email === 'aroldoruiz100@gmail.com' || currentUser.email === 'rnochezmc@gmail.com') ? (
+                  <div className="form-field" style={{ background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                      <label style={{ margin: 0, fontWeight: 700, fontSize: '0.82rem', color: '#0d2847', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>👤</span> Técnico Asignado (Delegar Expediente para Inspección)
+                      </label>
+                      {formData.asignadoANombre ? (
+                        <span style={{ fontSize: '0.72rem', background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                          ● Asignado a: {formData.asignadoANombre}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                          Sin delegar (Visible para Administradores)
+                        </span>
+                      )}
+                    </div>
+                    <select
+                      className="form-select"
+                      style={{ background: '#ffffff', fontSize: '0.85rem' }}
+                      value={formData.asignadoAEmail || ''}
+                      onChange={(e) => {
+                        const selectedEmail = e.target.value;
+                        const found = (usuarios || []).find(u => u.email === selectedEmail);
+                        setFormData(prev => ({
+                          ...prev,
+                          asignadoAEmail: selectedEmail,
+                          asignadoANombre: found?.nombre || (selectedEmail ? selectedEmail.split('@')[0] : ''),
+                          asignadoAUid: found?.uid || ''
+                        }));
+                      }}
+                    >
+                      <option value="">-- Sin asignar (Solo visible para Aroldo y Administradores) --</option>
+                      {(usuarios || []).filter(u => u.activo !== false).map(u => (
+                        <option key={u.id || u.email} value={u.email}>
+                          {u.nombre || u.email} {u.rol ? `[${u.rol}]` : ''} — {u.email}
+                        </option>
+                      ))}
+                    </select>
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '4px' }}>
+                      ℹ️ El técnico seleccionado podrá ver y completar los datos de inspección física y fotos de este avalúo desde su propia cuenta.
+                    </div>
+                  </div>
+                ) : formData.asignadoANombre ? (
+                  <div style={{ background: '#eff6ff', padding: '0.6rem 0.9rem', borderRadius: '6px', border: '1px solid #bfdbfe', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#1e40af' }}>
+                    <span>👤</span>
+                    <span><strong>Proyecto delegado a ti para inspección:</strong> {formData.asignadoANombre}</span>
+                  </div>
+                ) : null}
+
                 <div className="form-grid-2">
                   <div className="form-field">
                     <label className="form-label">Dirección Física o Catastral del Inmueble</label>
@@ -1564,8 +1633,216 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                   />
                 </div>
 
-                {/* Profesionales Valuadores y Firmantes Oficiales */}
-                <div className="form-section-title" style={{ marginTop: '2rem' }}>
+                {/* Resumen Registral Rápido de Fincas y Áreas (Página 1 del Reporte) */}
+                <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#0d2847', fontSize: '0.88rem' }}>
+                      <Building size={16} />
+                      <span>Resumen de Fincas Registradas ({formData.fincas.length})</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveStep(3)}
+                      style={{ fontSize: '0.75rem', color: '#1e40af', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                    >
+                      Editar Fincas en Paso 3 →
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#334155' }}>
+                    {formData.fincas.map((f, i) => (
+                      <span key={i} style={{ display: 'inline-block', marginRight: '0.75rem', background: '#ffffff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                        Finca: <strong>{f.finca || (i + 1)}</strong> (Folio: {f.folio || '-'}, Libro: {f.libro || '-'}) — <strong>{Number(f.areaValuada || 0).toFixed(2)} m²</strong>
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#1e3a8a', fontWeight: 700 }}>
+                    Área Valuada Total: {Number(formData.areaValuada || 0).toFixed(2)} m² ({parseFloat(((Number(formData.areaValuada) || 0) * 1.43115).toFixed(2))} v²)
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ==============================================================
+                PASO 2: VALORES, LIMITACIONES Y FIRMAS OFICIALES (PÁGINAS 2 Y 3)
+                ============================================================== */}
+            {activeStep === 2 && (
+              <div>
+                {/* 1. LIMITACIONES */}
+                <div className="form-section-title">
+                  <Scale size={16} />
+                  <span>LIMITACIONES</span>
+                </div>
+                <div style={{ marginBottom: '1.5rem', padding: '0.85rem 1rem', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.65rem' }}>
+                    {[
+                      { key: 'gravamenes', label: 'Anotaciones y gravámenes' },
+                      { key: 'servidumbres', label: 'Servidumbres' },
+                      { key: 'areasComunes', label: 'Áreas comunes' },
+                      { key: 'desmembracion', label: 'Desmembración' },
+                      { key: 'copropiedad', label: 'Régimen de copropiedad' }
+                    ].map(item => {
+                      const currentVal = formData.limitacionesCheck?.[item.key] || 'No';
+                      return (
+                        <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#334155' }}>{item.label}:</span>
+                          <div style={{ display: 'inline-flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({
+                                ...prev,
+                                limitacionesCheck: { ...prev.limitacionesCheck, [item.key]: 'Si' }
+                              }))}
+                              style={{
+                                padding: '2px 10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: currentVal === 'Si' ? '#0d2847' : '#ffffff',
+                                color: currentVal === 'Si' ? '#ffffff' : '#64748b'
+                              }}
+                            >
+                              Si
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({
+                                ...prev,
+                                limitacionesCheck: { ...prev.limitacionesCheck, [item.key]: 'No' }
+                              }))}
+                              style={{
+                                padding: '2px 10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                borderLeft: '1px solid #cbd5e1',
+                                cursor: 'pointer',
+                                background: currentVal === 'No' ? '#0d2847' : '#ffffff',
+                                color: currentVal === 'No' ? '#ffffff' : '#64748b'
+                              }}
+                            >
+                              No
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. VALORES */}
+                <div className="form-section-title">
+                  <DollarSign size={16} />
+                  <span>VALORES</span>
+                </div>
+
+                <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
+                  {/* Tarjeta Comercial 100% */}
+                  <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '6px', border: '1.5px solid #0d2847' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                      1. VALOR COMERCIAL TOTAL (100%)
+                    </div>
+                    <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0d2847', marginTop: '4px' }}>
+                      Q. {Number(formData.valorComercialGTQ || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e40af', marginTop: '2px' }}>
+                      $ {Number(formData.valorComercialUSD || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} USD
+                    </div>
+                  </div>
+
+                  {/* Tarjeta Bancaria 80% */}
+                  <div style={{ background: '#eff6ff', padding: '1rem', borderRadius: '6px', border: '1.5px solid #2563eb' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>
+                        2. SUMA TOTAL VALOR BANCARIO
+                      </div>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', background: '#dbeafe', color: '#1e40af' }}>
+                        80% Garantía
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1e3a8a', marginTop: '4px' }}>
+                      Q. {Number(formData.valorBancarioGTQ || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#2563eb', marginTop: '2px' }}>
+                      $ {Number(formData.valorBancarioUSD || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const com = parseFloat(formData.valorComercialGTQ) || 0;
+                          const exact80 = parseFloat((com * 0.8).toFixed(2));
+                          const tc = parseFloat(formData.tipoCambio) || 7.62581;
+                          setFormData(prev => ({
+                            ...prev,
+                            valorBancarioGTQ: exact80,
+                            valorBancarioUSD: parseFloat((exact80 / tc).toFixed(2))
+                          }));
+                        }}
+                        style={{ fontSize: '0.72rem', padding: '3px 8px', background: '#ffffff', border: '1px solid #93c5fd', borderRadius: '4px', color: '#1d4ed8', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        ⚡ 80% Estándar (Q. {(Number(formData.valorComercialGTQ || 0) * 0.8).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const com = parseFloat(formData.valorComercialGTQ) || 0;
+                          const exact70 = parseFloat((com * 0.7).toFixed(2));
+                          const tc = parseFloat(formData.tipoCambio) || 7.62581;
+                          setFormData(prev => ({
+                            ...prev,
+                            valorBancarioGTQ: exact70,
+                            valorBancarioUSD: parseFloat((exact70 / tc).toFixed(2))
+                          }));
+                        }}
+                        style={{ fontSize: '0.72rem', padding: '3px 8px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#475569', fontWeight: 500, cursor: 'pointer' }}
+                      >
+                        70% (Q. {(Number(formData.valorComercialGTQ || 0) * 0.7).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <label className="form-label" style={{ color: '#475569', margin: 0, fontSize: '0.85rem' }}>Tipo de Cambio Banguat:</label>
+                      <input
+                        type="number"
+                        step="any"
+                        className="form-input"
+                        style={{ width: '100px', padding: '0.35rem 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}
+                        value={formData.tipoCambio}
+                        onChange={(e) => handleCalcUpdate('tipoCambio', null, e.target.value)}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <label className="form-label" style={{ color: '#475569', margin: 0, fontSize: '0.85rem' }}>Ajustar Valor Bancario (Q):</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="form-input"
+                        style={{ width: '140px', padding: '0.35rem 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}
+                        value={formData.valorBancarioGTQ || ''}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          const tc = parseFloat(formData.tipoCambio) || 7.62581;
+                          setFormData(prev => ({
+                            ...prev,
+                            valorBancarioGTQ: val,
+                            valorBancarioUSD: parseFloat((val / tc).toFixed(2))
+                          }));
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', fontStyle: 'italic' }}>
+                    ℹ️ Los desgloses detallados de terreno y construcción se configuran en el <strong>Paso 5</strong>.
+                  </div>
+                </div>
+
+                {/* 3. Profesionales Valuadores y Firmantes Oficiales */}
+                <div className="form-section-title">
                   <ShieldCheck size={16} />
                   <span>Profesionales Valuadores y Firmantes Oficiales (Páginas 2 y 3 del Reporte)</span>
                 </div>
@@ -1574,7 +1851,6 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                 </p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: formData.incluirFirmaRevisor ? '1fr 1fr' : '1fr', gap: '1rem', background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', border: '1.5px solid #e2e8f0' }}>
-                  
                   {/* Valuador Principal (Firma Derecha) */}
                   <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '6px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1723,20 +1999,19 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       </div>
                     )}
                   </div>
-
                 </div>
               </div>
             )}
 
             {/* ==============================================================
-                PASO 2: FINCAS (ÁREAS INDEPENDIENTES Y DESMEMBRACIONES) Y DICABI
+                PASO 3: PROPIEDAD, ASPECTOS LEGALES Y DICABI (PÁGINAS 4 Y 5)
                 ============================================================== */}
-            {activeStep === 2 && (
+            {activeStep === 3 && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <div className="form-section-title" style={{ margin: 0 }}>
                     <Building size={16} />
-                    <span>Fincas Registradas y Áreas Individuales</span>
+                    <span>INFORMACION DE LA PROPIEDAD</span>
                   </div>
                   <button
                     type="button"
@@ -1750,16 +2025,6 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                 </div>
 
                 <div className="form-grid-2" style={{ marginBottom: '1.25rem' }}>
-                  <div className="form-field">
-                    <label className="form-label">Propietario Principal del Inmueble</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.propietarioPrincipal}
-                      onChange={(e) => setFormData({ ...formData, propietarioPrincipal: e.target.value })}
-                      placeholder="Nombre completo del propietario o empresa titular"
-                    />
-                  </div>
                   <div className="form-field">
                     <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>Fecha de Consulta a Distancia (RGP)</span>
@@ -1777,6 +2042,16 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                     <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '3px' }}>
                       Fecha de emisión de la consulta electrónica del RGP reflejada en la Información de la Propiedad.
                     </div>
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Propietario</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.propietarioPrincipal}
+                      onChange={(e) => setFormData({ ...formData, propietarioPrincipal: e.target.value })}
+                      placeholder="Nombre completo del propietario o empresa titular"
+                    />
                   </div>
                 </div>
 
@@ -1881,61 +2156,89 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       />
                     </div>
 
-                    {/* Desglose de Áreas Individuales para esta finca */}
-                    <div style={{ marginTop: '0.75rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-                        Áreas Individuales de esta Finca (m²)
+                    {/* Dirección según IUSI */}
+                    <div className="form-field" style={{ marginTop: '0.65rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                        <label className="form-label" style={{ margin: 0, fontWeight: 600 }}>
+                          Dirección según IUSI{formData.fincas.length > 1 ? ` (Finca ${fincaItem.finca ? `#${fincaItem.finca}` : (index + 1)})` : ''}
+                        </label>
+                        {formData.direccionIusi && (
+                          <button
+                            type="button"
+                            onClick={() => updateFinca(index, 'direccionIusi', formData.direccionIusi)}
+                            style={{ fontSize: '0.72rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
+                          >
+                            + Usar IUSI general
+                          </button>
+                        )}
                       </div>
-                      <div className="form-grid-5">
-                        <div className="form-field">
-                          <label className="form-label" style={{ fontSize: '0.72rem' }}>Orig. Registrada (m²)</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={fincaItem.direccionIusi || ''}
+                        onChange={(e) => updateFinca(index, 'direccionIusi', e.target.value)}
+                        placeholder={formData.direccionIusi || "Dirección según recibo o matrícula de IUSI..."}
+                      />
+                    </div>
+
+                    {/* Matriz de Áreas de la Finca */}
+                    <div style={{ marginTop: '0.75rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0d2847', marginBottom: '0.5rem', letterSpacing: '0.04em' }}>
+                        AREAS
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '0.6rem' }}>
+                        <div className="form-field" style={{ margin: 0 }}>
+                          <label className="form-label" style={{ fontSize: '0.72rem', fontWeight: 600, color: '#475569', marginBottom: '2px', display: 'block' }}>Orig. Registrada (m²)</label>
                           <input
                             type="number"
                             step="any"
                             className="form-input"
+                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.85rem' }}
                             value={fincaItem.areaRegistrada || 0}
                             onChange={(e) => updateFinca(index, 'areaRegistrada', e.target.value)}
                           />
                         </div>
-                        <div className="form-field">
-                          <label className="form-label" style={{ fontSize: '0.72rem', color: '#b91c1c' }}>Desmembrada (m²)</label>
+                        <div className="form-field" style={{ margin: 0 }}>
+                          <label className="form-label" style={{ fontSize: '0.72rem', fontWeight: 600, color: '#b91c1c', marginBottom: '2px', display: 'block' }}>Desmembrada (m²)</label>
                           <input
                             type="number"
                             step="any"
                             className="form-input"
+                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.85rem' }}
                             value={fincaItem.areaDesmembrada || 0}
                             onChange={(e) => updateFinca(index, 'areaDesmembrada', e.target.value)}
                             title="Se resta automáticamente del área original"
                           />
                         </div>
-                        <div className="form-field">
-                          <label className="form-label" style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0d2847' }}>Act. Registrada (m²)</label>
+                        <div className="form-field" style={{ margin: 0 }}>
+                          <label className="form-label" style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0d2847', marginBottom: '2px', display: 'block' }}>Act. Registrada (m²)</label>
                           <input
                             type="number"
                             step="any"
                             className="form-input"
-                            style={{ fontWeight: 700, background: '#f1f5f9' }}
+                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.85rem', fontWeight: 700, background: '#f1f5f9' }}
                             value={fincaItem.areaActualRegistrada || 0}
                             readOnly
                           />
                         </div>
-                        <div className="form-field">
-                          <label className="form-label" style={{ fontSize: '0.72rem' }}>Área Física (m²)</label>
+                        <div className="form-field" style={{ margin: 0 }}>
+                          <label className="form-label" style={{ fontSize: '0.72rem', fontWeight: 600, color: '#475569', marginBottom: '2px', display: 'block' }}>Área Física (m²)</label>
                           <input
                             type="number"
                             step="any"
                             className="form-input"
+                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.85rem' }}
                             value={fincaItem.areaFisica || 0}
                             onChange={(e) => updateFinca(index, 'areaFisica', e.target.value)}
                           />
                         </div>
-                        <div className="form-field">
-                          <label className="form-label" style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1e40af' }}>Área Valuada (m²)</label>
+                        <div className="form-field" style={{ margin: 0 }}>
+                          <label className="form-label" style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1e40af', marginBottom: '2px', display: 'block' }}>Área Valuada (m²)</label>
                           <input
                             type="number"
                             step="any"
                             className="form-input"
-                            style={{ fontWeight: 700, borderColor: '#3b82f6' }}
+                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.85rem', fontWeight: 700, borderColor: '#3b82f6', background: '#eff6ff' }}
                             value={fincaItem.areaValuada || 0}
                             onChange={(e) => updateFinca(index, 'areaValuada', e.target.value)}
                           />
@@ -2252,9 +2555,9 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
             )}
 
             {/* ==============================================================
-                PASO 3: COLINDANCIAS, SERVICIOS (CHECKLIST) Y CONSTRUCCIÓN
+                PASO 4: TERRENO, COLINDANCIAS Y SERVICIOS E INFRAESTRUCTURA (PÁGINAS 6 Y 7)
                 ============================================================== */}
-            {activeStep === 3 && (
+            {activeStep === 4 && (
               <div>
                 {/* Checkbox y Botón de Terreno / Colindancias */}
                 <div style={{ marginBottom: '1.25rem', padding: '0.85rem 1rem', background: formData.aplicaTerreno === false ? '#fef2f2' : '#f8fafc', borderRadius: '8px', border: formData.aplicaTerreno === false ? '1.5px solid #ef4444' : '1px solid #cbd5e1' }}>
@@ -2398,7 +2701,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <div className="form-section-title" style={{ margin: 0 }}>
                         <MapPin size={16} />
-                        <span>Colindancias Registrales y Físicas del Terreno — {formData.fincas.length} {formData.fincas.length === 1 ? 'Cuadro' : 'Cuadros según Fincas'}</span>
+                        <span>COLINDANCIAS</span>
                       </div>
                       {formData.fincas.length > 1 && (
                         <button
@@ -2431,7 +2734,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                             <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.45rem 0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', fontWeight: 700 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <span>
-                                  CUADRO DE COLINDANCIAS {formData.fincas.length > 1 ? `— FINCA: ${fincaItem.finca || `No. ${fIndex + 1}`}` : ''}
+                                  COLINDANCIAS {formData.fincas.length > 1 ? `— FINCA: ${fincaItem.finca || `No. ${fIndex + 1}`}` : ''}
                                 </span>
                                 {formData.fincas.length > 1 && (
                                   <span style={{ fontSize: '0.72rem', fontWeight: 500, color: '#93c5fd' }}>
@@ -2581,7 +2884,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                 {/* Servicios con Checklist */}
                 <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
                   <CheckSquare size={16} />
-                  <span>Servicios e Infraestructura (Checklist Oficial — 31 Elementos)</span>
+                  <span>Servicios</span>
                 </div>
 
                 <div className="form-grid-3">
@@ -2747,11 +3050,18 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                     </div>
                   )}
                 </div>
+              </div>
+            )}
 
+            {/* ==============================================================
+                PASO 5: CONSTRUCCIÓN, DESGLOSE Y DICTAMEN (PÁGINAS 7 Y 8)
+                ============================================================== */}
+            {activeStep === 5 && (
+              <div>
                 {/* Características de Construcción */}
-                <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
+                <div className="form-section-title">
                   <Building size={16} />
-                  <span>Características de la Construcción</span>
+                  <span>Características Físicas de la Construcción (Página 7)</span>
                 </div>
 
                 <div className="form-grid-3">
@@ -2954,75 +3264,8 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                     />
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* ==============================================================
-                PASO 4: VALORES, FINCAS ASOCIADAS Y VARAS CUADRADAS
-                ============================================================== */}
-            {activeStep === 4 && (
-              <div>
-                {/* Cuadro Oficial Editable: Dictamen de Garantía Crediticia (Pág. 6 del reporte) */}
-                <div style={{ background: '#ffffff', padding: '1.25rem', borderRadius: '8px', border: '1.5px solid #0d2847', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <ShieldCheck size={18} style={{ color: '#1e40af' }} />
-                      <span style={{ fontWeight: 800, color: '#0d2847', fontSize: '0.92rem', textTransform: 'uppercase' }}>
-                        Dictamen Oficial de Garantía Crediticia (Cuadro Superior Pág. 6)
-                      </span>
-                    </div>
-                    <span style={{ fontSize: '0.74rem', background: '#eff6ff', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
-                      Editable para el informe oficial PDF
-                    </span>
-                  </div>
-
-                  <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.75rem' }}>
-                    Este texto se imprime en el recuadro superior de la página 6 del reporte. Puede editarlo directamente o seleccionar una de las plantillas oficiales predefinidas:
-                  </p>
-
-                  {/* Botones de plantilla rápida */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginBottom: '0.75rem' }}>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.favorable })}
-                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      ✓ Favorable Estándar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.condicionado })}
-                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      ⚠️ Favorable Condicionado
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.noFavorable })}
-                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      ✕ No Favorable
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.construccion })}
-                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#fefce8', color: '#854d0e', border: '1px solid #fef08a', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      🏗️ En Construcción
-                    </button>
-                  </div>
-
-                  <textarea
-                    className="form-input"
-                    rows={3}
-                    style={{ width: '100%', fontStyle: 'italic', fontSize: '0.86rem', lineHeight: 1.5, padding: '0.65rem 0.85rem' }}
-                    value={formData.dictamenGarantia !== undefined ? formData.dictamenGarantia : DEFAULT_DICTAMEN_GARANTIA}
-                    onChange={(e) => setFormData({ ...formData, dictamenGarantia: e.target.value })}
-                    placeholder="Escriba el dictamen de garantía oficial..."
-                  />
-                </div>
-
-                <div className="form-section-title">
+                <div className="form-section-title" style={{ marginTop: '1.75rem' }}>
                   <DollarSign size={16} />
                   <span>Desglose Matemático de Valoración (Terreno con Fincas y Varas²)</span>
                 </div>
@@ -3403,13 +3646,73 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                     </div>
                   </div>
                 </div>
+
+                {/* Cuadro Oficial Editable: Dictamen de Garantía Crediticia (Final del Paso 5) */}
+                <div style={{ background: '#ffffff', padding: '1.25rem', borderRadius: '8px', border: '1.5px solid #0d2847', marginTop: '1.75rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <ShieldCheck size={18} style={{ color: '#1e40af' }} />
+                      <span style={{ fontWeight: 800, color: '#0d2847', fontSize: '0.92rem', textTransform: 'uppercase' }}>
+                        Dictamen Oficial de Garantía Crediticia (Pág. 7 del reporte)
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.74rem', background: '#eff6ff', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                      Editable para el informe oficial PDF
+                    </span>
+                  </div>
+
+                  <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.75rem' }}>
+                    Este texto se imprime en el recuadro inferior de la página 7 del reporte. Puede editarlo directamente o seleccionar una de las plantillas oficiales predefinidas:
+                  </p>
+
+                  {/* Botones de plantilla rápida */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginBottom: '0.75rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.favorable })}
+                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      ✓ Favorable Estándar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.condicionado })}
+                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      ⚠️ Favorable Condicionado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.noFavorable })}
+                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      ✕ No Favorable
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.construccion })}
+                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#fefce8', color: '#854d0e', border: '1px solid #fef08a', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      🏗️ En Construcción
+                    </button>
+                  </div>
+
+                  <textarea
+                    className="form-input"
+                    rows={3}
+                    style={{ width: '100%', fontStyle: 'italic', fontSize: '0.86rem', lineHeight: 1.5, padding: '0.65rem 0.85rem' }}
+                    value={formData.dictamenGarantia !== undefined ? formData.dictamenGarantia : DEFAULT_DICTAMEN_GARANTIA}
+                    onChange={(e) => setFormData({ ...formData, dictamenGarantia: e.target.value })}
+                    placeholder="Escriba el dictamen de garantía oficial..."
+                  />
+                </div>
               </div>
             )}
 
             {/* ==============================================================
-                PASO 5: FOTOGRAFÍAS (OPTIMIZADAS) Y CONSULTAS ELECTRÓNICAS RGP (PDFS)
+                PASO 6: FOTOGRAFÍAS (OPTIMIZADAS) Y CONSULTAS ELECTRÓNICAS RGP (PDFS)
                 ============================================================== */}
-            {activeStep === 5 && (
+            {activeStep === 6 && (
               <div>
                 <div className="form-section-title">
                   <Camera size={16} />
@@ -3714,14 +4017,14 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                   ← Anterior
                 </button>
               )}
-              {activeStep < 5 && (
+              {activeStep < 6 && (
                 <button
                   type="button"
                   className="btn-secondary"
                   onClick={() => setActiveStep(prev => prev + 1)}
                   style={{ padding: '0.5rem 0.9rem', fontSize: '0.85rem', fontWeight: 600, color: '#1e40af', borderColor: '#3b82f6' }}
                 >
-                  Siguiente ({activeStep + 1}/5) →
+                  Siguiente ({activeStep + 1}/6) →
                 </button>
               )}
             </div>

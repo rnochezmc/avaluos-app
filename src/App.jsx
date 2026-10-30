@@ -534,13 +534,14 @@ export default function App() {
                    currentUser.email === 'cverdeavaluos@gmail.com' || 
                    currentUser.email === 'rnochezmc@gmail.com';
 
-  // Verificar si un expediente fue creado por el usuario actual
+  // Verificar si un expediente fue creado por el usuario actual o asignado a él
   const isCreatorOfItem = (item) => {
     if (!currentUser) return false;
     const userEmail = (currentUser.email || '').toLowerCase().trim();
     const userUid = currentUser.uid || '';
     const userNombre = (currentUser.nombre || '').toLowerCase().trim();
 
+    // 1. Creador del expediente
     const itemEmail = (item.creadoPorEmail || item.creadoPor || item.usuarioEmail || '').toLowerCase().trim();
     const itemUid = item.creadoPorUid || item.userId || '';
     const itemNombre = (item.creadoPorNombre || '').toLowerCase().trim();
@@ -549,6 +550,15 @@ export default function App() {
     if (userUid && itemUid && userUid === itemUid) return true;
     if (userNombre && itemNombre && userNombre === itemNombre) return true;
     if (item.bienMostradoPor && userNombre && item.bienMostradoPor.toLowerCase().includes(userNombre)) return true;
+
+    // 2. Asignado o delegado por Aroldo/Admin a este técnico
+    const assignedEmail = (item.asignadoAEmail || item.asignadoA || item.tecnicoAsignadoEmail || '').toLowerCase().trim();
+    const assignedUid = item.asignadoAUid || '';
+    const assignedNombre = (item.asignadoANombre || item.tecnicoAsignado || '').toLowerCase().trim();
+
+    if (userEmail && assignedEmail && userEmail === assignedEmail) return true;
+    if (userUid && assignedUid && userUid === assignedUid) return true;
+    if (userNombre && assignedNombre && userNombre === assignedNombre) return true;
 
     return false;
   };
@@ -656,13 +666,16 @@ export default function App() {
 
   // Handlers
   const handleSaveAvaluo = async (savedItem) => {
-    // Asegurar metadata de autoría del expediente
+    // Asegurar metadata de autoría y asignación del expediente
     const itemWithCreator = {
       ...savedItem,
       creadoPorEmail: savedItem.creadoPorEmail || currentUser?.email || '',
       creadoPorUid: savedItem.creadoPorUid || currentUser?.uid || '',
       creadoPorNombre: savedItem.creadoPorNombre || currentUser?.nombre || '',
-      creadoPor: savedItem.creadoPor || currentUser?.email || currentUser?.nombre || ''
+      creadoPor: savedItem.creadoPor || currentUser?.email || currentUser?.nombre || '',
+      asignadoAEmail: savedItem.asignadoAEmail || '',
+      asignadoANombre: savedItem.asignadoANombre || '',
+      asignadoAUid: savedItem.asignadoAUid || ''
     };
 
     // 1. Actualización optimista en lista en memoria
