@@ -151,6 +151,14 @@ export async function saveAvaluoToCloud(avaluo) {
       } catch (fErr) {
         console.warn('Error guardando fotos en subcolección fotosGallery:', fErr);
       }
+    } else {
+      // Si se removieron todas las fotos, limpiar documentos de la subcolección
+      try {
+        const currentSnap = await getDocs(subColRef);
+        currentSnap.forEach(snapDoc => {
+          deleteDoc(snapDoc.ref).catch(() => {});
+        });
+      } catch (_cleanupErr) {}
     }
   }
 
