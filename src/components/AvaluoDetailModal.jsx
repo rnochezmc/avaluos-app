@@ -14,6 +14,7 @@ import { getTenantConfig } from '../data/tenantsConfig';
 
 export default function AvaluoDetailModal({ 
   avaluo, 
+  currentUser,
   onClose, 
   onEdit, 
   onPrint, 
@@ -24,6 +25,14 @@ export default function AvaluoDetailModal({
   onUpdateField
 }) {
   const avaluoTenant = getTenantConfig(avaluo?.tenantId || (avaluo?.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam'));
+  const isAroldoOrAdmin = !currentUser || 
+                          currentUser.rol === 'admin' || 
+                          currentUser.rol === 'soporte' || 
+                          currentUser.email === 'aroldoruiz100@gmail.com' || 
+                          currentUser.email === 'oruiz@cverde.com.gt' || 
+                          currentUser.email === 'cverdeavaluos@gmail.com' || 
+                          currentUser.email === 'rnochezmc@gmail.com';
+  const isAuthorizer = currentRole === 'autorizador' || isAroldoOrAdmin;
   const [activeTab, setActiveTab] = useState('solicitud');
   const [isRejecting, setIsRejecting] = useState(false);
   const [rejectionComment, setRejectionComment] = useState('');
@@ -456,7 +465,7 @@ export default function AvaluoDetailModal({
 
           {/* Workflow Buttons according to current role */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {currentRole === 'autorizador' ? (
+            {isAuthorizer ? (
               <>
                 {avaluo.estado !== 'autorizado' && (
                   <button

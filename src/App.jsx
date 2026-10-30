@@ -716,75 +716,67 @@ export default function App() {
 
   // Cambio de estado de autorización
   const handleStatusChange = async (id, newStatus, comments) => {
-    let updatedItem = null;
-
-    setAvaluos((prev) => {
-      return prev.map((item) => {
-        if (item.id === id) {
-          const next = {
-            ...item,
-            estado: newStatus,
-            observacionesAutorizador: comments !== undefined ? comments : item.observacionesAutorizador,
-            updatedAt: new Date().toISOString()
-          };
-          if (newStatus === 'autorizado') {
-            next.fechaAutorizacion = new Date().toISOString().slice(0, 10);
-            next.autorizadoPor = currentUser?.nombre 
-              ? `${currentUser.nombre} (${item.registroPrincipal || 'Reg. 2572-R-2026'})` 
-              : `${item.valuadorPrincipal || 'Lic. Aroldo Ruiz'} (${item.registroPrincipal || 'Reg. 2572-R-2026'})`;
-          }
-          updatedItem = next;
-          return next;
-        }
-        return item;
-      });
-    });
-
-    if (viewingAvaluo?.id === id && updatedItem) {
-      setViewingAvaluo(updatedItem);
+    const currentItem = avaluos.find((a) => a.id === id);
+    if (!currentItem) {
+      console.warn('handleStatusChange: No se encontró el avalúo con id:', id);
+      return;
     }
 
-    if (updatedItem) {
-      try {
-        await saveAvaluoToLocalDb(updatedItem);
-      } catch (_e) {}
-      try {
-        await saveAvaluoToCloud(updatedItem);
-      } catch (err) {
-        console.error('Error actualizando estado en Firebase:', err);
-      }
+    const next = {
+      ...currentItem,
+      estado: newStatus,
+      observacionesAutorizador: comments !== undefined ? comments : currentItem.observacionesAutorizador,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (newStatus === 'autorizado') {
+      next.fechaAutorizacion = new Date().toISOString().slice(0, 10);
+      next.autorizadoPor = currentUser?.nombre 
+        ? `${currentUser.nombre} (${currentItem.registroPrincipal || 'Reg. 2572-R-2026'})` 
+        : `${currentItem.valuadorPrincipal || 'Lic. Aroldo Ruiz'} (${currentItem.registroPrincipal || 'Reg. 2572-R-2026'})`;
+    }
+
+    // 1. Actualizar estado reactivo de inmediato
+    setAvaluos((prev) => prev.map((item) => (item.id === id ? next : item)));
+
+    // 2. Actualizar modal en pantalla
+    setViewingAvaluo((cur) => (cur?.id === id ? next : cur));
+
+    // 3. Persistir de forma garantizada en IndexedDB local
+    try {
+      await saveAvaluoToLocalDb(next);
+    } catch (_e) {}
+
+    // 4. Persistir de forma garantizada en Firebase Firestore en la nube
+    try {
+      await saveAvaluoToCloud(next);
+    } catch (err) {
+      console.error('Error actualizando estado en Firebase:', err);
     }
   };
 
   // Actualizar un campo específico de un avalúo (ej: tieneLimitaciones)
   const handleUpdateAvaluoField = async (id, fields) => {
     if (!id || !fields) return;
-    let updatedItem = null;
-    setAvaluos((prev) => {
-      return prev.map((item) => {
-        if (item.id === id) {
-          const next = {
-            ...item,
-            ...fields,
-            updatedAt: new Date().toISOString()
-          };
-          updatedItem = next;
-          return next;
-        }
-        return item;
-      });
-    });
+    const currentItem = avaluos.find((a) => a.id === id);
+    if (!currentItem) return;
 
-    if (updatedItem) {
-      setViewingAvaluo((cur) => (cur?.id === id ? updatedItem : cur));
-      try {
-        await saveAvaluoToLocalDb(updatedItem);
-      } catch (_e) {}
-      try {
-        await saveAvaluoToCloud(updatedItem);
-      } catch (err) {
-        console.error('Error actualizando campo en Firebase:', err);
-      }
+    const next = {
+      ...currentItem,
+      ...fields,
+      updatedAt: new Date().toISOString()
+    };
+
+    setAvaluos((prev) => prev.map((item) => (item.id === id ? next : item)));
+    setViewingAvaluo((cur) => (cur?.id === id ? next : cur));
+
+    try {
+      await saveAvaluoToLocalDb(next);
+    } catch (_e) {}
+    try {
+      await saveAvaluoToCloud(next);
+    } catch (err) {
+      console.error('Error actualizando campo en Firebase:', err);
     }
   };
 
@@ -1125,6 +1117,7 @@ export default function App() {
       {viewingAvaluo && (
         <AvaluoDetailModal
           avaluo={viewingAvaluo}
+          currentUser={currentUser}
           currentRole={currentRole}
           onStatusChange={handleStatusChange}
           onClose={() => setViewingAvaluo(null)}
