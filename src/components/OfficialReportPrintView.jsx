@@ -735,52 +735,51 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
             </div>
 
             {/* Firmas en Página 2 oficiales inmediatamente debajo del cuadro de valores por seguridad jurídica */}
-            <div className="pdf-signatures-container" style={{ marginTop: '1.75rem', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around' }}>
-              {avaluo.incluirFirmaRevisor !== false && (
-                <div className="pdf-signature-block" style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  {getFirmaRevisorSrc() ? (
-                    <div style={{ minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <img 
-                        src={getFirmaRevisorSrc()} 
-                        alt="Firma y Sello Oficial Valuador Revisor" 
-                        style={{ maxHeight: '115px', maxWidth: '230px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="pdf-signature-line"></div>
-                      <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
-                        {valRevisorNombre}
-                      </div>
-                      <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                        {valRevisorRegistro}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-
-              <div className="pdf-signature-block" style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                {getFirmaPrincipalSrc() ? (
-                  <div style={{ minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="pdf-signatures-container" style={{ marginTop: '1.75rem', display: 'flex', justifyContent: avaluo.incluirFirmaRevisor === false ? 'center' : 'space-around', alignItems: 'flex-start' }}>
+              
+              {/* 1. Valuador Principal (Lic. Aroldo Ruiz) - A LA IZQUIERDA */}
+              <div className="pdf-signature-block" style={{ width: '270px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ minHeight: '115px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '6px' }}>
+                  {getFirmaPrincipalSrc() ? (
                     <img 
                       src={getFirmaPrincipalSrc()} 
                       alt="Firma y Sello Oficial Valuador Principal" 
                       style={{ maxHeight: '115px', maxWidth: '230px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
                     />
-                  </div>
-                ) : (
-                  <>
-                    <div className="pdf-signature-line"></div>
-                    <div className="pdf-sig-name" style={{ fontWeight: 700, color: company.navyColor }}>
-                      {valPrincipalNombre}
-                    </div>
-                    <div className="pdf-sig-role" style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                      {valPrincipalRegistro}
-                    </div>
-                  </>
-                )}
+                  ) : (
+                    <div className="pdf-signature-line" style={{ width: '210px', height: '1px', background: '#000000', marginBottom: '8px' }}></div>
+                  )}
+                </div>
+                <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#000000', fontSize: '0.88rem', lineHeight: 1.25 }}>
+                  {valPrincipalNombre}
+                </div>
+                <div className="pdf-sig-role" style={{ fontSize: '0.82rem', color: '#1e293b', marginTop: '2px' }}>
+                  {valPrincipalRegistro}
+                </div>
               </div>
+
+              {/* 2. Valuador Revisor (Segundo Firmante) - A LA DERECHA */}
+              {avaluo.incluirFirmaRevisor !== false && (
+                <div className="pdf-signature-block" style={{ width: '270px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ minHeight: '115px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '6px' }}>
+                    {getFirmaRevisorSrc() ? (
+                      <img 
+                        src={getFirmaRevisorSrc()} 
+                        alt="Firma y Sello Oficial Valuador Revisor" 
+                        style={{ maxHeight: '115px', maxWidth: '230px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
+                      />
+                    ) : (
+                      <div className="pdf-signature-line" style={{ width: '210px', height: '1px', background: '#000000', marginBottom: '8px' }}></div>
+                    )}
+                  </div>
+                  <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#000000', fontSize: '0.88rem', lineHeight: 1.25 }}>
+                    {valRevisorNombre}
+                  </div>
+                  <div className="pdf-sig-role" style={{ fontSize: '0.82rem', color: '#1e293b', marginTop: '2px' }}>
+                    {valRevisorRegistro}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
