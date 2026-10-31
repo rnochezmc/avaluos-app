@@ -450,7 +450,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
   }, [normalizedFotos]);
 
   const totalPhotoPages = photoPages.length;
-  const dicabiPageNum = 9 + totalPhotoPages;
+  const dicabiPageNum = 8 + totalPhotoPages;
   const totalRgpPages = rgpPages.length;
   const totalPages = dicabiPageNum + totalRgpPages;
 
@@ -822,57 +822,58 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
         </section>
 
         {/* ==============================================================
-            PÁGINA 4: INFORMACIÓN DE LA PROPIEDAD, RGP, ÁREAS, TERRENO Y REGISTROS
+            PÁGINA 4: INFORMACIÓN DE LA PROPIEDAD, ÁREAS, ASPECTOS LEGALES Y DICABI
+            (Continuo y completo según formato oficial de Aroldo Ruiz)
             ============================================================== */}
         <section className="pdf-sheet-page">
           <PageHeader />
 
           <div className="pdf-sheet-content">
-            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.3rem', marginBottom: '0.6rem' }}>
+            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.8rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.2rem', marginBottom: '0.35rem' }}>
               INFORMACION DE LA PROPIEDAD
             </div>
 
             <div className="pdf-boxed-table">
-              <table className="pdf-inner-table">
+              <table className="pdf-inner-table" style={{ fontSize: '0.72rem' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
-                    <th>FINCA</th>
-                    <th>FOLIO</th>
-                    <th>LIBRO</th>
+                    <th style={{ padding: '0.15rem 0.35rem' }}>FINCA</th>
+                    <th style={{ padding: '0.15rem 0.35rem' }}>FOLIO</th>
+                    <th style={{ padding: '0.15rem 0.35rem' }}>LIBRO</th>
                   </tr>
                 </thead>
                 <tbody>
                   {fincas.map((f, i) => (
                     <tr key={i}>
-                      <td style={{ fontWeight: 600 }}>{f.finca}</td>
-                      <td>{f.folio}</td>
-                      <td>{f.libro}</td>
+                      <td style={{ fontWeight: 600, padding: '0.15rem 0.35rem' }}>{f.finca}</td>
+                      <td style={{ padding: '0.15rem 0.35rem' }}>{f.folio}</td>
+                      <td style={{ padding: '0.15rem 0.35rem' }}>{f.libro}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Fecha de consulta a distancia:</span>
-                <span className="pdf-data-value">
+              <div className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', fontSize: '0.72rem' }}>
+                <span className="pdf-data-label" style={{ fontSize: '0.72rem' }}>Fecha de consulta a distancia:</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.72rem' }}>
                   {formatDateDisplay(avaluo.fechaConsultaDistancia) || avaluo.fechaConsultaDistancia || formatDateDisplay(avaluo.fechaActualizacion) || avaluo.fechaActualizacion || '-'}
                 </span>
               </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Propietario:</span>
-                <span className="pdf-data-value"><strong>{avaluo.propietarioPrincipal}</strong></span>
+              <div className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', fontSize: '0.72rem' }}>
+                <span className="pdf-data-label" style={{ fontSize: '0.72rem' }}>Propietario:</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.72rem' }}><strong>{avaluo.propietarioPrincipal}</strong></span>
               </div>
 
-              {/* Dirección según el RGP: Tabla desglosada por Finca (Formato Oficial Word) */}
-              <div style={{ marginTop: '0.45rem', marginBottom: '0.45rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.35rem' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.82rem', padding: '0.15rem 0.5rem 0.3rem 0.5rem', color: '#1e293b' }}>
+              {/* Dirección según el RGP: Tabla desglosada por Finca */}
+              <div style={{ marginTop: '0.25rem', marginBottom: '0.25rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.2rem' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.74rem', padding: '0.1rem 0.4rem', color: '#1e293b' }}>
                   Dirección según el RGP:
                 </div>
-                <table className="pdf-inner-table" style={{ border: '1px solid #cbd5e1' }}>
+                <table className="pdf-inner-table" style={{ border: '1px solid #cbd5e1', fontSize: '0.7rem' }}>
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
-                      <th style={{ width: '80px', textAlign: 'center', borderRight: '1px solid #cbd5e1' }}>FINCA</th>
-                      <th style={{ textAlign: 'left' }}></th>
+                      <th style={{ width: '70px', textAlign: 'center', borderRight: '1px solid #cbd5e1', padding: '0.12rem 0.3rem' }}>FINCA</th>
+                      <th style={{ textAlign: 'left', padding: '0.12rem 0.3rem' }}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -880,10 +881,10 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                       const dirRgp = f.direccionRgp || f.direccionRegistral || (fincas.length === 1 ? avaluo.direccion : (f.dicabiDireccion || avaluo.direccion));
                       return (
                         <tr key={i} style={{ borderBottom: i === fincas.length - 1 ? 'none' : '1px solid #cbd5e1' }}>
-                          <td style={{ fontWeight: 700, textAlign: 'center', verticalAlign: 'top', width: '80px', borderRight: '1px solid #cbd5e1', padding: '0.35rem 0.5rem' }}>
+                          <td style={{ fontWeight: 700, textAlign: 'center', verticalAlign: 'top', width: '70px', borderRight: '1px solid #cbd5e1', padding: '0.15rem 0.35rem' }}>
                             {f.finca}
                           </td>
-                          <td style={{ textAlign: 'justify', lineHeight: 1.35, fontSize: '0.8rem', color: '#0f172a', padding: '0.35rem 0.6rem' }}>
+                          <td style={{ textAlign: 'justify', lineHeight: 1.25, fontSize: '0.7rem', color: '#0f172a', padding: '0.15rem 0.45rem' }}>
                             {dirRgp}
                           </td>
                         </tr>
@@ -893,38 +894,38 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 </table>
               </div>
 
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Dirección física o catastral:</span>
-                <span className="pdf-data-value">{avaluo.direccion}</span>
+              <div className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', fontSize: '0.72rem' }}>
+                <span className="pdf-data-label" style={{ fontSize: '0.72rem' }}>Dirección física o catastral:</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.72rem' }}>{avaluo.direccion}</span>
               </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Dirección según IUSI:</span>
-                <span className="pdf-data-value">
+              <div className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', fontSize: '0.72rem' }}>
+                <span className="pdf-data-label" style={{ fontSize: '0.72rem' }}>Dirección según IUSI:</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.72rem' }}>
                   {avaluo.direccionIusi || avaluo.iusiDireccion || avaluo.direccion || 'N/A'}
                 </span>
               </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label">Nota:</span>
-                <span className="pdf-data-value">
+              <div className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', fontSize: '0.72rem' }}>
+                <span className="pdf-data-label" style={{ fontSize: '0.72rem' }}>Nota:</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.72rem' }}>
                   {avaluo.notaDireccion || avaluo.nota || 'Inmueble plenamente identificado en inspección física de campo.'}
                 </span>
               </div>
             </div>
 
-            {/* CORRECCIÓN FOTO 69: Muestra TODAS las fincas con su columna de Desmembradas y resta */}
-            <div className="pdf-section-title-bar" style={{ background: company.navyColor, color: '#ffffff', marginTop: '0.75rem', padding: '0.25rem', fontWeight: 700, fontSize: '0.82rem' }}>
+            {/* ÁREA */}
+            <div className="pdf-section-title-bar" style={{ background: company.navyColor, color: '#ffffff', marginTop: '0.35rem', padding: '0.18rem', fontWeight: 700, fontSize: '0.76rem' }}>
               ÁREA
             </div>
 
-            <table className="pdf-inner-table" style={{ border: '1px solid #64748b', marginTop: '0.35rem' }}>
+            <table className="pdf-inner-table" style={{ border: '1px solid #64748b', marginTop: '0.2rem', fontSize: '0.71rem' }}>
               <thead>
                 <tr style={{ background: '#f1f5f9' }}>
-                  <th>FINCA</th>
-                  <th>Original registrada</th>
-                  <th>Desmembrada</th>
-                  <th>Actual Registrada</th>
-                  <th>Física</th>
-                  <th>Valuada</th>
+                  <th style={{ padding: '0.14rem 0.3rem' }}>FINCA</th>
+                  <th style={{ padding: '0.14rem 0.3rem' }}>Original registrada</th>
+                  <th style={{ padding: '0.14rem 0.3rem' }}>Desmembrada</th>
+                  <th style={{ padding: '0.14rem 0.3rem' }}>Actual Registrada</th>
+                  <th style={{ padding: '0.14rem 0.3rem' }}>Física</th>
+                  <th style={{ padding: '0.14rem 0.3rem' }}>Valuada</th>
                 </tr>
               </thead>
               <tbody>
@@ -937,274 +938,143 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
 
                   return (
                     <tr key={i}>
-                      <td style={{ fontWeight: 600 }}>{f.finca}</td>
-                      <td>{orig.toFixed(6)} m²</td>
-                      <td style={{ color: desm > 0 ? '#b91c1c' : 'inherit' }}>{desm.toFixed(6)} m²</td>
-                      <td style={{ fontWeight: 600 }}>{act.toFixed(6)} m²</td>
-                      <td>{fis.toFixed(6)} m²</td>
-                      <td style={{ fontWeight: 700, color: company.navyColor }}>{val.toFixed(6)} m²</td>
+                      <td style={{ fontWeight: 600, padding: '0.14rem 0.3rem' }}>{f.finca}</td>
+                      <td style={{ padding: '0.14rem 0.3rem' }}>{orig.toFixed(6)} m²</td>
+                      <td style={{ color: desm > 0 ? '#b91c1c' : 'inherit', padding: '0.14rem 0.3rem' }}>{desm.toFixed(6)} m²</td>
+                      <td style={{ fontWeight: 600, padding: '0.14rem 0.3rem' }}>{act.toFixed(6)} m²</td>
+                      <td style={{ padding: '0.14rem 0.3rem' }}>{fis.toFixed(6)} m²</td>
+                      <td style={{ fontWeight: 700, color: company.navyColor, padding: '0.14rem 0.3rem' }}>{val.toFixed(6)} m²</td>
                     </tr>
                   );
                 })}
                 {fincas.length > 1 && (
                   <tr style={{ background: '#f8fafc', fontWeight: 700, borderTop: `2px solid ${company.navyColor}` }}>
-                    <td>TOTAL:</td>
-                    <td>{Number(avaluo.areaRegistrada || 0).toFixed(6)} m²</td>
-                    <td style={{ color: '#b91c1c' }}>{Number(avaluo.areaDesmembrada || 0).toFixed(6)} m²</td>
-                    <td>{Number(avaluo.areaActualRegistrada || 0).toFixed(6)} m²</td>
-                    <td>{Number(avaluo.areaFisica || 0).toFixed(6)} m²</td>
-                    <td style={{ color: company.navyColor }}>{Number(avaluo.areaValuada || 0).toFixed(6)} m²</td>
+                    <td style={{ padding: '0.14rem 0.3rem' }}>TOTAL:</td>
+                    <td style={{ padding: '0.14rem 0.3rem' }}>{Number(avaluo.areaRegistrada || 0).toFixed(6)} m²</td>
+                    <td style={{ color: '#b91c1c', padding: '0.14rem 0.3rem' }}>{Number(avaluo.areaDesmembrada || 0).toFixed(6)} m²</td>
+                    <td style={{ padding: '0.14rem 0.3rem' }}>{Number(avaluo.areaActualRegistrada || 0).toFixed(6)} m²</td>
+                    <td style={{ padding: '0.14rem 0.3rem' }}>{Number(avaluo.areaFisica || 0).toFixed(6)} m²</td>
+                    <td style={{ color: company.navyColor, padding: '0.14rem 0.3rem' }}>{Number(avaluo.areaValuada || 0).toFixed(6)} m²</td>
                   </tr>
                 )}
               </tbody>
             </table>
 
-            {/* Línea de Cierre Legal de la Hoja 4 */}
-            <div style={{ marginTop: '1.25rem', padding: '0.4rem', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '0.72rem', color: '#64748b', letterSpacing: '0.04em' }}>
-              <strong>*** INFORMACIÓN DE PROPIEDAD Y ANTECEDENTES REGISTRALES VERIFICADOS ***</strong>
-            </div>
-          </div>
-
-          <PageFooter pageNum={4} />
-        </section>
-
-        {/* ==============================================================
-            PÁGINA 5: ASPECTOS LEGALES Y DICABI (OFICIAL AROLDO)
-            ============================================================== */}
-        <section className="pdf-sheet-page">
-          <PageHeader />
-
-          <div className="pdf-sheet-content">
-            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.3rem', marginBottom: '0.75rem' }}>
-              ASPECTOS LEGALES Y CATASTRO (DICABI)
-            </div>
-
-            {/* ASPECTOS LEGALES */}
-            <div className="pdf-boxed-table" style={{ marginBottom: '1rem' }}>
-              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.35rem' }}>
+            {/* ASPECTOS LEGALES (Continúa inmediatamente abajo de ÁREA sin líneas divisorias) */}
+            <div className="pdf-boxed-table" style={{ marginTop: '0.35rem' }}>
+              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.18rem 0.4rem', fontSize: '0.74rem' }}>
                 ASPECTOS LEGALES
               </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Limitaciones o servidumbres:</span>
-                <span className="pdf-data-value" style={{ textAlign: 'justify', lineHeight: 1.35 }}>
-                  {avaluo.limitaciones || 'Los inmuebles descritos se encuentran sometidos a las condiciones que constan en las inscripciones de dominio y gravámenes correspondientes en el Registro General de la Propiedad.'}
+              <div className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', fontSize: '0.71rem' }}>
+                <span className="pdf-data-label" style={{ width: '160px', fontSize: '0.71rem' }}>Anotación:</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.71rem' }}>{avaluo.anotaciones || 'Ninguna vigente según consulta electrónica del RGP.'}</span>
+              </div>
+              <div className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', fontSize: '0.71rem' }}>
+                <span className="pdf-data-label" style={{ width: '160px', fontSize: '0.71rem' }}>Gravámenes:</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.71rem' }}>{avaluo.gravamenes || 'Libre de gravámenes hipotecarios.'}</span>
+              </div>
+              <div className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', fontSize: '0.71rem' }}>
+                <span className="pdf-data-label" style={{ width: '160px', fontSize: '0.71rem' }}>Limitaciones:</span>
+                <span className="pdf-data-value" style={{ textAlign: 'justify', lineHeight: 1.25, fontSize: '0.71rem' }}>
+                  {avaluo.limitaciones || 'sometida al Régimen de Propiedad Horizontal.'}
                 </span>
               </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Anotación:</span>
-                <span className="pdf-data-value">{avaluo.anotaciones || 'Ninguna vigente según consulta electrónica del RGP.'}</span>
+              <div className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', fontSize: '0.71rem' }}>
+                <span className="pdf-data-label" style={{ width: '160px', fontSize: '0.71rem' }}>Servidumbres:</span>
+                <span className="pdf-data-value" style={{ textAlign: 'justify', lineHeight: 1.25, fontSize: '0.71rem' }}>{avaluo.servidumbres || 'Sin servidumbres activas.'}</span>
               </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Gravámenes:</span>
-                <span className="pdf-data-value">{avaluo.gravamenes || 'NINGUNA'}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Servidumbres:</span>
-                <span className="pdf-data-value" style={{ textAlign: 'justify', lineHeight: 1.35 }}>{avaluo.servidumbres || 'Sin servidumbres activas.'}</span>
-              </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Áreas comunes:</span>
-                <span className="pdf-data-value">
+              <div className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', fontSize: '0.71rem' }}>
+                <span className="pdf-data-label" style={{ width: '160px', fontSize: '0.71rem' }}>Áreas comunes:</span>
+                <span className="pdf-data-value" style={{ textAlign: 'justify', lineHeight: 1.25, fontSize: '0.71rem' }}>
                   {((!avaluo.areasComunes || avaluo.areasComunes === 'No aplica') && avaluo.desmembracion && (/elementos comunes|areas comunes|áreas comunes|comunes|finca 500|finca 1334/i.test(avaluo.desmembracion)))
                     ? avaluo.desmembracion
                     : (avaluo.areasComunes || 'No aplica')}
                 </span>
               </div>
-              <div className="pdf-data-row">
-                <span className="pdf-data-label" style={{ width: '190px' }}>Desmembración:</span>
-                <span className="pdf-data-value">
+              <div className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', fontSize: '0.71rem' }}>
+                <span className="pdf-data-label" style={{ width: '160px', fontSize: '0.71rem' }}>Desmembración:</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.71rem' }}>
                   {((!avaluo.areasComunes || avaluo.areasComunes === 'No aplica') && avaluo.desmembracion && (/elementos comunes|areas comunes|áreas comunes|comunes|finca 500|finca 1334/i.test(avaluo.desmembracion)))
-                    ? 'No aplica'
-                    : (avaluo.desmembracion || 'No aplica')}
+                    ? 'Sin desmembraciones pendientes.'
+                    : (avaluo.desmembracion || 'Sin desmembraciones pendientes.')}
                 </span>
               </div>
             </div>
 
-            {/* DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI) */}
-            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.3rem', marginBottom: '0.65rem' }}>
-              DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES
-            </div>
-            {fincas.map((f, i) => {
-              const isFirst = i === 0;
-              const fNombre = f.dicabiNombre || (isFirst ? (avaluo.dicabiNombre || '') : '');
-              const fDireccion = f.dicabiDireccion || (isFirst ? (avaluo.dicabiDireccion || '') : '');
-              const fMatricula = f.dicabiMatricula || (isFirst ? (avaluo.dicabiMatricula || '') : '');
-              const fArea = f.dicabiArea || (isFirst ? (avaluo.dicabiArea || '') : '');
-              const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
-                ? f.dicabiObservaciones 
-                : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : 'Fincas no inscritas en DICABI');
-
-              return (
-                <div 
-                  key={i} 
-                  className="pdf-boxed-table" 
-                  style={{ 
-                    marginTop: i > 0 ? '0.5rem' : '0', 
-                    border: '1px solid #1e293b' 
-                  }}
-                >
-                  <div 
-                    className="pdf-subtable-header" 
-                    style={{ 
-                      background: company.navyColor, 
-                      color: '#ffffff', 
-                      fontWeight: 700, 
-                      padding: '0.3rem 0.5rem', 
-                      textAlign: 'center', 
-                      fontSize: '0.8rem', 
-                      letterSpacing: '0.04em' 
-                    }}
-                  >
-                    DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI){fincas.length > 1 ? ` — FINCA: ${f.finca || (i + 1)}` : ''}
-                  </div>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                    <tbody>
-                      <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                        <td style={{ width: '135px', padding: '0.35rem 0.6rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
-                          Nombre:
-                        </td>
-                        <td style={{ padding: '0.35rem 0.6rem', color: '#0f172a' }}>
-                          {fNombre || '-'}
-                        </td>
-                      </tr>
-                      <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                        <td style={{ width: '135px', padding: '0.35rem 0.6rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
-                          Dirección:
-                        </td>
-                        <td style={{ padding: '0.35rem 0.6rem', color: '#0f172a', lineHeight: 1.25 }}>
-                          {fDireccion || '-'}
-                        </td>
-                      </tr>
-                      <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                        <td style={{ width: '135px', padding: '0.35rem 0.6rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
-                          Matricula:
-                        </td>
-                        <td style={{ padding: '0.35rem 0.6rem', color: '#0f172a' }}>
-                          {fMatricula ? <strong>{fMatricula}</strong> : '-'}
-                        </td>
-                      </tr>
-                      <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                        <td style={{ width: '135px', padding: '0.35rem 0.6rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
-                          Área:
-                        </td>
-                        <td style={{ padding: '0.35rem 0.6rem', color: '#0f172a' }}>
-                          {fArea || '-'}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style={{ width: '135px', padding: '0.35rem 0.6rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
-                          Observaciones:
-                        </td>
-                        <td style={{ padding: '0.35rem 0.6rem', color: '#0f172a', lineHeight: 1.25 }}>
-                          {fObservaciones}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })}
-          </div>
-
-          <PageFooter pageNum={5} />
-        </section>
-
-        {/* ==============================================================
-            PÁGINA 6: DETALLES DEL TERRENO, COLINDANCIAS Y SERVICIOS E INFRAESTRUCTURA (PARTE 1)
-            ============================================================== */}
-        <section className="pdf-sheet-page">
-          <PageHeader />
-
-          <div className="pdf-sheet-content">
-            {/* DETALLES DEL TERRENO */}
-            <div className="pdf-boxed-table" style={{ marginBottom: '0.55rem' }}>
-              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.22rem 0.5rem', fontSize: '0.74rem', textAlign: 'center', letterSpacing: '0.04em' }}>
-                DETALLES DEL TERRENO
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                    <td style={{ width: '135px', padding: '0.22rem 0.45rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>
-                      Uso:
-                    </td>
-                    <td style={{ padding: '0.22rem 0.45rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>
-                      {avaluo.usoSuelo || avaluo.terreno?.uso || 'Comercial / Residencial'}
-                    </td>
-                    <td style={{ width: '135px', padding: '0.22rem 0.45rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>
-                      Forma / Pendiente:
-                    </td>
-                    <td style={{ padding: '0.22rem 0.45rem', color: '#0f172a' }}>
-                      {[avaluo.formaTerreno || 'Regular / Rectangular', avaluo.pendiente || 'Plana (1%)'].filter(Boolean).join(' / ')}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ width: '135px', padding: '0.22rem 0.45rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>
-                      Nivel socio económico:
-                    </td>
-                    <td style={{ padding: '0.22rem 0.45rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>
-                      {avaluo.nivelSocioeconomico || avaluo.terreno?.nivelSocioEconomico || 'Medio-Alto'}
-                    </td>
-                    <td style={{ width: '135px', padding: '0.22rem 0.45rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>
-                      Esquina / Acceso:
-                    </td>
-                    <td style={{ padding: '0.22rem 0.45rem', color: '#0f172a' }}>
-                      {[avaluo.esquina || 'No', avaluo.accesoCalle || 'Calle asfaltada con acera y bordillo'].filter(Boolean).join(' / ')}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* COLINDANCIAS SEGÚN CANTIDAD DE FINCAS (REGISTRALES Y FÍSICAS - SOLICITUD AROLDO) */}
-            <div style={{ marginBottom: '0.55rem' }}>
+            {/* DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI) - CONTINÚA INMEDIATAMENTE ABAJO COMPLETO SIN CORTES */}
+            <div style={{ marginTop: '0.35rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: fincas.length > 1 ? '1fr 1fr' : '1fr', gap: '0.45rem' }}>
                 {fincas.map((f, i) => {
-                  const col = f.colindancias || (i === 0 ? avaluo.colindancias : {}) || {};
-                  const rootCol = avaluo.colindancias || {};
-
-                  const rNorte = col.norte || (i === 0 ? rootCol.norte : '') || 'S/D';
-                  const rSur = col.sur || (i === 0 ? rootCol.sur : '') || 'S/D';
-                  const rEste = col.este || (i === 0 ? rootCol.este : '') || 'S/D';
-                  const rOeste = col.oeste || (i === 0 ? rootCol.oeste : '') || 'S/D';
-
-                  const fNorte = col.norteFisica || (i === 0 ? rootCol.norteFisica : '') || rNorte || 'S/D';
-                  const fSur = col.surFisica || (i === 0 ? rootCol.surFisica : '') || rSur || 'S/D';
-                  const fEste = col.esteFisica || (i === 0 ? rootCol.esteFisica : '') || rEste || 'S/D';
-                  const fOeste = col.oesteFisica || (i === 0 ? rootCol.oesteFisica : '') || rOeste || 'S/D';
+                  const isFirst = i === 0;
+                  const fNombre = f.dicabiNombre || (isFirst ? (avaluo.dicabiNombre || '') : '');
+                  const fDireccion = f.dicabiDireccion || (isFirst ? (avaluo.dicabiDireccion || '') : '');
+                  const fMatricula = f.dicabiMatricula || (isFirst ? (avaluo.dicabiMatricula || '') : '');
+                  const fArea = f.dicabiArea || (isFirst ? (avaluo.dicabiArea || '') : '');
+                  const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
+                    ? f.dicabiObservaciones 
+                    : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : 'Fincas no inscritas en DICABI');
 
                   return (
-                    <div key={i} className="pdf-boxed-table" style={{ border: '1px solid #1e293b' }}>
-                      <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.2rem 0.4rem', fontSize: '0.74rem', textAlign: 'center', letterSpacing: '0.04em' }}>
-                        COLINDANCIAS{fincas.length > 1 ? ` — FINCA: ${f.finca || (i + 1)}` : ''}
+                    <div 
+                      key={i} 
+                      className="pdf-boxed-table" 
+                      style={{ border: '1px solid #1e293b' }}
+                    >
+                      <div 
+                        className="pdf-subtable-header" 
+                        style={{ 
+                          background: company.navyColor, 
+                          color: '#ffffff', 
+                          fontWeight: 700, 
+                          padding: '0.18rem 0.4rem', 
+                          textAlign: 'center', 
+                          fontSize: '0.72rem', 
+                          letterSpacing: '0.03em' 
+                        }}
+                      >
+                        DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI){fincas.length > 1 ? ` — FINCA: ${f.finca || (i + 1)}` : ''}
                       </div>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
-                        <thead>
-                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
-                            <th style={{ width: '48px', padding: '0.14rem 0.3rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>RUMBO</th>
-                            <th style={{ padding: '0.14rem 0.3rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>REGISTRAL (RGP)</th>
-                            <th style={{ padding: '0.14rem 0.3rem', textAlign: 'left', fontWeight: 700, color: company.accentColor }}>FÍSICA (IN SITU)</th>
-                          </tr>
-                        </thead>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.71rem' }}>
                         <tbody>
-                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ padding: '0.14rem 0.3rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Norte:</td>
-                            <td style={{ padding: '0.14rem 0.3rem', color: '#0f172a', borderRight: '1px solid #cbd5e1', lineHeight: 1.25 }}>{rNorte}</td>
-                            <td style={{ padding: '0.14rem 0.3rem', color: '#0f172a', lineHeight: 1.25 }}>{fNorte}</td>
+                          <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                            <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                              Nombre:
+                            </td>
+                            <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a' }}>
+                              {fNombre || '-'}
+                            </td>
                           </tr>
-                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ padding: '0.14rem 0.3rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Sur:</td>
-                            <td style={{ padding: '0.14rem 0.3rem', color: '#0f172a', borderRight: '1px solid #cbd5e1', lineHeight: 1.25 }}>{rSur}</td>
-                            <td style={{ padding: '0.14rem 0.3rem', color: '#0f172a', lineHeight: 1.25 }}>{fSur}</td>
+                          <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                            <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                              Dirección:
+                            </td>
+                            <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a', lineHeight: 1.2 }}>
+                              {fDireccion || '-'}
+                            </td>
                           </tr>
-                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ padding: '0.14rem 0.3rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Este:</td>
-                            <td style={{ padding: '0.14rem 0.3rem', color: '#0f172a', borderRight: '1px solid #cbd5e1', lineHeight: 1.25 }}>{rEste}</td>
-                            <td style={{ padding: '0.14rem 0.3rem', color: '#0f172a', lineHeight: 1.25 }}>{fEste}</td>
+                          <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                            <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                              Matricula:
+                            </td>
+                            <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a' }}>
+                              {fMatricula ? <strong>{fMatricula}</strong> : '-'}
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                            <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                              Área:
+                            </td>
+                            <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a' }}>
+                              {fArea || '-'}
+                            </td>
                           </tr>
                           <tr>
-                            <td style={{ padding: '0.14rem 0.3rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Oeste:</td>
-                            <td style={{ padding: '0.14rem 0.3rem', color: '#0f172a', borderRight: '1px solid #cbd5e1', lineHeight: 1.25 }}>{rOeste}</td>
-                            <td style={{ padding: '0.14rem 0.3rem', color: '#0f172a', lineHeight: 1.25 }}>{fOeste}</td>
+                            <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                              Observaciones:
+                            </td>
+                            <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a', lineHeight: 1.2 }}>
+                              {fObservaciones}
+                            </td>
                           </tr>
                         </tbody>
                       </table>
@@ -1214,16 +1084,116 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
             </div>
 
-            {/* SERVICIOS E INFRAESTRUCTURA (PARTE 1: Elementos 1 al 21) */}
+            {/* TERRENO Y COLINDANCIAS (Solo si aplica para lotes o fincas rústicas) */}
+            {showTerrenoSections && (
+              <div style={{ marginTop: '0.35rem' }}>
+                <div className="pdf-boxed-table" style={{ marginBottom: '0.35rem' }}>
+                  <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.18rem 0.4rem', fontSize: '0.72rem', letterSpacing: '0.04em' }}>
+                    DETALLES DEL TERRENO
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                    <div style={{ borderRight: '1px solid #cbd5e1' }}>
+                      <div className="pdf-data-row" style={{ padding: '0.1rem 0.35rem', fontSize: '0.68rem' }}>
+                        <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Topografía:</span>
+                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.pendiente || 'Plana'}</span>
+                      </div>
+                      <div className="pdf-data-row" style={{ padding: '0.1rem 0.35rem', fontSize: '0.68rem' }}>
+                        <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Forma:</span>
+                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.formaTerreno || 'Regular'}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="pdf-data-row" style={{ padding: '0.1rem 0.35rem', fontSize: '0.68rem' }}>
+                        <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Uso del suelo:</span>
+                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.usoSuelo || 'Residencial'}</span>
+                      </div>
+                      <div className="pdf-data-row" style={{ padding: '0.1rem 0.35rem', fontSize: '0.68rem' }}>
+                        <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Nivel socioeconómico:</span>
+                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.nivelSocioeconomico || 'Medio-Alto'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: fincas.length > 1 ? '1fr 1fr' : '1fr', gap: '0.45rem' }}>
+                  {fincas.map((f, i) => {
+                    const col = f.colindancias || (i === 0 ? avaluo.colindancias : {}) || {};
+                    const rootCol = avaluo.colindancias || {};
+
+                    const rNorte = col.norte || (i === 0 ? rootCol.norte : '') || 'S/D';
+                    const rSur = col.sur || (i === 0 ? rootCol.sur : '') || 'S/D';
+                    const rEste = col.este || (i === 0 ? rootCol.este : '') || 'S/D';
+                    const rOeste = col.oeste || (i === 0 ? rootCol.oeste : '') || 'S/D';
+
+                    const fNorte = col.norteFisica || (i === 0 ? rootCol.norteFisica : '') || rNorte || 'S/D';
+                    const fSur = col.surFisica || (i === 0 ? rootCol.surFisica : '') || rSur || 'S/D';
+                    const fEste = col.esteFisica || (i === 0 ? rootCol.esteFisica : '') || rEste || 'S/D';
+                    const fOeste = col.oesteFisica || (i === 0 ? rootCol.oesteFisica : '') || rOeste || 'S/D';
+
+                    return (
+                      <div key={i} className="pdf-boxed-table" style={{ border: '1px solid #1e293b' }}>
+                        <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.18rem 0.35rem', fontSize: '0.72rem', textAlign: 'center' }}>
+                          COLINDANCIAS{fincas.length > 1 ? ` — FINCA: ${f.finca || (i + 1)}` : ''}
+                        </div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.68rem' }}>
+                          <thead>
+                            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                              <th style={{ width: '45px', padding: '0.1rem 0.25rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>RUMBO</th>
+                              <th style={{ padding: '0.1rem 0.25rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>REGISTRAL</th>
+                              <th style={{ padding: '0.1rem 0.25rem', textAlign: 'left', fontWeight: 700, color: company.accentColor }}>FÍSICA</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '0.1rem 0.25rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Norte:</td>
+                              <td style={{ padding: '0.1rem 0.25rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rNorte}</td>
+                              <td style={{ padding: '0.1rem 0.25rem', color: '#0f172a' }}>{fNorte}</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '0.1rem 0.25rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Sur:</td>
+                              <td style={{ padding: '0.1rem 0.25rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rSur}</td>
+                              <td style={{ padding: '0.1rem 0.25rem', color: '#0f172a' }}>{fSur}</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '0.1rem 0.25rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Este:</td>
+                              <td style={{ padding: '0.1rem 0.25rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rEste}</td>
+                              <td style={{ padding: '0.1rem 0.25rem', color: '#0f172a' }}>{fEste}</td>
+                            </tr>
+                            <tr>
+                              <td style={{ padding: '0.1rem 0.25rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Oeste:</td>
+                              <td style={{ padding: '0.1rem 0.25rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rOeste}</td>
+                              <td style={{ padding: '0.1rem 0.25rem', color: '#0f172a' }}>{fOeste}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <PageFooter pageNum={4} />
+        </section>
+
+        {/* ==============================================================
+            PÁGINA 5: SERVICIOS Y CARACTERÍSTICAS DE CONSTRUCCIÓN
+            ============================================================== */}
+        <section className="pdf-sheet-page">
+          <PageHeader />
+
+          <div className="pdf-sheet-content">
+            {/* Lista oficial de Servicios e Infraestructura (31 Elementos solicitados por Aroldo) */}
             <div className="pdf-boxed-table">
-              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.25rem 0.5rem', fontSize: '0.76rem', letterSpacing: '0.04em' }}>
+              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.28rem 0.5rem', fontSize: '0.78rem', letterSpacing: '0.04em' }}>
                 SERVICIOS E INFRAESTRUCTURA
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-                {/* Columna Izquierda: Elementos 1 al 11 */}
+                {/* Columna Izquierda: Elementos 1 al 16 */}
                 <div style={{ borderRight: '1px solid #cbd5e1' }}>
-                  {SERVICIOS_INFRAESTRUCTURA_LIST.slice(0, 11).map((item, idx) => (
-                    <div key={item.key} className="pdf-data-row" style={{ padding: '0.13rem 0.4rem', borderBottom: idx === 10 ? 'none' : '1px solid #e2e8f0' }}>
+                  {SERVICIOS_INFRAESTRUCTURA_LIST.slice(0, 16).map((item, idx) => (
+                    <div key={item.key} className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', borderBottom: idx === 15 ? 'none' : '1px solid #e2e8f0' }}>
                       <span className="pdf-data-label" style={{ width: '150px', fontSize: '0.67rem', color: '#334155', fontWeight: 600 }}>
                         {item.label}:
                       </span>
@@ -1234,57 +1204,10 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                   ))}
                 </div>
 
-                {/* Columna Derecha: Elementos 12 al 21 */}
+                {/* Columna Derecha: Elementos 17 al 31 */}
                 <div>
-                  {SERVICIOS_INFRAESTRUCTURA_LIST.slice(11, 21).map((item, idx) => (
-                    <div key={item.key} className="pdf-data-row" style={{ padding: '0.13rem 0.4rem', borderBottom: idx === 9 ? 'none' : '1px solid #e2e8f0' }}>
-                      <span className="pdf-data-label" style={{ width: '160px', fontSize: '0.67rem', color: '#334155', fontWeight: 600 }}>
-                        {item.label}:
-                      </span>
-                      <span className="pdf-data-value" style={{ fontSize: '0.67rem', color: '#0f172a' }}>
-                        {avaluo.servicios?.[item.key] !== undefined && avaluo.servicios?.[item.key] !== '' ? avaluo.servicios[item.key] : item.defaultVal}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <PageFooter pageNum={6} />
-        </section>
-
-        {/* ==============================================================
-            PÁGINA 7: SERVICIOS (PARTE 2), CARACTERÍSTICAS DE CONSTRUCCIÓN Y DICTAMEN DE GARANTÍA
-            ============================================================== */}
-        <section className="pdf-sheet-page">
-          <PageHeader />
-
-          <div className="pdf-sheet-content">
-            {/* SERVICIOS E INFRAESTRUCTURA (PARTE 2: Elementos 22 al 31 + Adicionales) */}
-            <div className="pdf-boxed-table" style={{ marginBottom: '0.65rem' }}>
-              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.22rem 0.5rem', fontSize: '0.74rem', letterSpacing: '0.04em' }}>
-                SERVICIOS E INFRAESTRUCTURA (CONTINUACIÓN)
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-                {/* Columna Izquierda: Elementos 22 al 26 */}
-                <div style={{ borderRight: '1px solid #cbd5e1' }}>
-                  {SERVICIOS_INFRAESTRUCTURA_LIST.slice(21, 26).map((item, idx) => (
-                    <div key={item.key} className="pdf-data-row" style={{ padding: '0.13rem 0.4rem', borderBottom: idx === 4 ? 'none' : '1px solid #e2e8f0' }}>
-                      <span className="pdf-data-label" style={{ width: '160px', fontSize: '0.67rem', color: '#334155', fontWeight: 600 }}>
-                        {item.label}:
-                      </span>
-                      <span className="pdf-data-value" style={{ fontSize: '0.67rem', color: '#0f172a' }}>
-                        {avaluo.servicios?.[item.key] !== undefined && avaluo.servicios?.[item.key] !== '' ? avaluo.servicios[item.key] : item.defaultVal}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Columna Derecha: Elementos 27 al 31 */}
-                <div>
-                  {SERVICIOS_INFRAESTRUCTURA_LIST.slice(26, 31).map((item, idx) => (
-                    <div key={item.key} className="pdf-data-row" style={{ padding: '0.13rem 0.4rem', borderBottom: idx === 4 ? 'none' : '1px solid #e2e8f0' }}>
+                  {SERVICIOS_INFRAESTRUCTURA_LIST.slice(16).map((item, idx) => (
+                    <div key={item.key} className="pdf-data-row" style={{ padding: '0.12rem 0.4rem', borderBottom: idx === 14 ? 'none' : '1px solid #e2e8f0' }}>
                       <span className="pdf-data-label" style={{ width: '160px', fontSize: '0.67rem', color: '#334155', fontWeight: 600 }}>
                         {item.label}:
                       </span>
@@ -1297,7 +1220,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
 
               {avaluo.serviciosAdicionales?.length > 0 && (
-                <div style={{ borderTop: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', background: '#f8fafc' }}>
+                <div style={{ borderTop: '1px solid #cbd5e1', padding: '0.2rem 0.45rem', background: '#f8fafc' }}>
                   <div style={{ fontSize: '0.68rem', fontWeight: 700, color: company.navyColor, marginBottom: '2px' }}>
                     Servicios Adicionales:
                   </div>
@@ -1308,14 +1231,14 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               )}
             </div>
 
-            {/* CARACTERÍSTICAS DE CONSTRUCCIÓN */}
-            <div className="pdf-boxed-table" style={{ marginBottom: '0.65rem' }}>
-              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.25rem 0.5rem', fontSize: '0.76rem', letterSpacing: '0.04em' }}>
+            {/* Características de Construcción */}
+            <div className="pdf-boxed-table" style={{ marginTop: '0.65rem' }}>
+              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.28rem 0.5rem', fontSize: '0.78rem', letterSpacing: '0.04em' }}>
                 CARACTERÍSTICAS DE CONSTRUCCIÓN
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Edad aproximada:</span>
-                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.edadAprox || '5 años'}</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.edadAprox || '1 año'}</span>
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Estado actual:</span>
@@ -1323,15 +1246,15 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Construcciones apropiadas al sector:</span>
-                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.apropiadaSector || 'Sí'}</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.apropiadaSector || 'Sí, acorde al entorno urbano'}</span>
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Distribución:</span>
-                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.distribucion || 'Ambientes completos'}</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.distribucion || 'Ambientes completos según plano'}</span>
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Estructura:</span>
-                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.estructura || 'Concreto armado y mampostería'}</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.estructura || 'Concreto armado y mampostería reforzada'}</span>
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Paredes:</span>
@@ -1339,11 +1262,11 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Techo y entre piso:</span>
-                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.techoEntrePiso || 'Losa de concreto'}</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.techoEntrePiso || 'Losa maciza de concreto'}</span>
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Piso:</span>
-                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.piso || 'Cerámico'}</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.piso || 'Piso cerámico'}</span>
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Puertas:</span>
@@ -1351,44 +1274,43 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Ventanas:</span>
-                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.ventanas || 'Aluminio y vidrio'}</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.ventanas || 'Aluminio y vidrio claro'}</span>
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Instalación sanitaria:</span>
-                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.sanitaria || 'Artefactos estándar'}</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.sanitaria || 'Artefactos estándar en buen estado'}</span>
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Instalación eléctrica:</span>
-                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.electrica || 'Instalación empotrada'}</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.electrica || 'Instalación empotrada protegida'}</span>
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Factores positivos:</span>
-                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.factoresPositivos || 'Ubicación y estado de conservación'}</span>
+                <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.factoresPositivos || 'Excelente ubicación y mantenimiento continuo'}</span>
               </div>
               <div className="pdf-data-row" style={{ padding: '0.14rem 0.45rem', fontSize: '0.7rem' }}>
                 <span className="pdf-data-label" style={{ fontSize: '0.7rem' }}>Factores negativos:</span>
                 <span className="pdf-data-value" style={{ fontSize: '0.7rem' }}>{avaluo.construccion?.factoresNegativos || 'Ninguno de gravedad'}</span>
               </div>
             </div>
-
-            {/* DICTAMEN DE GARANTÍA */}
-            <div className="pdf-dictamen-callout" style={{ border: '1px solid #0f172a', background: '#f8fafc', padding: '0.55rem 0.75rem', fontSize: '0.76rem', fontStyle: 'italic', lineHeight: 1.4, textAlign: 'justify' }}>
-              {avaluo.dictamenGarantia !== undefined && avaluo.dictamenGarantia !== '' 
-                ? avaluo.dictamenGarantia 
-                : DEFAULT_DICTAMEN_GARANTIA}
-            </div>
           </div>
 
-          <PageFooter pageNum={7} />
+          <PageFooter pageNum={5} />
         </section>
 
         {/* ==============================================================
-            PÁGINA 8: VALUACIÓN COMERCIAL Y VALUACIÓN BANCARIA
+            PÁGINA 6: DICTAMEN DE GARANTÍA Y VALUACIÓN COMERCIAL
             ============================================================== */}
         <section className="pdf-sheet-page">
           <PageHeader />
 
           <div className="pdf-sheet-content">
+            <div className="pdf-dictamen-callout" style={{ border: '1px solid #0f172a', background: '#f8fafc', padding: '0.55rem 0.75rem', fontSize: '0.76rem', fontStyle: 'italic', marginBottom: '0.65rem', lineHeight: 1.4, textAlign: 'justify' }}>
+              {avaluo.dictamenGarantia !== undefined && avaluo.dictamenGarantia !== '' 
+                ? avaluo.dictamenGarantia 
+                : DEFAULT_DICTAMEN_GARANTIA}
+            </div>
+
             {/* SECCIÓN 1: VALUACIÓN COMERCIAL */}
             <div style={{ marginBottom: '0.65rem' }}>
               <div style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.82rem', marginBottom: '0.35rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
@@ -1397,22 +1319,22 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
 
               {/* TABLA DE VALORACIÓN DEL TERRENO: Solo si aplicaTerreno es true */}
               {aplicaTerreno && (
-                <div className="pdf-valuation-block" style={{ marginBottom: '0.45rem' }}>
+                <div className="pdf-valuation-block" style={{ marginBottom: '0.5rem' }}>
                   <table className="pdf-blue-table">
                     <thead>
                       <tr style={{ background: company.navyColor, color: '#ffffff' }}>
-                        <th colSpan={6} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.78rem', padding: '0.22rem', border: `1px solid ${company.navyColor}` }}>TERRENO</th>
+                        <th colSpan={6} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.8rem', padding: '0.25rem', border: `1px solid ${company.navyColor}` }}>TERRENO</th>
                       </tr>
-                      <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.72rem' }}>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>FINCA</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>EQUIVALENTE EN VARAS² (v²)</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
+                      <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.74rem' }}>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>FINCA</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>EQUIVALENTE EN VARAS² (v²)</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
                       </tr>
                     </thead>
-                    <tbody style={{ fontSize: '0.72rem' }}>
+                    <tbody style={{ fontSize: '0.74rem' }}>
                       {terrainItems.map((item, i) => {
                         const areaVal = Number(item.area || 0);
                         const varas = Number(item.varasCuadradas || (areaVal * 1.43115));
@@ -1421,27 +1343,27 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
 
                         return (
                           <tr key={i}>
-                            <td style={{ textAlign: 'center', fontWeight: 600, padding: '0.2rem 0.35rem' }}>{item.finca || `Finca ${i + 1}`}</td>
-                            <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{areaVal.toFixed(2)}</td>
-                            <td style={{ textAlign: 'center', fontWeight: 600, color: company.accentColor, padding: '0.2rem 0.35rem' }}>
+                            <td style={{ textAlign: 'center', fontWeight: 600, padding: '0.22rem 0.35rem' }}>{item.finca || `Finca ${i + 1}`}</td>
+                            <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{areaVal.toFixed(2)}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 600, color: company.accentColor, padding: '0.22rem 0.35rem' }}>
                               {varas.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
-                            <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{item.unidad || 'm²'}</td>
-                            <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>{formatQ(unitVal)}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.2rem 0.35rem' }}>{formatQ(subtotal)}</td>
+                            <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{item.unidad || 'm²'}</td>
+                            <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>{formatQ(unitVal)}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.22rem 0.35rem' }}>{formatQ(subtotal)}</td>
                           </tr>
                         );
                       })}
                       {terrainItems.length > 1 && (
                         <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
-                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>TOTAL:</td>
-                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{totalTerrenoArea.toFixed(2)}</td>
-                          <td style={{ textAlign: 'center', color: company.accentColor, padding: '0.2rem 0.35rem' }}>
+                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>TOTAL:</td>
+                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{totalTerrenoArea.toFixed(2)}</td>
+                          <td style={{ textAlign: 'center', color: company.accentColor, padding: '0.22rem 0.35rem' }}>
                             {totalTerrenoVaras.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>m²</td>
-                          <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>-</td>
-                          <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.2rem 0.35rem' }}>{formatQ(totalTerrenoSubtotal)}</td>
+                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>m²</td>
+                          <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>-</td>
+                          <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.22rem 0.35rem' }}>{formatQ(totalTerrenoSubtotal)}</td>
                         </tr>
                       )}
                     </tbody>
@@ -1450,112 +1372,121 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               )}
 
               {/* TABLA DE VALORACIÓN DE CONSTRUCCIÓN COMERCIAL */}
-              <div className="pdf-valuation-block" style={{ marginBottom: '0.45rem' }}>
+              <div className="pdf-valuation-block" style={{ marginBottom: '0.5rem' }}>
                 <table className="pdf-blue-table">
                   <thead>
                     <tr style={{ background: company.navyColor, color: '#ffffff' }}>
-                      <th colSpan={5} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.78rem', padding: '0.22rem', border: `1px solid ${company.navyColor}` }}>CONSTRUCCION</th>
+                      <th colSpan={5} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.8rem', padding: '0.25rem', border: `1px solid ${company.navyColor}` }}>CONSTRUCCION</th>
                     </tr>
-                    <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.72rem' }}>
-                      <th style={{ background: company.navyColor, color: '#ffffff', textAlign: 'left', paddingLeft: '8px', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>DESCRIPCIÓN</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
+                    <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.74rem' }}>
+                      <th style={{ background: company.navyColor, color: '#ffffff', textAlign: 'left', paddingLeft: '8px', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>DESCRIPCIÓN</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
                     </tr>
                   </thead>
-                  <tbody style={{ fontSize: '0.72rem' }}>
+                  <tbody style={{ fontSize: '0.74rem' }}>
                     {constructionItems.map((item, i) => (
                       <tr key={i}>
-                        <td style={{ textAlign: 'left', paddingLeft: '8px', fontWeight: 600, padding: '0.2rem 0.35rem' }}>{item.descripcion || 'Construcción'}</td>
-                        <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{Number(item.area || 0).toFixed(2)}</td>
-                        <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{item.unidad || 'm²'}</td>
-                        <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>{formatQ(item.valorUnitario)}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.2rem 0.35rem' }}>
+                        <td style={{ textAlign: 'left', paddingLeft: '8px', fontWeight: 600, padding: '0.22rem 0.35rem' }}>{item.descripcion || 'Construcción'}</td>
+                        <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{Number(item.area || 0).toFixed(2)}</td>
+                        <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{item.unidad || 'm²'}</td>
+                        <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>{formatQ(item.valorUnitario)}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.22rem 0.35rem' }}>
                           {formatQ(item.total != null ? item.total : (Number(item.area || 0) * Number(item.valorUnitario || 0)))}
                         </td>
                       </tr>
                     ))}
                     <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
-                      <td style={{ textAlign: 'left', paddingLeft: '8px', padding: '0.2rem 0.35rem' }}>TOTAL CONSTRUCCIÓN:</td>
-                      <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{totalConstruccionArea.toFixed(2)}</td>
-                      <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>m²</td>
-                      <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>-</td>
-                      <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.2rem 0.35rem' }}>{formatQ(totalConstruccionTotal)}</td>
+                      <td style={{ textAlign: 'left', paddingLeft: '8px', padding: '0.22rem 0.35rem' }}>TOTAL CONSTRUCCIÓN:</td>
+                      <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{totalConstruccionArea.toFixed(2)}</td>
+                      <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>m²</td>
+                      <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>-</td>
+                      <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.22rem 0.35rem' }}>{formatQ(totalConstruccionTotal)}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
               {/* Resumen Total al Pie de la Valuación Comercial */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.35rem 0.75rem', background: '#f8fafc', border: `1px solid ${company.navyColor}`, borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.76rem', color: company.navyColor, textTransform: 'uppercase', fontWeight: 700 }}>
+              <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.85rem', background: '#f8fafc', border: `1.5px solid ${company.navyColor}`, borderRadius: '4px', textAlign: 'right' }}>
+                <div style={{ fontSize: '0.78rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
                   SUMA TOTAL VALOR COMERCIAL:
-                </span>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '1.05rem', fontWeight: 800, color: company.navyColor, marginRight: '1rem' }}>
-                    {formatQ(computedComercialGTQ)}
-                  </span>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#334155' }}>
-                    Equivalente en Dólares: <strong style={{ color: company.accentColor }}>{formatUSD(computedComercialUSD)}</strong> (T/C: {avaluo.tipoCambio})
-                  </span>
+                </div>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: company.navyColor, margin: '2px 0' }}>
+                  {formatQ(computedComercialGTQ)}
+                </div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#334155' }}>
+                  Equivalente en Dólares: <strong style={{ color: company.accentColor }}>{formatUSD(computedComercialUSD)}</strong> (T/C: {avaluo.tipoCambio})
                 </div>
               </div>
             </div>
+          </div>
 
+          <PageFooter pageNum={6} />
+        </section>
+
+        {/* ==============================================================
+            PÁGINA 7: VALUACIÓN BANCARIA
+            ============================================================== */}
+        <section className="pdf-sheet-page">
+          <PageHeader />
+
+          <div className="pdf-sheet-content">
             {/* SECCIÓN 2: VALUACIÓN BANCARIA */}
             <div style={{ marginBottom: '0.65rem' }}>
               <div style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.82rem', marginBottom: '0.35rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                 2. VALUACIÓN BANCARIA
               </div>
 
-              {/* TABLA DE VALORACIÓN DEL TERRENO BANCARIO */}
+              {/* TABLA DE VALORACIÓN DEL TERRENO: Solo si aplicaTerreno es true */}
               {aplicaTerreno && (
-                <div className="pdf-valuation-block" style={{ marginBottom: '0.45rem' }}>
+                <div className="pdf-valuation-block" style={{ marginBottom: '0.5rem' }}>
                   <table className="pdf-blue-table">
                     <thead>
                       <tr style={{ background: company.navyColor, color: '#ffffff' }}>
-                        <th colSpan={6} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.78rem', padding: '0.22rem', border: `1px solid ${company.navyColor}` }}>TERRENO</th>
+                        <th colSpan={6} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.8rem', padding: '0.25rem', border: `1px solid ${company.navyColor}` }}>TERRENO</th>
                       </tr>
-                      <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.72rem' }}>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>FINCA</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>EQUIVALENTE EN VARAS² (v²)</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
+                      <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.74rem' }}>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>FINCA</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>EQUIVALENTE EN VARAS² (v²)</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
                       </tr>
                     </thead>
-                    <tbody style={{ fontSize: '0.72rem' }}>
+                    <tbody style={{ fontSize: '0.74rem' }}>
                       {terrainItems.map((item, i) => {
                         const areaVal = Number(item.area || 0);
                         const varas = Number(item.varasCuadradas || (areaVal * 1.43115));
-                        const unitVal80 = parseFloat((Number(item.valorUnitario || 0) * 0.8).toFixed(2));
+                        const unit80 = parseFloat((Number(item.valorUnitario || 0) * 0.8).toFixed(2));
                         const subtotal80 = parseFloat(((item.total != null ? Number(item.total) : (areaVal * Number(item.valorUnitario || 0))) * 0.8).toFixed(2));
 
                         return (
                           <tr key={i}>
-                            <td style={{ textAlign: 'center', fontWeight: 600, padding: '0.2rem 0.35rem' }}>{item.finca || `Finca ${i + 1}`}</td>
-                            <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{areaVal.toFixed(2)}</td>
-                            <td style={{ textAlign: 'center', fontWeight: 600, color: company.accentColor, padding: '0.2rem 0.35rem' }}>
+                            <td style={{ textAlign: 'center', fontWeight: 600, padding: '0.22rem 0.35rem' }}>{item.finca || `Finca ${i + 1}`}</td>
+                            <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{areaVal.toFixed(2)}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 600, color: company.accentColor, padding: '0.22rem 0.35rem' }}>
                               {varas.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
-                            <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{item.unidad || 'm²'}</td>
-                            <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>{formatQ(unitVal80)}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.2rem 0.35rem' }}>{formatQ(subtotal80)}</td>
+                            <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{item.unidad || 'm²'}</td>
+                            <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>{formatQ(unit80)}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.22rem 0.35rem' }}>{formatQ(subtotal80)}</td>
                           </tr>
                         );
                       })}
                       {terrainItems.length > 1 && (
                         <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
-                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>TOTAL:</td>
-                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{totalTerrenoArea.toFixed(2)}</td>
-                          <td style={{ textAlign: 'center', color: company.accentColor, padding: '0.2rem 0.35rem' }}>
+                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>TOTAL:</td>
+                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{totalTerrenoArea.toFixed(2)}</td>
+                          <td style={{ textAlign: 'center', color: company.accentColor, padding: '0.22rem 0.35rem' }}>
                             {totalTerrenoVaras.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>m²</td>
-                          <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>-</td>
-                          <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.2rem 0.35rem' }}>{formatQ(parseFloat((totalTerrenoSubtotal * 0.8).toFixed(2)))}</td>
+                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>m²</td>
+                          <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>-</td>
+                          <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.22rem 0.35rem' }}>{formatQ(parseFloat((totalTerrenoSubtotal * 0.8).toFixed(2)))}</td>
                         </tr>
                       )}
                     </tbody>
@@ -1563,69 +1494,67 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 </div>
               )}
 
-              {/* TABLA DE VALORACIÓN DE CONSTRUCCIÓN BANCARIA */}
-              <div className="pdf-valuation-block" style={{ marginBottom: '0.45rem' }}>
+              {/* TABLA DE VALORACIÓN DE CONSTRUCCIÓN BANCARIA (80% DEL VALOR COMERCIAL) */}
+              <div className="pdf-valuation-block" style={{ marginBottom: '0.5rem' }}>
                 <table className="pdf-blue-table">
                   <thead>
                     <tr style={{ background: company.navyColor, color: '#ffffff' }}>
-                      <th colSpan={5} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.78rem', padding: '0.22rem', border: `1px solid ${company.navyColor}` }}>CONSTRUCCION</th>
+                      <th colSpan={5} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.8rem', padding: '0.25rem', border: `1px solid ${company.navyColor}` }}>CONSTRUCCION</th>
                     </tr>
-                    <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.72rem' }}>
-                      <th style={{ background: company.navyColor, color: '#ffffff', textAlign: 'left', paddingLeft: '8px', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>DESCRIPCIÓN</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
+                    <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.74rem' }}>
+                      <th style={{ background: company.navyColor, color: '#ffffff', textAlign: 'left', paddingLeft: '8px', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>DESCRIPCIÓN</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
                     </tr>
                   </thead>
-                  <tbody style={{ fontSize: '0.72rem' }}>
+                  <tbody style={{ fontSize: '0.74rem' }}>
                     {constructionItems.map((item, i) => {
                       const unit80 = parseFloat((Number(item.valorUnitario || 0) * 0.8).toFixed(2));
                       const subtotal80 = parseFloat(((item.total != null ? Number(item.total) : (Number(item.area || 0) * Number(item.valorUnitario || 0))) * 0.8).toFixed(2));
                       return (
                         <tr key={i}>
-                          <td style={{ textAlign: 'left', paddingLeft: '8px', fontWeight: 600, padding: '0.2rem 0.35rem' }}>{item.descripcion || 'Construcción'}</td>
-                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{Number(item.area || 0).toFixed(2)}</td>
-                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{item.unidad || 'm²'}</td>
-                          <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>{formatQ(unit80)}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.2rem 0.35rem' }}>{formatQ(subtotal80)}</td>
+                          <td style={{ textAlign: 'left', paddingLeft: '8px', fontWeight: 600, padding: '0.22rem 0.35rem' }}>{item.descripcion || 'Construcción'}</td>
+                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{Number(item.area || 0).toFixed(2)}</td>
+                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{item.unidad || 'm²'}</td>
+                          <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>{formatQ(unit80)}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.22rem 0.35rem' }}>{formatQ(subtotal80)}</td>
                         </tr>
                       );
                     })}
                     <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
-                      <td style={{ textAlign: 'left', paddingLeft: '8px', padding: '0.2rem 0.35rem' }}>TOTAL CONSTRUCCIÓN:</td>
-                      <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{totalConstruccionArea.toFixed(2)}</td>
-                      <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>m²</td>
-                      <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>-</td>
-                      <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.2rem 0.35rem' }}>{formatQ(parseFloat((totalConstruccionTotal * 0.8).toFixed(2)))}</td>
+                      <td style={{ textAlign: 'left', paddingLeft: '8px', padding: '0.22rem 0.35rem' }}>TOTAL CONSTRUCCIÓN:</td>
+                      <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{totalConstruccionArea.toFixed(2)}</td>
+                      <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>m²</td>
+                      <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>-</td>
+                      <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.22rem 0.35rem' }}>{formatQ(parseFloat((totalConstruccionTotal * 0.8).toFixed(2)))}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
               {/* Resumen Total Bancario */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.35rem 0.75rem', background: '#f8fafc', border: `1px solid ${company.navyColor}`, borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.76rem', color: company.navyColor, textTransform: 'uppercase', fontWeight: 700 }}>
+              <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.85rem', background: '#f8fafc', border: `1.5px solid ${company.navyColor}`, borderRadius: '4px', textAlign: 'right' }}>
+                <div style={{ fontSize: '0.78rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
                   SUMA TOTAL VALOR BANCARIO:
-                </span>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '1.05rem', fontWeight: 800, color: company.navyColor, marginRight: '1rem' }}>
-                    {formatQ(computedBancarioGTQ)}
-                  </span>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#334155' }}>
-                    Equivalente en Dólares: <strong style={{ color: company.accentColor }}>{formatUSD(computedBancarioUSD)}</strong> (T/C: {avaluo.tipoCambio})
-                  </span>
+                </div>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: company.navyColor, margin: '2px 0' }}>
+                  {formatQ(computedBancarioGTQ)}
+                </div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#334155' }}>
+                  Equivalente en Dólares: <strong style={{ color: company.accentColor }}>{formatUSD(computedBancarioUSD)}</strong> (T/C: {avaluo.tipoCambio})
                 </div>
               </div>
             </div>
 
             {/* Cláusula de cierre de valoración para evitar alteraciones o adiciones */}
-            <div style={{ marginTop: '0.55rem', padding: '0.3rem', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '0.68rem', color: '#64748b', letterSpacing: '0.04em' }}>
+            <div style={{ marginTop: '0.65rem', padding: '0.35rem', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '0.7rem', color: '#64748b', letterSpacing: '0.04em' }}>
               <strong>*** ÚLTIMA LÍNEA DE CÁLCULO DE VALORACIÓN — FIN DEL CUADRO DE LIQUIDACIÓN ***</strong>
             </div>
           </div>
 
-          <PageFooter pageNum={8} />
+          <PageFooter pageNum={7} />
         </section>
 
         {/* ==============================================================
@@ -1680,7 +1609,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
             </div>
 
-            <PageFooter pageNum={9 + pIdx} />
+            <PageFooter pageNum={8 + pIdx} />
           </section>
         ))}
 
