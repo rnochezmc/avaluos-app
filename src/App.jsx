@@ -588,8 +588,8 @@ export default function App() {
           return false;
         }
 
-        // Multi-tenant company filter
-        if (selectedTenantId !== 'todos') {
+        // Multi-tenant company filter (al escribir una búsqueda, busca globalmente para no perder de vista ningún expediente)
+        if (selectedTenantId !== 'todos' && !term) {
           const itemTenant = item.tenantId || (item.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
           if (itemTenant !== selectedTenantId) {
             return false;
