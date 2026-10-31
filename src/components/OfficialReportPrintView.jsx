@@ -30,7 +30,6 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
 
             return {
               ...prev,
-              ...localItem,
               fotos: mergedFotos,
               consultasPdfs: localItem.consultasPdfs || prev.consultasPdfs
             };

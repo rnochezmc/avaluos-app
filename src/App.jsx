@@ -207,16 +207,6 @@ export default function App() {
   useEffect(() => {
     getAllAvaluosFromLocalDb().then((localList) => {
       if (Array.isArray(localList) && localList.length > 0) {
-        // Auto-sincronizar a la nube avalúos que tengan fotos locales en IndexedDB pendientes de subir
-        localList.forEach(localItem => {
-          if (localItem && localItem.fotos && typeof localItem.fotos === 'object') {
-            const hasAnyLocalPhoto = Object.values(localItem.fotos).some(v => Array.isArray(v) ? v.length > 0 : Boolean(v));
-            if (hasAnyLocalPhoto) {
-              saveAvaluoToCloud(localItem).catch(e => console.warn('Background sync local photos to cloud error:', e));
-            }
-          }
-        });
-
         setAvaluos((prev) => {
           return prev.map((item) => {
             const local = localList.find(l => l.id === item.id);
