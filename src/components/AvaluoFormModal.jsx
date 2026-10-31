@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, Save, MapPin, Camera, Building, DollarSign, FileText, Plus, 
   Trash2, Crosshair, FileUp, CheckSquare, Square, Check, RefreshCw, Copy,
-  ShieldCheck, Layers
+  ShieldCheck, Layers, Scale
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST, getDefaultServicios } from '../data/serviciosConstants';
 import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
@@ -160,7 +160,6 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
     // DICABI (Independiente del RGP)
     dicabiNombre: avaluo?.dicabiNombre || '',
     dicabiDireccion: avaluo?.dicabiDireccion || '',
-    direccionIusi: avaluo?.direccionIusi || avaluo?.iusiDireccion || '',
     dicabiMatricula: avaluo?.dicabiMatricula || '',
     dicabiArea: avaluo?.dicabiArea || '',
     dicabiObservaciones: avaluo?.dicabiObservaciones || '',
