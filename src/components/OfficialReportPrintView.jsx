@@ -1001,87 +1001,139 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
             </div>
 
-            {/* DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI) - CONTINÚA INMEDIATAMENTE ABAJO COMPLETO SIN CORTES */}
+            {/* DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI) - ADAPTATIVO: TARJETAS (<=2 FINCAS) O TABLA COMPACTA (>2 FINCAS) */}
             <div style={{ marginTop: '0.35rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: fincas.length > 1 ? '1fr 1fr' : '1fr', gap: '0.45rem' }}>
-                {fincas.map((f, i) => {
-                  const isFirst = i === 0;
-                  const fNombre = f.dicabiNombre || (isFirst ? (avaluo.dicabiNombre || '') : '');
-                  const fDireccion = f.dicabiDireccion || (isFirst ? (avaluo.dicabiDireccion || '') : '');
-                  const fMatricula = f.dicabiMatricula || (isFirst ? (avaluo.dicabiMatricula || '') : '');
-                  const fArea = f.dicabiArea || (isFirst ? (avaluo.dicabiArea || '') : '');
-                  const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
-                    ? f.dicabiObservaciones 
-                    : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : 'Fincas no inscritas en DICABI');
+              {fincas.length <= 2 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: fincas.length > 1 ? '1fr 1fr' : '1fr', gap: '0.45rem' }}>
+                  {fincas.map((f, i) => {
+                    const isFirst = i === 0;
+                    const fNombre = f.dicabiNombre || (isFirst ? (avaluo.dicabiNombre || '') : '');
+                    const fDireccion = f.dicabiDireccion || (isFirst ? (avaluo.dicabiDireccion || '') : '');
+                    const fMatricula = f.dicabiMatricula || (isFirst ? (avaluo.dicabiMatricula || '') : '');
+                    const fArea = f.dicabiArea || (isFirst ? (avaluo.dicabiArea || '') : '');
+                    const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
+                      ? f.dicabiObservaciones 
+                      : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : 'Fincas no inscritas en DICABI');
 
-                  return (
-                    <div 
-                      key={i} 
-                      className="pdf-boxed-table" 
-                      style={{ border: '1px solid #1e293b' }}
-                    >
+                    return (
                       <div 
-                        className="pdf-subtable-header" 
-                        style={{ 
-                          background: company.navyColor, 
-                          color: '#ffffff', 
-                          fontWeight: 700, 
-                          padding: '0.18rem 0.4rem', 
-                          textAlign: 'center', 
-                          fontSize: '0.72rem', 
-                          letterSpacing: '0.03em' 
-                        }}
+                        key={i} 
+                        className="pdf-boxed-table" 
+                        style={{ border: '1px solid #1e293b' }}
                       >
-                        DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI){fincas.length > 1 ? ` — FINCA: ${f.finca || (i + 1)}` : ''}
+                        <div 
+                          className="pdf-subtable-header" 
+                          style={{ 
+                            background: company.navyColor, 
+                            color: '#ffffff', 
+                            fontWeight: 700, 
+                            padding: '0.18rem 0.4rem', 
+                            textAlign: 'center', 
+                            fontSize: '0.72rem', 
+                            letterSpacing: '0.03em' 
+                          }}
+                        >
+                          DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI){fincas.length > 1 ? ` — FINCA: ${f.finca || (i + 1)}` : ''}
+                        </div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.71rem' }}>
+                          <tbody>
+                            <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                              <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                                Nombre:
+                              </td>
+                              <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a' }}>
+                                {fNombre || '-'}
+                              </td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                              <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                                Dirección:
+                              </td>
+                              <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a', lineHeight: 1.2 }}>
+                                {fDireccion || '-'}
+                              </td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                              <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                                Matricula:
+                              </td>
+                              <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a' }}>
+                                {fMatricula ? <strong>{fMatricula}</strong> : '-'}
+                              </td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                              <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                                Área:
+                              </td>
+                              <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a' }}>
+                                {fArea || '-'}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
+                                Observaciones:
+                              </td>
+                              <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a', lineHeight: 1.2 }}>
+                                {fObservaciones}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.71rem' }}>
-                        <tbody>
-                          <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                            <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
-                              Nombre:
-                            </td>
-                            <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a' }}>
-                              {fNombre || '-'}
-                            </td>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* TABLA MATRICIAL CONSOLIDADA PARA 3 O MÁS FINCAS (HASTA 7+) */
+                <div className="pdf-boxed-table" style={{ border: '1px solid #1e293b' }}>
+                  <div 
+                    className="pdf-subtable-header" 
+                    style={{ 
+                      background: company.navyColor, 
+                      color: '#ffffff', 
+                      fontWeight: 700, 
+                      padding: '0.18rem 0.4rem', 
+                      textAlign: 'center', 
+                      fontSize: '0.72rem', 
+                      letterSpacing: '0.03em' 
+                    }}
+                  >
+                    DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI) — {fincas.length} FINCAS
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.69rem' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                        <th style={{ width: '65px', padding: '0.12rem 0.3rem', textAlign: 'center', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>FINCA</th>
+                        <th style={{ width: '90px', padding: '0.12rem 0.3rem', textAlign: 'center', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>MATRÍCULA</th>
+                        <th style={{ padding: '0.12rem 0.3rem', textAlign: 'left', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>NOMBRE REGISTRADO</th>
+                        <th style={{ width: '75px', padding: '0.12rem 0.3rem', textAlign: 'center', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>ÁREA</th>
+                        <th style={{ padding: '0.12rem 0.3rem', textAlign: 'left', fontWeight: 700, color: '#1e293b' }}>OBSERVACIONES</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fincas.map((f, i) => {
+                        const isFirst = i === 0;
+                        const fNombre = f.dicabiNombre || (isFirst ? (avaluo.dicabiNombre || '') : '');
+                        const fMatricula = f.dicabiMatricula || (isFirst ? (avaluo.dicabiMatricula || '') : '');
+                        const fArea = f.dicabiArea || (isFirst ? (avaluo.dicabiArea || '') : '');
+                        const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
+                          ? f.dicabiObservaciones 
+                          : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : 'Fincas no inscritas en DICABI');
+
+                        return (
+                          <tr key={i} style={{ borderBottom: i === fincas.length - 1 ? 'none' : '1px solid #cbd5e1' }}>
+                            <td style={{ textAlign: 'center', fontWeight: 700, padding: '0.12rem 0.3rem', borderRight: '1px solid #cbd5e1' }}>{f.finca}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 600, padding: '0.12rem 0.3rem', borderRight: '1px solid #cbd5e1' }}>{fMatricula || '-'}</td>
+                            <td style={{ padding: '0.12rem 0.3rem', borderRight: '1px solid #cbd5e1' }}>{fNombre || '-'}</td>
+                            <td style={{ textAlign: 'center', padding: '0.12rem 0.3rem', borderRight: '1px solid #cbd5e1' }}>{fArea || '-'}</td>
+                            <td style={{ padding: '0.12rem 0.3rem', lineHeight: 1.15 }}>{fObservaciones}</td>
                           </tr>
-                          <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                            <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
-                              Dirección:
-                            </td>
-                            <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a', lineHeight: 1.2 }}>
-                              {fDireccion || '-'}
-                            </td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                            <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
-                              Matricula:
-                            </td>
-                            <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a' }}>
-                              {fMatricula ? <strong>{fMatricula}</strong> : '-'}
-                            </td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                            <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
-                              Área:
-                            </td>
-                            <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a' }}>
-                              {fArea || '-'}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style={{ width: '95px', padding: '0.14rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1', verticalAlign: 'top' }}>
-                              Observaciones:
-                            </td>
-                            <td style={{ padding: '0.14rem 0.35rem', color: '#0f172a', lineHeight: 1.2 }}>
-                              {fObservaciones}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                })}
-              </div>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             {/* TERRENO Y COLINDANCIAS (Solo si aplica para lotes o fincas rústicas) */}
