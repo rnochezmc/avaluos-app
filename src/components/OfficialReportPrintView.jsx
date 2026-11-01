@@ -488,35 +488,80 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
   const page4Fincas = fincas.slice(0, 1);
   const extraFincas = fincas.slice(1);
 
-  // Paginación continua de DICABI (Fincas 2 en adelante): caben 5 cómodamente por página
-  const DICABIS_PER_PAGE = 5;
-  const extraDicabiPages = React.useMemo(() => {
+  // Paginación continua adaptativa de Fincas extras y Colindancias:
+  // Agrupa DICABIs extras (Fincas 2..N), y si aplica terreno/colindancias, fluyen a continuación
+  // sin forzar saltos innecesarios a nueva página, garantizando que Servicios e Infraestructura
+  // inicie siempre al principio de su propia página nueva.
+  const continuationPages = React.useMemo(() => {
     if (!isMultiFinca) return [];
-    const pages = [];
-    for (let i = 0; i < extraFincas.length; i += DICABIS_PER_PAGE) {
-      pages.push(extraFincas.slice(i, i + DICABIS_PER_PAGE));
-    }
-    return pages;
-  }, [isMultiFinca, extraFincas]);
 
-  // Paginación continua de Colindancias (Fincas 1 hasta N, todas consecutivas empezando por la 1):
-  const FIRST_PAGE_COLINDANCIAS = 6;
-  const SUBSEQUENT_PAGE_COLINDANCIAS = 6;
-  const allColindanciasPages = React.useMemo(() => {
-    if (!showTerrenoSections || !isMultiFinca) return [];
     const pages = [];
-    if (fincas.length <= FIRST_PAGE_COLINDANCIAS) {
-      pages.push(fincas);
-    } else {
-      pages.push(fincas.slice(0, FIRST_PAGE_COLINDANCIAS));
-      for (let i = FIRST_PAGE_COLINDANCIAS; i < fincas.length; i += SUBSEQUENT_PAGE_COLINDANCIAS) {
-        pages.push(fincas.slice(i, i + SUBSEQUENT_PAGE_COLINDANCIAS));
+    let currentPage = { items: [] };
+    let currentHeight = 0;
+    const MAX_PAGE_HEIGHT = 205; // Altura máxima útil por hoja para evitar cualquier desborde
+
+    // 1. Agregar DICABIs extras (Fincas 2 en adelante)
+    extraFincas.forEach((f, i) => {
+      const itemHeight = 25; // Altura tabla DICABI
+      const titleHeight = (currentPage.items.length === 0) ? 12 : 0;
+      if (currentHeight + itemHeight + titleHeight > MAX_PAGE_HEIGHT) {
+        pages.push(currentPage);
+        currentPage = { items: [] };
+        currentHeight = 0;
       }
-    }
-    return pages;
-  }, [showTerrenoSections, isMultiFinca, fincas]);
+      if (currentPage.items.length === 0) {
+        currentHeight += 12;
+      }
+      currentPage.items.push({
+        type: 'dicabi',
+        finca: f,
+        fincaGlobalIdx: 1 + i,
+      });
+      currentHeight += itemHeight;
+    });
 
-  const totalExtraPages = extraDicabiPages.length + allColindanciasPages.length;
+    // 2. Si aplica terreno y colindancias, fluyen a continuación inmediatamente
+    if (showTerrenoSections) {
+      const terrenoHeight = 36; // Título + tabla detalles del terreno
+      if (currentHeight + terrenoHeight > MAX_PAGE_HEIGHT) {
+        pages.push(currentPage);
+        currentPage = { items: [] };
+        currentHeight = 0;
+      }
+      currentPage.items.push({
+        type: 'detalles_terreno'
+      });
+      currentHeight += terrenoHeight;
+
+      // Colindancias de TODAS las fincas (empezando desde Finca 1 hasta N)
+      fincas.forEach((f, idx) => {
+        const colHeight = 25; // Altura tabla colindancias
+        const titleHeight = (currentPage.items.length === 0) ? 12 : 0;
+        if (currentHeight + colHeight + titleHeight > MAX_PAGE_HEIGHT) {
+          pages.push(currentPage);
+          currentPage = { items: [] };
+          currentHeight = 0;
+        }
+        if (currentPage.items.length === 0) {
+          currentHeight += 12;
+        }
+        currentPage.items.push({
+          type: 'colindancia',
+          finca: f,
+          fincaGlobalIdx: idx,
+        });
+        currentHeight += colHeight;
+      });
+    }
+
+    if (currentPage.items.length > 0) {
+      pages.push(currentPage);
+    }
+
+    return pages;
+  }, [isMultiFinca, extraFincas, showTerrenoSections, fincas]);
+
+  const totalExtraPages = continuationPages.length;
 
   // Cálculo dinámico y matemático exacto de páginas antes de fotos según fincas:
   const pagesBeforePhotos = 6 + totalExtraPages;
@@ -1613,179 +1658,186 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
         ) : (
           /* CASO CON MÚLTIPLES FINCAS (Ej. 2 a 6 o más fincas) */
           <>
-            {/* 1. TODAS LAS TABLAS DE DICABI CONTINUAS (Fincas 2 en adelante) */}
-            {extraDicabiPages.map((chunk, pageIdx) => (
-              <section key={`dicabi-extra-${pageIdx}`} className="pdf-sheet-page">
-                <PageHeader />
+            {/* PÁGINAS CONTINUAS DE FINCAS EXTRAS Y COLINDANCIAS (Flujo natural sin whitespace) */}
+            {continuationPages.map((page, pageIdx) => {
+              const startsWithColindancias = page.items[0]?.type === 'colindancia';
+              const startsWithDicabi = page.items[0]?.type === 'dicabi';
 
-                <div className="pdf-sheet-content">
-                  <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.25rem', marginBottom: '0.45rem' }}>
-                    CONTINUACIÓN DE ANTECEDENTES CATASTRALES (DICABI){extraDicabiPages.length > 1 ? ` (PARTE ${pageIdx + 1} DE ${extraDicabiPages.length})` : ''}
+              return (
+                <section key={`continuation-page-${pageIdx}`} className="pdf-sheet-page">
+                  <PageHeader />
+
+                  <div className="pdf-sheet-content">
+                    {/* Título de inicio de página según el primer bloque */}
+                    {startsWithDicabi && (
+                      <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.25rem', marginBottom: '0.45rem' }}>
+                        CONTINUACIÓN DE ANTECEDENTES CATASTRALES (DICABI)
+                      </div>
+                    )}
+                    {startsWithColindancias && (
+                      <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.25rem', marginBottom: '0.45rem' }}>
+                        CONTINUACIÓN DE COLINDANCIAS
+                      </div>
+                    )}
+
+                    {page.items.map((item, i) => {
+                      if (item.type === 'dicabi') {
+                        const f = item.finca;
+                        const fincaGlobalIdx = item.fincaGlobalIdx;
+                        const fNombre = f.dicabiNombre || '';
+                        const fDireccion = f.dicabiDireccion || '';
+                        const fMatricula = f.dicabiMatricula || '';
+                        const fArea = f.dicabiArea || '';
+                        const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
+                          ? f.dicabiObservaciones 
+                          : 'Fincas no inscritas en DICABI';
+
+                        return (
+                          <div key={`item-${i}`} style={{ marginTop: i > 0 ? '0.35rem' : '0' }}>
+                            <div className="pdf-boxed-table" style={{ border: '1px solid #1e293b', width: '100%' }}>
+                              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.12rem 0.45rem', textAlign: 'center', fontSize: '0.71rem', letterSpacing: '0.03em' }}>
+                                DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI) — FINCA: {f.finca || (fincaGlobalIdx + 1)}
+                              </div>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.67rem' }}>
+                                <tbody>
+                                  <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                                    <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Nombre:</td>
+                                    <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a' }}>{fNombre || '-'}</td>
+                                  </tr>
+                                  <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                                    <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Dirección:</td>
+                                    <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a', lineHeight: 1.2 }}>{fDireccion || '-'}</td>
+                                  </tr>
+                                  <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                                    <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Matricula:</td>
+                                    <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a' }}>{fMatricula ? <strong>{fMatricula}</strong> : '-'}</td>
+                                  </tr>
+                                  <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                                    <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Área:</td>
+                                    <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a' }}>{fArea || '-'}</td>
+                                  </tr>
+                                  <tr>
+                                    <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Observaciones:</td>
+                                    <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a', lineHeight: 1.2 }}>{fObservaciones}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      if (item.type === 'detalles_terreno') {
+                        return (
+                          <div key={`item-${i}`} style={{ marginTop: '0.45rem' }}>
+                            <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.2rem', marginBottom: '0.35rem' }}>
+                              DETALLES DEL TERRENO Y COLINDANCIAS
+                            </div>
+                            <div className="pdf-boxed-table" style={{ marginBottom: '0.35rem' }}>
+                              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.14rem 0.4rem', fontSize: '0.71rem', letterSpacing: '0.04em' }}>
+                                DETALLES DEL TERRENO
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                                <div style={{ borderRight: '1px solid #cbd5e1' }}>
+                                  <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                                    <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Topografía / Pendiente:</span>
+                                    <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.pendiente || '1 / Plana'}</span>
+                                  </div>
+                                  <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                                    <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Forma:</span>
+                                    <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.formaTerreno || 'Regular'}</span>
+                                  </div>
+                                  <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                                    <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Ubicación de esquina:</span>
+                                    <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.ubicacionEsquina || 'No'}</span>
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                                    <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Uso del suelo:</span>
+                                    <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.usoSuelo || 'Mixto'}</span>
+                                  </div>
+                                  <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                                    <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Nivel socioeconómico:</span>
+                                    <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.nivelSocioeconomico || 'Alto'}</span>
+                                  </div>
+                                  <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                                    <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Desde la calle:</span>
+                                    <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.desdeCalle || 'En frente'}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      if (item.type === 'colindancia') {
+                        const f = item.finca;
+                        const fincaGlobalIdx = item.fincaGlobalIdx;
+                        const col = f.colindancias || (fincaGlobalIdx === 0 ? avaluo.colindancias : {}) || {};
+                        const rootCol = avaluo.colindancias || {};
+
+                        const rNorte = col.norte || (fincaGlobalIdx === 0 ? rootCol.norte : '') || 'S/D';
+                        const rSur = col.sur || (fincaGlobalIdx === 0 ? rootCol.sur : '') || 'S/D';
+                        const rEste = col.este || (fincaGlobalIdx === 0 ? rootCol.este : '') || 'S/D';
+                        const rOeste = col.oeste || (fincaGlobalIdx === 0 ? rootCol.oeste : '') || 'S/D';
+
+                        const fNorte = col.norteFisica || (fincaGlobalIdx === 0 ? rootCol.norteFisica : '') || rNorte || 'S/D';
+                        const fSur = col.surFisica || (fincaGlobalIdx === 0 ? rootCol.surFisica : '') || rSur || 'S/D';
+                        const fEste = col.esteFisica || (fincaGlobalIdx === 0 ? rootCol.esteFisica : '') || rEste || 'S/D';
+                        const fOeste = col.oesteFisica || (fincaGlobalIdx === 0 ? rootCol.oesteFisica : '') || rOeste || 'S/D';
+
+                        return (
+                          <div key={`item-${i}`} style={{ marginTop: '0.35rem' }}>
+                            <div className="pdf-boxed-table" style={{ border: '1px solid #1e293b', width: '100%' }}>
+                              <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.12rem 0.45rem', fontSize: '0.71rem', textAlign: 'center' }}>
+                                COLINDANCIAS — FINCA: {f.finca || (fincaGlobalIdx + 1)}
+                              </div>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.67rem' }}>
+                                <thead>
+                                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                                    <th style={{ width: '15%', padding: '0.08rem 0.35rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>RUMBO</th>
+                                    <th style={{ width: '42.5%', padding: '0.08rem 0.35rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>REGISTRAL</th>
+                                    <th style={{ width: '42.5%', padding: '0.08rem 0.35rem', textAlign: 'left', fontWeight: 700, color: company.accentColor }}>FÍSICA</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                    <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Norte:</td>
+                                    <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rNorte}</td>
+                                    <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fNorte}</td>
+                                  </tr>
+                                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                    <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Sur:</td>
+                                    <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rSur}</td>
+                                    <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fSur}</td>
+                                  </tr>
+                                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                    <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Este:</td>
+                                    <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rEste}</td>
+                                    <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fEste}</td>
+                                  </tr>
+                                  <tr>
+                                    <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Oeste:</td>
+                                    <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rOeste}</td>
+                                    <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fOeste}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    })}
                   </div>
 
-                  {chunk.map((f, i) => {
-                    const fincaGlobalIdx = 1 + (pageIdx * DICABIS_PER_PAGE) + i; // Inicia en finca index 1 (Finca 2)
-                    const fNombre = f.dicabiNombre || '';
-                    const fDireccion = f.dicabiDireccion || '';
-                    const fMatricula = f.dicabiMatricula || '';
-                    const fArea = f.dicabiArea || '';
-                    const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
-                      ? f.dicabiObservaciones 
-                      : 'Fincas no inscritas en DICABI';
-
-                    return (
-                      <div key={i} style={{ marginTop: i > 0 ? '0.35rem' : '0' }}>
-                        <div className="pdf-boxed-table" style={{ border: '1px solid #1e293b', width: '100%' }}>
-                          <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.12rem 0.45rem', textAlign: 'center', fontSize: '0.71rem', letterSpacing: '0.03em' }}>
-                            DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI) — FINCA: {f.finca || (fincaGlobalIdx + 1)}
-                          </div>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.67rem' }}>
-                            <tbody>
-                              <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                                <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Nombre:</td>
-                                <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a' }}>{fNombre || '-'}</td>
-                              </tr>
-                              <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                                <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Dirección:</td>
-                                <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a', lineHeight: 1.2 }}>{fDireccion || '-'}</td>
-                              </tr>
-                              <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                                <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Matricula:</td>
-                                <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a' }}>{fMatricula ? <strong>{fMatricula}</strong> : '-'}</td>
-                              </tr>
-                              <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                                <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Área:</td>
-                                <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a' }}>{fArea || '-'}</td>
-                              </tr>
-                              <tr>
-                                <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Observaciones:</td>
-                                <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a', lineHeight: 1.2 }}>{fObservaciones}</td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <PageFooter pageNum={5 + pageIdx} />
-              </section>
-            ))}
-
-            {/* 2. TODAS LAS COLINDANCIAS CONTINUAS (Desde Finca 1 hasta la Finca N) */}
-            {allColindanciasPages.map((chunk, colPageIdx) => (
-              <section key={`colindancias-page-${colPageIdx}`} className="pdf-sheet-page">
-                <PageHeader />
-
-                <div className="pdf-sheet-content">
-                  <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.25rem', marginBottom: '0.45rem' }}>
-                    {colPageIdx === 0 
-                      ? 'DETALLES DEL TERRENO Y COLINDANCIAS' 
-                      : `CONTINUACIÓN DE COLINDANCIAS (PARTE ${colPageIdx + 1})`}
-                  </div>
-
-                  {/* En la primera página de Colindancias, incluir DETALLES DEL TERRENO */}
-                  {colPageIdx === 0 && (
-                    <div className="pdf-boxed-table" style={{ marginBottom: '0.35rem' }}>
-                      <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.14rem 0.4rem', fontSize: '0.71rem', letterSpacing: '0.04em' }}>
-                        DETALLES DEL TERRENO
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-                        <div style={{ borderRight: '1px solid #cbd5e1' }}>
-                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
-                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Topografía / Pendiente:</span>
-                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.pendiente || '1 / Plana'}</span>
-                          </div>
-                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
-                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Forma:</span>
-                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.formaTerreno || 'Regular'}</span>
-                          </div>
-                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
-                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Ubicación de esquina:</span>
-                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.ubicacionEsquina || 'No'}</span>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
-                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Uso del suelo:</span>
-                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.usoSuelo || 'Mixto'}</span>
-                          </div>
-                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
-                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Nivel socioeconómico:</span>
-                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.nivelSocioeconomico || 'Alto'}</span>
-                          </div>
-                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
-                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Desde la calle:</span>
-                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.desdeCalle || 'En frente'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Renderizado consecutivo de las colindancias del chunk empezando por la Finca 1 */}
-                  {chunk.map((f, i) => {
-                    const fincaGlobalIdx = (colPageIdx === 0 ? 0 : FIRST_PAGE_COLINDANCIAS + (colPageIdx - 1) * SUBSEQUENT_PAGE_COLINDANCIAS) + i;
-                    const col = f.colindancias || (fincaGlobalIdx === 0 ? avaluo.colindancias : {}) || {};
-                    const rootCol = avaluo.colindancias || {};
-
-                    const rNorte = col.norte || (fincaGlobalIdx === 0 ? rootCol.norte : '') || 'S/D';
-                    const rSur = col.sur || (fincaGlobalIdx === 0 ? rootCol.sur : '') || 'S/D';
-                    const rEste = col.este || (fincaGlobalIdx === 0 ? rootCol.este : '') || 'S/D';
-                    const rOeste = col.oeste || (fincaGlobalIdx === 0 ? rootCol.oeste : '') || 'S/D';
-
-                    const fNorte = col.norteFisica || (fincaGlobalIdx === 0 ? rootCol.norteFisica : '') || rNorte || 'S/D';
-                    const fSur = col.surFisica || (fincaGlobalIdx === 0 ? rootCol.surFisica : '') || rSur || 'S/D';
-                    const fEste = col.esteFisica || (fincaGlobalIdx === 0 ? rootCol.esteFisica : '') || rEste || 'S/D';
-                    const fOeste = col.oesteFisica || (fincaGlobalIdx === 0 ? rootCol.oesteFisica : '') || rOeste || 'S/D';
-
-                    return (
-                      <div key={i} style={{ marginTop: (colPageIdx === 0 && i === 0) ? '0' : '0.35rem' }}>
-                        <div className="pdf-boxed-table" style={{ border: '1px solid #1e293b', width: '100%' }}>
-                          <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.12rem 0.45rem', fontSize: '0.71rem', textAlign: 'center' }}>
-                            COLINDANCIAS — FINCA: {f.finca || (fincaGlobalIdx + 1)}
-                          </div>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.67rem' }}>
-                            <thead>
-                              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
-                                <th style={{ width: '15%', padding: '0.08rem 0.35rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>RUMBO</th>
-                                <th style={{ width: '42.5%', padding: '0.08rem 0.35rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>REGISTRAL</th>
-                                <th style={{ width: '42.5%', padding: '0.08rem 0.35rem', textAlign: 'left', fontWeight: 700, color: company.accentColor }}>FÍSICA</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Norte:</td>
-                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rNorte}</td>
-                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fNorte}</td>
-                              </tr>
-                              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Sur:</td>
-                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rSur}</td>
-                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fSur}</td>
-                              </tr>
-                              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Este:</td>
-                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rEste}</td>
-                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fEste}</td>
-                              </tr>
-                              <tr>
-                                <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Oeste:</td>
-                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rOeste}</td>
-                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fOeste}</td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <PageFooter pageNum={5 + extraDicabiPages.length + colPageIdx} />
-              </section>
-            ))}
+                  <PageFooter pageNum={5 + pageIdx} />
+                </section>
+              );
+            })}
 
             {/* PÁGINA SIGUIENTE A FINCAS: SERVICIOS + CARACTERÍSTICAS DE CONSTRUCCIÓN + DICTAMEN DE GARANTÍA */}
             <section className="pdf-sheet-page">
