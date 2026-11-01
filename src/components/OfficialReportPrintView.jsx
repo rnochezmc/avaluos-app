@@ -531,67 +531,36 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
     </div>
   );
 
-  const renderConstruccionBox = (marginTop = '0.45rem') => (
+  const construccionItemsList = [
+    { label: 'Edad aproximada', value: avaluo.construccion?.edadAprox || '1 año' },
+    { label: 'Estado actual', value: avaluo.construccion?.estadoActual || 'Bueno', isBold: true },
+    { label: 'Construcciones apropiadas al sector', value: avaluo.construccion?.apropiadaSector || 'Sí, acorde al entorno urbano' },
+    { label: 'Distribución', value: avaluo.construccion?.distribucion || 'Ambientes completos según plano' },
+    { label: 'Estructura', value: avaluo.construccion?.estructura || 'Concreto armado y mampostería reforzada' },
+    { label: 'Paredes', value: avaluo.construccion?.paredes || 'Block pómez con repello y cernido' },
+    { label: 'Techo y entre piso', value: avaluo.construccion?.techoEntrePiso || 'Losa maciza de concreto' },
+    { label: 'Piso', value: avaluo.construccion?.piso || 'Piso cerámico' },
+    { label: 'Puertas', value: avaluo.construccion?.puertas || 'Madera y metal' },
+    { label: 'Ventanas', value: avaluo.construccion?.ventanas || 'Aluminio y vidrio claro' },
+    { label: 'Instalación sanitaria', value: avaluo.construccion?.sanitaria || 'Artefactos estándar en buen estado' },
+    { label: 'Instalación eléctrica', value: avaluo.construccion?.electrica || 'Instalación empotrada protegida' },
+    { label: 'Factores positivos', value: avaluo.construccion?.factoresPositivos || 'Excelente ubicación y mantenimiento continuo' },
+    { label: 'Factores negativos', value: avaluo.construccion?.factoresNegativos || 'Ninguno de gravedad' },
+  ];
+
+  const renderConstruccionTable = (items, title = 'CARACTERÍSTICAS DE CONSTRUCCIÓN', marginTop = '0.45rem') => (
     <div className="pdf-boxed-table" style={{ marginTop }}>
-      <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.22rem 0.5rem', fontSize: '0.74rem', letterSpacing: '0.04em' }}>
-        CARACTERÍSTICAS DE CONSTRUCCIÓN
+      <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.18rem 0.5rem', fontSize: '0.74rem', letterSpacing: '0.04em' }}>
+        {title}
       </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Edad aproximada:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.edadAprox || '1 año'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Estado actual:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}><strong>{avaluo.construccion?.estadoActual || 'Bueno'}</strong></span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Construcciones apropiadas al sector:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.apropiadaSector || 'Sí, acorde al entorno urbano'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Distribución:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.distribucion || 'Ambientes completos según plano'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Estructura:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.estructura || 'Concreto armado y mampostería reforzada'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Paredes:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.paredes || 'Block pómez con repello y cernido'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Techo y entre piso:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.techoEntrePiso || 'Losa maciza de concreto'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Piso:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.piso || 'Piso cerámico'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Puertas:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.puertas || 'Madera y metal'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Ventanas:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.ventanas || 'Aluminio y vidrio claro'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Instalación sanitaria:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.sanitaria || 'Artefactos estándar en buen estado'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Instalación eléctrica:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.electrica || 'Instalación empotrada protegida'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Factores positivos:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.factoresPositivos || 'Excelente ubicación y mantenimiento continuo'}</span>
-      </div>
-      <div className="pdf-data-row" style={{ padding: '0.1rem 0.45rem', fontSize: '0.68rem' }}>
-        <span className="pdf-data-label" style={{ fontSize: '0.68rem' }}>Factores negativos:</span>
-        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.construccion?.factoresNegativos || 'Ninguno de gravedad'}</span>
-      </div>
+      {items.map((it, idx) => (
+        <div key={idx} className="pdf-data-row" style={{ padding: '0.08rem 0.45rem', fontSize: '0.67rem', borderBottom: idx === items.length - 1 ? 'none' : '1px solid #e2e8f0' }}>
+          <span className="pdf-data-label" style={{ fontSize: '0.67rem', width: '220px' }}>{it.label}:</span>
+          <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>
+            {it.isBold ? <strong>{it.value}</strong> : it.value}
+          </span>
+        </div>
+      ))}
     </div>
   );
 
@@ -1667,17 +1636,20 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
 
                 {/* SERVICIOS E INFRAESTRUCTURA CONTINÚA INMEDIATAMENTE ABAJO */}
                 {renderServiciosBox()}
+
+                {/* CARACTERÍSTICAS DE CONSTRUCCIÓN (PARTE 1) INICIA EN EL ESPACIO RESTANTE */}
+                {renderConstruccionTable(construccionItemsList.slice(0, 7), 'CARACTERÍSTICAS DE CONSTRUCCIÓN', '0.45rem')}
               </div>
 
               <PageFooter pageNum={5} />
             </section>
 
-            {/* PÁGINA 6: CARACTERÍSTICAS DE CONSTRUCCIÓN Y VALUACIÓN COMERCIAL Y BANCARIA */}
+            {/* PÁGINA 6: CARACTERÍSTICAS DE CONSTRUCCIÓN (PARTE 2) Y VALUACIÓN COMERCIAL Y BANCARIA */}
             <section className="pdf-sheet-page">
               <PageHeader />
 
               <div className="pdf-sheet-content">
-                {renderConstruccionBox('0')}
+                {renderConstruccionTable(construccionItemsList.slice(7), 'CARACTERÍSTICAS DE CONSTRUCCIÓN (CONTINUACIÓN)', '0')}
                 {renderValuacionesBox()}
               </div>
 
@@ -1692,7 +1664,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
 
               <div className="pdf-sheet-content">
                 {renderServiciosBox()}
-                {renderConstruccionBox('0.55rem')}
+                {renderConstruccionTable(construccionItemsList, 'CARACTERÍSTICAS DE CONSTRUCCIÓN', '0.55rem')}
               </div>
 
               <PageFooter pageNum={5} />
@@ -1822,7 +1794,12 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                       );
                     })}
 
-                    {hasSingleFincaOnLastPage && renderServiciosBox()}
+                    {hasSingleFincaOnLastPage && (
+                      <>
+                        {renderServiciosBox()}
+                        {renderConstruccionTable(construccionItemsList.slice(0, 7), 'CARACTERÍSTICAS DE CONSTRUCCIÓN', '0.45rem')}
+                      </>
+                    )}
                   </div>
 
                   <PageFooter pageNum={5 + pageIdx} />
@@ -1837,7 +1814,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                   <PageHeader />
                   <div className="pdf-sheet-content">
                     {renderServiciosBox()}
-                    {renderConstruccionBox('0.55rem')}
+                    {renderConstruccionTable(construccionItemsList, 'CARACTERÍSTICAS DE CONSTRUCCIÓN', '0.55rem')}
                   </div>
                   <PageFooter pageNum={5 + extraFincaPages.length} />
                 </section>
@@ -1854,7 +1831,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               <section className="pdf-sheet-page">
                 <PageHeader />
                 <div className="pdf-sheet-content">
-                  {renderConstruccionBox('0')}
+                  {renderConstruccionTable(construccionItemsList.slice(7), 'CARACTERÍSTICAS DE CONSTRUCCIÓN (CONTINUACIÓN)', '0')}
                   {renderValuacionesBox()}
                 </div>
                 <PageFooter pageNum={5 + extraFincaPages.length} />
