@@ -316,9 +316,6 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
     }
   ];
 
-  const MAX_PAGE1_FINCAS = 4;
-  const page1Fincas = fincas.slice(0, MAX_PAGE1_FINCAS);
-  const page2Fincas = fincas.length > MAX_PAGE1_FINCAS ? fincas.slice(MAX_PAGE1_FINCAS) : [];
 
   // Desglose de terrenos por finca con valores unitarios independientes
   const terrainItems = (avaluo.desgloseTerreno?.items && Array.isArray(avaluo.desgloseTerreno.items) && avaluo.desgloseTerreno.items.length > 0)
@@ -952,81 +949,81 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               <div className="pdf-subtable-header" style={{ background: '#f1f5f9', fontWeight: 700, padding: '0.18rem 0.45rem', borderBottom: '1px solid #cbd5e1', fontSize: '0.72rem' }}>
                 INFORMACIÓN REGISTRAL
               </div>
-              <table className="pdf-inner-table" style={{ fontSize: '0.69rem' }}>
+              <table className="pdf-inner-table" style={{ fontSize: '0.67rem' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
-                    <th style={{ width: '30%', padding: '0.12rem 0.35rem' }}>FINCA</th>
-                    <th style={{ width: '30%', padding: '0.12rem 0.35rem' }}>FOLIO</th>
-                    <th style={{ padding: '0.12rem 0.35rem' }}>LIBRO</th>
+                    <th style={{ width: '30%', padding: '0.08rem 0.35rem' }}>FINCA</th>
+                    <th style={{ width: '30%', padding: '0.08rem 0.35rem' }}>FOLIO</th>
+                    <th style={{ padding: '0.08rem 0.35rem' }}>LIBRO</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {page1Fincas.map((f, i) => (
+                  {fincas.map((f, i) => (
                     <tr key={i}>
-                      <td style={{ fontWeight: 600, padding: '0.1rem 0.35rem' }}>{f.finca}</td>
-                      <td style={{ padding: '0.1rem 0.35rem' }}>{f.folio}</td>
-                      <td style={{ padding: '0.1rem 0.35rem' }}>{f.libro}</td>
+                      <td style={{ fontWeight: 600, padding: '0.06rem 0.35rem' }}>{f.finca}</td>
+                      <td style={{ padding: '0.06rem 0.35rem' }}>{f.folio}</td>
+                      <td style={{ padding: '0.06rem 0.35rem' }}>{f.libro}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              <div style={{ padding: '0.18rem 0.45rem', borderTop: '1px solid #cbd5e1', fontWeight: 700, background: '#f8fafc', fontSize: '0.72rem' }}>
+              <div style={{ padding: '0.12rem 0.4rem', borderTop: '1px solid #cbd5e1', fontWeight: 700, background: '#f8fafc', fontSize: '0.69rem' }}>
                 Propietario:
               </div>
-              <table className="pdf-inner-table" style={{ fontSize: '0.69rem' }}>
+              <table className="pdf-inner-table" style={{ fontSize: '0.67rem' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
-                    <th style={{ width: '30%', padding: '0.12rem 0.35rem' }}>FINCA</th>
-                    <th style={{ padding: '0.12rem 0.35rem' }}>Propietario</th>
+                    <th style={{ width: '30%', padding: '0.08rem 0.35rem' }}>FINCA</th>
+                    <th style={{ padding: '0.08rem 0.35rem' }}>Propietario</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {page1Fincas.map((f, i) => (
+                  {fincas.map((f, i) => (
                     <tr key={i}>
-                      <td style={{ fontWeight: 600, padding: '0.1rem 0.35rem' }}>{f.finca}</td>
-                      <td style={{ padding: '0.1rem 0.35rem' }}>{f.propietario || avaluo.propietarioPrincipal}</td>
+                      <td style={{ fontWeight: 600, padding: '0.06rem 0.35rem' }}>{f.finca}</td>
+                      <td style={{ padding: '0.06rem 0.35rem' }}>{f.propietario || avaluo.propietarioPrincipal}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
               {/* Cada finca muestra su propia área registrada y valuada individualmente */}
-              <div style={{ padding: '0.18rem 0.45rem', borderTop: '1px solid #cbd5e1', fontWeight: 700, background: '#f8fafc', fontSize: '0.72rem' }}>
+              <div style={{ padding: '0.12rem 0.4rem', borderTop: '1px solid #cbd5e1', fontWeight: 700, background: '#f8fafc', fontSize: '0.69rem' }}>
                 Área registrada:
               </div>
-              <table className="pdf-inner-table" style={{ fontSize: '0.69rem' }}>
+              <table className="pdf-inner-table" style={{ fontSize: '0.67rem' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
-                    <th style={{ width: '30%', padding: '0.12rem 0.35rem' }}>FINCA</th>
-                    <th style={{ padding: '0.12rem 0.35rem' }}>Área</th>
+                    <th style={{ width: '30%', padding: '0.08rem 0.35rem' }}>FINCA</th>
+                    <th style={{ padding: '0.08rem 0.35rem' }}>Área</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {page1Fincas.map((f, i) => (
+                  {fincas.map((f, i) => (
                     <tr key={i}>
-                      <td style={{ fontWeight: 600, padding: '0.1rem 0.35rem' }}>{f.finca}</td>
-                      <td style={{ padding: '0.1rem 0.35rem' }}>{Number(f.areaRegistrada || f.areaActualRegistrada || avaluo.areaRegistrada || 0).toFixed(6)} m²</td>
+                      <td style={{ fontWeight: 600, padding: '0.06rem 0.35rem' }}>{f.finca}</td>
+                      <td style={{ padding: '0.06rem 0.35rem' }}>{Number(f.areaRegistrada || f.areaActualRegistrada || avaluo.areaRegistrada || 0).toFixed(6)} m²</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              <div style={{ padding: '0.18rem 0.45rem', borderTop: '1px solid #cbd5e1', fontWeight: 700, background: '#f8fafc', fontSize: '0.72rem' }}>
+              <div style={{ padding: '0.12rem 0.4rem', borderTop: '1px solid #cbd5e1', fontWeight: 700, background: '#f8fafc', fontSize: '0.69rem' }}>
                 Área valuada:
               </div>
-              <table className="pdf-inner-table" style={{ fontSize: '0.69rem' }}>
+              <table className="pdf-inner-table" style={{ fontSize: '0.67rem' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
-                    <th style={{ width: '30%', padding: '0.12rem 0.35rem' }}>FINCA</th>
-                    <th style={{ padding: '0.12rem 0.35rem' }}>Área</th>
+                    <th style={{ width: '30%', padding: '0.08rem 0.35rem' }}>FINCA</th>
+                    <th style={{ padding: '0.08rem 0.35rem' }}>Área</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {page1Fincas.map((f, i) => (
+                  {fincas.map((f, i) => (
                     <tr key={i}>
-                      <td style={{ fontWeight: 600, padding: '0.1rem 0.35rem' }}>{f.finca}</td>
-                      <td style={{ fontWeight: 600, color: company.navyColor, padding: '0.1rem 0.35rem' }}>
+                      <td style={{ fontWeight: 600, padding: '0.06rem 0.35rem' }}>{f.finca}</td>
+                      <td style={{ fontWeight: 600, color: company.navyColor, padding: '0.06rem 0.35rem' }}>
                         {Number(f.areaValuada || (avaluo.areaValuada / fincas.length) || 0).toFixed(6)} m²
                       </td>
                     </tr>
@@ -1040,43 +1037,12 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
         </section>
 
         {/* ==============================================================
-            PÁGINA 2: VALORES Y FIRMAS DE VALUADORES
+            PÁGINA 2: VALORES Y FIRMAS DE VALUADORES (PÁGINA EXCLUSIVA)
             ============================================================== */}
         <section className="pdf-sheet-page">
           <PageHeader />
 
           <div className="pdf-sheet-content">
-            {/* Si hay más de 4 fincas, la información registral restante continúa al inicio de la Página 2 */}
-            {page2Fincas.length > 0 && (
-              <div className="pdf-boxed-table" style={{ marginBottom: '0.65rem' }}>
-                <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.2rem 0.45rem', fontSize: '0.72rem' }}>
-                  INFORMACIÓN REGISTRAL (CONTINUACIÓN DE FINCAS)
-                </div>
-                <table className="pdf-inner-table" style={{ fontSize: '0.69rem' }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc' }}>
-                      <th style={{ width: '25%', padding: '0.12rem 0.35rem' }}>FINCA</th>
-                      <th style={{ width: '20%', padding: '0.12rem 0.35rem' }}>FOLIO</th>
-                      <th style={{ width: '25%', padding: '0.12rem 0.35rem' }}>LIBRO</th>
-                      <th style={{ padding: '0.12rem 0.35rem' }}>ÁREA REGISTRADA / VALUADA</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {page2Fincas.map((f, i) => (
-                      <tr key={i}>
-                        <td style={{ fontWeight: 600, padding: '0.1rem 0.35rem' }}>{f.finca}</td>
-                        <td style={{ padding: '0.1rem 0.35rem' }}>{f.folio}</td>
-                        <td style={{ padding: '0.1rem 0.35rem' }}>{f.libro}</td>
-                        <td style={{ padding: '0.1rem 0.35rem' }}>
-                          {Number(f.areaRegistrada || f.areaActualRegistrada || avaluo.areaRegistrada || 0).toFixed(6)} m² / <strong style={{ color: company.navyColor }}>{Number(f.areaValuada || 0).toFixed(6)} m²</strong>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
             {/* Sección Limitaciones (conceptos oficiales) */}
             <div className="pdf-boxed-table" style={{ marginBottom: '0.85rem' }}>
               <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.35rem' }}>
@@ -1785,6 +1751,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                     </div>
                     <div 
                       className="pdf-photo-frame-media-carta"
+                      style={{ background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       {card.src ? (
                         <img 
@@ -1793,7 +1760,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                           style={{ 
                             width: '100%', 
                             height: '100%', 
-                            objectFit: card.category === 'croquis' ? 'contain' : 'cover', 
+                            objectFit: 'contain', 
                             display: 'block' 
                           }} 
                           loading="eager" 
