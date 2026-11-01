@@ -41,6 +41,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
     codigo: avaluo?.codigo || `${tenantConfig.codigoPrefix || 'LR-2026-'}0${Math.floor(Math.random() * 90) + 10}`,
     tipoAvaluo: avaluo?.tipoAvaluo || 'Comercial',
     solicitante: avaluo?.solicitante || (tenantConfig.id === 'cverde' ? 'BANCO INDUSTRIAL, S.A.' : 'BANCO G&T CONTINENTAL'),
+    dirigidoA: avaluo?.dirigidoA || '',
     fechaSolicitud: avaluo?.fechaSolicitud || new Date().toISOString().slice(0, 10),
     fechaInspeccion: avaluo ? (avaluo.fechaInspeccion || '') : new Date().toISOString().slice(0, 10),
     fechaActualizacion: avaluo?.fechaActualizacion || '',
@@ -1414,6 +1415,16 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       value={formData.solicitante}
                       onChange={(e) => setFormData({ ...formData, solicitante: e.target.value })}
                       placeholder="Ej: BANCO G&T CONTINENTAL, COOPERATIVA GUADALUPANA"
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Dirigido a (Opcional, si difiere de Solicitante)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.dirigidoA || ''}
+                      onChange={(e) => setFormData({ ...formData, dirigidoA: e.target.value })}
+                      placeholder="Dejar en blanco para usar el mismo Solicitante"
                     />
                   </div>
                 </div>

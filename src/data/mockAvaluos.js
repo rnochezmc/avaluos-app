@@ -16,6 +16,7 @@ export const initialAvaluos = [
     tenantId: "cverde",
     tipoAvaluo: "Apartamento / PH",
     solicitante: "BANCO G&T CONTINENTAL S.A.",
+    dirigidoA: "BANCO G&T CONTINENTAL S.A.",
     fechaSolicitud: "2026-10-16",
     fechaInspeccion: "16 de octubre de 2026",
     fechaConsultaDistancia: "19 de octubre de 2026",
