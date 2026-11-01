@@ -561,14 +561,16 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
     </div>
   );
 
+  const renderDictamenCallout = () => (
+    <div className="pdf-dictamen-callout" style={{ border: '1px solid #0f172a', background: '#f8fafc', padding: '0.45rem 0.65rem', fontSize: '0.73rem', fontStyle: 'italic', marginTop: '0.55rem', marginBottom: '0.2rem', lineHeight: 1.35, textAlign: 'justify' }}>
+      {avaluo.dictamenGarantia !== undefined && avaluo.dictamenGarantia !== '' 
+        ? avaluo.dictamenGarantia 
+        : DEFAULT_DICTAMEN_GARANTIA}
+    </div>
+  );
+
   const renderValuacionesBox = () => (
     <>
-      <div className="pdf-dictamen-callout" style={{ border: '1px solid #0f172a', background: '#f8fafc', padding: '0.45rem 0.65rem', fontSize: '0.73rem', fontStyle: 'italic', marginTop: '0.45rem', marginBottom: '0.5rem', lineHeight: 1.35, textAlign: 'justify' }}>
-        {avaluo.dictamenGarantia !== undefined && avaluo.dictamenGarantia !== '' 
-          ? avaluo.dictamenGarantia 
-          : DEFAULT_DICTAMEN_GARANTIA}
-      </div>
-
       {/* SECCIÓN 1: VALUACIÓN COMERCIAL */}
       <div style={{ marginBottom: '0.45rem' }}>
         <div style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.8rem', marginBottom: '0.25rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
@@ -1532,19 +1534,20 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
             ============================================================== */}
         {extraFincas.length === 0 ? (
           <>
-            {/* PÁGINA 5: SERVICIOS Y TODAS LAS CARACTERÍSTICAS DE CONSTRUCCIÓN (14 ÍTEMS) */}
+            {/* PÁGINA 5: SERVICIOS + CARACTERÍSTICAS DE CONSTRUCCIÓN + DICTAMEN DE GARANTÍA */}
             <section className="pdf-sheet-page">
               <PageHeader />
 
               <div className="pdf-sheet-content">
                 {renderServiciosBox()}
                 {renderConstruccionTable(construccionItemsList, 'CARACTERÍSTICAS DE CONSTRUCCIÓN', '0.45rem')}
+                {renderDictamenCallout()}
               </div>
 
               <PageFooter pageNum={5} />
             </section>
 
-            {/* PÁGINA 6: DICTAMEN DE GARANTÍA + 1. VALUACIÓN COMERCIAL + 2. VALUACIÓN BANCARIA */}
+            {/* PÁGINA 6: 1. VALUACIÓN COMERCIAL + 2. VALUACIÓN BANCARIA */}
             <section className="pdf-sheet-page">
               <PageHeader />
 
@@ -1669,17 +1672,18 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </section>
             ))}
 
-            {/* PÁGINA SIGUIENTE A FINCAS: SERVICIOS Y CARACTERÍSTICAS DE CONSTRUCCIÓN COMPLETAS (14 ÍTEMS) */}
+            {/* PÁGINA SIGUIENTE A FINCAS: SERVICIOS + CARACTERÍSTICAS DE CONSTRUCCIÓN + DICTAMEN DE GARANTÍA */}
             <section className="pdf-sheet-page">
               <PageHeader />
               <div className="pdf-sheet-content">
                 {renderServiciosBox()}
                 {renderConstruccionTable(construccionItemsList, 'CARACTERÍSTICAS DE CONSTRUCCIÓN', '0.45rem')}
+                {renderDictamenCallout()}
               </div>
               <PageFooter pageNum={5 + extraFincaPages.length} />
             </section>
 
-            {/* PÁGINA SIGUIENTE: DICTAMEN DE GARANTÍA + 1. VALUACIÓN COMERCIAL + 2. VALUACIÓN BANCARIA */}
+            {/* PÁGINA SIGUIENTE: 1. VALUACIÓN COMERCIAL + 2. VALUACIÓN BANCARIA */}
             <section className="pdf-sheet-page">
               <PageHeader />
               <div className="pdf-sheet-content">
