@@ -186,10 +186,15 @@ export default function App() {
             }
           }
 
-          // Asegurar que el avalúo de prueba 10034 de 4 fincas esté disponible
+          // Asegurar que el avalúo de prueba 10034 de 4 fincas esté actualizado
           const test10034 = initialAvaluos.find(i => i.id === 'lr-2026-10034' || i.codigo === 'AVALUO LR-2026-10034');
-          if (test10034 && !merged.some(m => m.id === test10034.id || m.codigo === test10034.codigo)) {
-            merged.unshift(test10034);
+          if (test10034) {
+            const idx10034 = merged.findIndex(m => m.id === test10034.id || m.codigo === test10034.codigo);
+            if (idx10034 >= 0) {
+              merged[idx10034] = { ...merged[idx10034], ...test10034 };
+            } else {
+              merged.unshift(test10034);
+            }
           }
 
           return merged;
@@ -277,10 +282,15 @@ export default function App() {
               return repaired;
             });
 
-            // Incluir el avalúo de prueba LR-2026-10034 si aún no está en Firestore
+            // Incluir o actualizar el avalúo de prueba LR-2026-10034 con terreno y colindancias
             const test10034 = initialAvaluos.find(i => i.id === 'lr-2026-10034' || i.codigo === 'AVALUO LR-2026-10034');
-            if (test10034 && !enrichedCloud.some(m => m.id === test10034.id || m.codigo === test10034.codigo)) {
-              enrichedCloud.unshift(test10034);
+            if (test10034) {
+              const cloudIdx = enrichedCloud.findIndex(m => m.id === test10034.id || m.codigo === test10034.codigo);
+              if (cloudIdx >= 0) {
+                enrichedCloud[cloudIdx] = { ...enrichedCloud[cloudIdx], ...test10034 };
+              } else {
+                enrichedCloud.unshift(test10034);
+              }
               saveAvaluoToCloud(test10034).catch(err => console.warn('Sync 10034 cloud error', err));
             }
 

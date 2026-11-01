@@ -30,7 +30,24 @@ export const initialAvaluos = [
     referenciaActualizacion: "Inspección física y certificación de valor 2026",
     estado: "autorizado",
     observacionesAutorizador: "Expediente de prueba 4 fincas (Apto 801, 2 Parqueos y Bodega) cargado para verificación de impresión de Aroldo Ruiz.",
-    aplicaTerreno: false,
+    aplicaTerreno: true,
+    formaTerreno: "Regular",
+    pendiente: "1 / Plana",
+    usoSuelo: "Mixto",
+    nivelSocioeconomico: "Alto",
+    ubicacionEsquina: "No",
+    desdeCalle: "En frente",
+
+    colindancias: {
+      norte: "Ver inscripción de dominio No. 1",
+      sur: "S/D",
+      este: "S/D",
+      oeste: "S/D",
+      norteFisica: "Área común y pasillo de acceso",
+      surFisica: "Colindancia aérea",
+      esteFisica: "Colindancia aérea",
+      oesteFisica: "Colindancia aérea"
+    },
 
     fincas: [
       {
@@ -48,7 +65,17 @@ export const initialAvaluos = [
         dicabiDireccion: "18 avenida A 8-33 Vista Hermosa I, zona 15, Guatemala.",
         dicabiMatricula: "",
         dicabiArea: "78.36 m²",
-        dicabiObservaciones: "Fincas no inscritas en DICABI"
+        dicabiObservaciones: "Fincas no inscritas en DICABI",
+        colindancias: {
+          norte: "Ver inscripción de dominio No. 1",
+          sur: "S/D",
+          este: "S/D",
+          oeste: "S/D",
+          norteFisica: "Área común y pasillo de acceso",
+          surFisica: "Colindancia aérea",
+          esteFisica: "Colindancia aérea",
+          oesteFisica: "Apartamento 802"
+        }
       },
       {
         finca: "6588",
@@ -65,7 +92,17 @@ export const initialAvaluos = [
         dicabiDireccion: "18 avenida A 8-33 Vista Hermosa I, zona 15, Guatemala.",
         dicabiMatricula: "",
         dicabiArea: "12.50 m²",
-        dicabiObservaciones: "Fincas no inscritas en DICABI"
+        dicabiObservaciones: "Fincas no inscritas en DICABI",
+        colindancias: {
+          norte: "Ver inscripción de dominio No. 1",
+          sur: "S/D",
+          este: "S/D",
+          oeste: "S/D",
+          norteFisica: "Área de rodaje / rampa",
+          surFisica: "Parqueo P05-121",
+          esteFisica: "Pared perimetral",
+          oesteFisica: "Parqueo P05-123"
+        }
       },
       {
         finca: "6589",
@@ -82,7 +119,17 @@ export const initialAvaluos = [
         dicabiDireccion: "18 avenida A 8-33 Vista Hermosa I, zona 15, Guatemala.",
         dicabiMatricula: "",
         dicabiArea: "12.50 m²",
-        dicabiObservaciones: "Fincas no inscritas en DICABI"
+        dicabiObservaciones: "Fincas no inscritas en DICABI",
+        colindancias: {
+          norte: "Ver inscripción de dominio No. 1",
+          sur: "S/D",
+          este: "S/D",
+          oeste: "S/D",
+          norteFisica: "Área de rodaje / rampa",
+          surFisica: "Parqueo P05-122",
+          esteFisica: "Parqueo P05-122",
+          oesteFisica: "Área común sótano 5"
+        }
       },
       {
         finca: "6655",
@@ -99,7 +146,17 @@ export const initialAvaluos = [
         dicabiDireccion: "18 avenida A 8-33 Vista Hermosa I, zona 15, Guatemala.",
         dicabiMatricula: "",
         dicabiArea: "0.77 m²",
-        dicabiObservaciones: "Fincas no inscritas en DICABI"
+        dicabiObservaciones: "Fincas no inscritas en DICABI",
+        colindancias: {
+          norte: "Ver inscripción de dominio No. 1",
+          sur: "S/D",
+          este: "S/D",
+          oeste: "S/D",
+          norteFisica: "Pasillo sótano 4",
+          surFisica: "Bodega B04-01",
+          esteFisica: "Pared sótano 4",
+          oesteFisica: "Bodega B04-03"
+        }
       }
     ],
 

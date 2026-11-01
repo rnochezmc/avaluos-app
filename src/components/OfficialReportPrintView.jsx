@@ -1438,22 +1438,30 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
                     <div style={{ borderRight: '1px solid #cbd5e1' }}>
                       <div className="pdf-data-row" style={{ padding: '0.1rem 0.35rem', fontSize: '0.68rem' }}>
-                        <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Topografía:</span>
-                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.pendiente || 'Plana'}</span>
+                        <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Topografía / Pendiente:</span>
+                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.pendiente || '1 / Plana'}</span>
                       </div>
                       <div className="pdf-data-row" style={{ padding: '0.1rem 0.35rem', fontSize: '0.68rem' }}>
                         <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Forma:</span>
                         <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.formaTerreno || 'Regular'}</span>
                       </div>
+                      <div className="pdf-data-row" style={{ padding: '0.1rem 0.35rem', fontSize: '0.68rem' }}>
+                        <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Ubicación de esquina:</span>
+                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.ubicacionEsquina || 'No'}</span>
+                      </div>
                     </div>
                     <div>
                       <div className="pdf-data-row" style={{ padding: '0.1rem 0.35rem', fontSize: '0.68rem' }}>
                         <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Uso del suelo:</span>
-                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.usoSuelo || 'Residencial'}</span>
+                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.usoSuelo || 'Mixto'}</span>
                       </div>
                       <div className="pdf-data-row" style={{ padding: '0.1rem 0.35rem', fontSize: '0.68rem' }}>
                         <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Nivel socioeconómico:</span>
-                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.nivelSocioeconomico || 'Medio-Alto'}</span>
+                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.nivelSocioeconomico || 'Alto'}</span>
+                      </div>
+                      <div className="pdf-data-row" style={{ padding: '0.1rem 0.35rem', fontSize: '0.68rem' }}>
+                        <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Desde la calle:</span>
+                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.desdeCalle || 'En frente'}</span>
                       </div>
                     </div>
                   </div>
