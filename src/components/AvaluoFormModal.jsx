@@ -1113,17 +1113,59 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
     });
   };
 
+  // Protección contra pérdida accidental de datos y borrador persistente
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftData, setDraftData] = useState(null);
+
+  useEffect(() => {
+    if (!isEditing) {
+      try {
+        const savedDraftStr = localStorage.getItem('avaluo_form_draft');
+        if (savedDraftStr) {
+          const parsed = JSON.parse(savedDraftStr);
+          if (parsed && parsed.data && (parsed.data.codigo || parsed.data.propietarioPrincipal || parsed.data.direccion)) {
+            setHasDraft(true);
+            setDraftData(parsed);
+          }
+        }
+      } catch (e) {}
+    }
+  }, [isEditing]);
+
+  // Autoguardado silencioso del borrador en cada cambio para no perder datos nunca
+  useEffect(() => {
+    if (!isEditing && (formData.codigo || formData.propietarioPrincipal || formData.direccion)) {
+      try {
+        localStorage.setItem('avaluo_form_draft', JSON.stringify({
+          data: formData,
+          activeStep,
+          timestamp: Date.now()
+        }));
+      } catch (e) {}
+    }
+  }, [formData, activeStep, isEditing]);
+
+  const handleSafeClose = () => {
+    const isDirty = Boolean(formData.codigo || formData.propietarioPrincipal || formData.direccion);
+    if (!isDirty || window.confirm('¿Está seguro de cerrar el formulario? Los datos no guardados permanecerán en su borrador pero no se guardarán en la nube.')) {
+      onClose();
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.codigo) {
       alert('Por favor especifique el código del avalúo.');
       return;
     }
+    try {
+      localStorage.removeItem('avaluo_form_draft');
+    } catch (e) {}
     onSave(formData);
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={(e) => e.stopPropagation()}>
       <div className="modal-window" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 'min(1280px, 96vw)', width: '100%' }}>
         <form
           onSubmit={handleSubmit}
@@ -1156,11 +1198,44 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                 <Save size={14} style={{ display: 'inline', marginRight: '4px' }} />
                 Guardar Expediente
               </button>
-              <button type="button" className="modal-close-btn" onClick={onClose} title="Cerrar sin guardar">
+              <button type="button" className="modal-close-btn" onClick={handleSafeClose} title="Cerrar sin guardar">
                 <X size={18} />
               </button>
             </div>
           </div>
+
+          {/* Banner de Recuperación de Borrador no guardado */}
+          {hasDraft && draftData && (
+            <div style={{ background: '#fef3c7', borderBottom: '1.5px solid #f59e0b', padding: '0.5rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', color: '#92400e', flexShrink: 0, gap: '0.75rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1rem' }}>📋</span>
+                <span><strong>Borrador no guardado disponible:</strong> Se detectaron datos del expediente <em>"{draftData.data.codigo || 'Sin código'}"</em> ({draftData.data.propietarioPrincipal || 'Sin propietario'}).</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setFormData(draftData.data);
+                    if (draftData.activeStep) setActiveStep(draftData.activeStep);
+                    setHasDraft(false);
+                  }}
+                  style={{ background: '#d97706', color: '#ffffff', border: 'none', borderRadius: '4px', padding: '4px 12px', fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem' }}
+                >
+                  Restaurar Borrador
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    try { localStorage.removeItem('avaluo_form_draft'); } catch (e) {}
+                    setHasDraft(false);
+                  }}
+                  style={{ background: 'transparent', color: '#78350f', border: '1px solid #d97706', borderRadius: '4px', padding: '3px 8px', fontWeight: 600, cursor: 'pointer', fontSize: '0.78rem' }}
+                >
+                  Descartar
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Form Step Indicator Tabs */}
           <div style={{ padding: '0 1rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
@@ -1539,7 +1614,11 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                           type="button"
                           className="btn-text"
                           style={{ fontSize: '0.72rem', color: '#1e40af', background: '#eff6ff', padding: '0.15rem 0.45rem', borderRadius: '4px', border: '1px solid #bfdbfe', fontWeight: 600, cursor: 'pointer' }}
-                          onClick={() => setFormData({ ...formData, direccionIusi: formData.direccion })}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setFormData(prev => ({ ...prev, direccionIusi: prev.direccion || '' }));
+                          }}
                           title="Copiar dirección física como dirección de IUSI"
                         >
                           Copiar Dir. Física
@@ -1550,7 +1629,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       type="text"
                       className="form-input"
                       value={formData.direccionIusi ?? ''}
-                      onChange={(e) => setFormData({ ...formData, direccionIusi: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, direccionIusi: e.target.value }))}
                       placeholder={formData.direccion ? `Misma que física (${formData.direccion.slice(0, 32)}...)` : "Dirección según boleta o padrón de IUSI (opcional)"}
                     />
                     <span className="text-xs text-gray-500 mt-1 block">
@@ -1566,7 +1645,11 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       type="button"
                       className="btn-text"
                       style={{ fontSize: '0.72rem', color: '#1e40af', background: '#eff6ff', padding: '0.15rem 0.45rem', borderRadius: '4px', border: '1px solid #bfdbfe', fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => setFormData({ ...formData, notaDireccion: 'Inmueble plenamente identificado en inspección física de campo.' })}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setFormData(prev => ({ ...prev, notaDireccion: 'Inmueble plenamente identificado en inspección física de campo.' }));
+                      }}
                       title="Restablecer texto oficial predeterminado"
                     >
                       Texto Predeterminado
@@ -2274,7 +2357,11 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       <label className="form-label" style={{ marginBottom: 0 }}>Anotaciones y Gravámenes *</label>
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, gravamenes: 'Libre de gravámenes hipotecarios.' })}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setFormData(prev => ({ ...prev, gravamenes: 'Libre de gravámenes hipotecarios.' }));
+                        }}
                         style={{ fontSize: '0.72rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
                       >
                         + Libre de gravámenes
@@ -2284,7 +2371,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       rows={2}
                       className="form-input"
                       value={formData.gravamenes}
-                      onChange={(e) => setFormData({ ...formData, gravamenes: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, gravamenes: e.target.value }))}
                       placeholder="Ej: Hipoteca a favor de Banco G&T Continental, Sociedad Anónima, en cada una de las fincas..."
                     />
                   </div>
@@ -2294,7 +2381,11 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       <label className="form-label" style={{ marginBottom: 0 }}>Servidumbres *</label>
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, servidumbres: 'Sin servidumbres activas.' })}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setFormData(prev => ({ ...prev, servidumbres: 'Sin servidumbres activas.' }));
+                        }}
                         style={{ fontSize: '0.72rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
                       >
                         + Sin servidumbres
@@ -2304,7 +2395,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       rows={2}
                       className="form-input"
                       value={formData.servidumbres}
-                      onChange={(e) => setFormData({ ...formData, servidumbres: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, servidumbres: e.target.value }))}
                       placeholder="Ej: Servidumbre de paso recíproca con predio colindante / Sin servidumbres activas..."
                     />
                   </div>
@@ -2316,7 +2407,11 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       <label className="form-label" style={{ marginBottom: 0 }}>Áreas Comunes *</label>
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, areasComunes: 'No aplica' })}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setFormData(prev => ({ ...prev, areasComunes: 'No aplica' }));
+                        }}
                         style={{ fontSize: '0.72rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
                       >
                         + No aplica
@@ -2326,7 +2421,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       rows={2}
                       className="form-input"
                       value={formData.areasComunes}
-                      onChange={(e) => setFormData({ ...formData, areasComunes: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, areasComunes: e.target.value }))}
                       placeholder="Ej: Soportan y gozan de los elementos comunes que constan en la Finca 1334, Folio 334, Libro 1163E / No aplica..."
                     />
                   </div>
@@ -2336,7 +2431,11 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       <label className="form-label" style={{ marginBottom: 0 }}>Desmembración *</label>
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, desmembracion: 'Sin desmembraciones pendientes.' })}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setFormData(prev => ({ ...prev, desmembracion: 'Sin desmembraciones pendientes.' }));
+                        }}
                         style={{ fontSize: '0.72rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
                       >
                         + Sin desmembraciones
@@ -2346,7 +2445,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                       rows={2}
                       className="form-input"
                       value={formData.desmembracion}
-                      onChange={(e) => setFormData({ ...formData, desmembracion: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, desmembracion: e.target.value }))}
                       placeholder="Ej: Sin desmembraciones pendientes / Desmembraciones de fracciones autorizadas / No aplica..."
                     />
                   </div>
@@ -3668,28 +3767,44 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginBottom: '0.75rem' }}>
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.favorable })}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setFormData(prev => ({ ...prev, dictamenGarantia: DICTAMEN_PRESETS.favorable }));
+                      }}
                       style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
                     >
                       ✓ Favorable Estándar
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.condicionado })}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setFormData(prev => ({ ...prev, dictamenGarantia: DICTAMEN_PRESETS.condicionado }));
+                      }}
                       style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
                     >
                       ⚠️ Favorable Condicionado
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.noFavorable })}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setFormData(prev => ({ ...prev, dictamenGarantia: DICTAMEN_PRESETS.noFavorable }));
+                      }}
                       style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
                     >
                       ✕ No Favorable
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, dictamenGarantia: DICTAMEN_PRESETS.construccion })}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setFormData(prev => ({ ...prev, dictamenGarantia: DICTAMEN_PRESETS.construccion }));
+                      }}
                       style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem', background: '#fefce8', color: '#854d0e', border: '1px solid #fef08a', borderRadius: '4px', fontWeight: 700, cursor: 'pointer' }}
                     >
                       🏗️ En Construcción
@@ -3701,7 +3816,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                     rows={3}
                     style={{ width: '100%', fontStyle: 'italic', fontSize: '0.86rem', lineHeight: 1.5, padding: '0.65rem 0.85rem' }}
                     value={formData.dictamenGarantia !== undefined ? formData.dictamenGarantia : DEFAULT_DICTAMEN_GARANTIA}
-                    onChange={(e) => setFormData({ ...formData, dictamenGarantia: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, dictamenGarantia: e.target.value }))}
                     placeholder="Escriba el dictamen de garantía oficial..."
                   />
                 </div>
