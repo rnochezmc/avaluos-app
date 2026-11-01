@@ -459,8 +459,8 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
   const page4Fincas = fincas.slice(0, fincasOnPage4Count);
   const extraFincas = fincas.slice(fincasOnPage4Count);
 
-  // Si hay más fincas (ej. 2 a 7 fincas), fluyen dinámicamente en hojas de continuación a ancho completo
-  const FINCAS_PER_PAGE = showTerrenoSections ? 2 : 3;
+  // Si hay más fincas (ej. 2 a 7 fincas), fluyen dinámicamente en hojas de continuación (caben 3 fincas por página a ancho completo sin desborde)
+  const FINCAS_PER_PAGE = 3;
   const extraFincaPages = React.useMemo(() => {
     if (extraFincas.length === 0) return [];
     const pages = [];
@@ -468,17 +468,17 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
       pages.push(extraFincas.slice(i, i + FINCAS_PER_PAGE));
     }
     return pages;
-  }, [extraFincas, FINCAS_PER_PAGE]);
+  }, [extraFincas]);
 
-  // Cálculo dinámico de páginas antes de fotos según fincas:
-  // Si hay 0 o 1 finca extra, las secciones fluyen continuamente ocupando exactamente 6 páginas antes de fotos.
-  // Si hay más de 1 finca extra (ej. 3 a 7 fincas), cada 2 fincas adicionales añaden 1 página antes de fotos.
-  const extraPagesBeforePhotos = extraFincas.length > 1 
-    ? Math.ceil((extraFincas.length - 1) / 2) 
-    : 0;
+  // Cálculo dinámico y matemático exacto de páginas antes de fotos según fincas:
+  const hasExtraFincaSharingWithServicios = extraFincas.length > 1 && (extraFincaPages[extraFincaPages.length - 1]?.length === 1);
+  const pagesBeforePhotos = extraFincas.length <= 1 
+    ? 6 
+    : (hasExtraFincaSharingWithServicios ? 5 + extraFincaPages.length : 6 + extraFincaPages.length);
 
+  const extraPagesBeforePhotos = pagesBeforePhotos - 6;
   const totalPhotoPages = photoPages.length;
-  const dicabiPageNum = 7 + extraPagesBeforePhotos + totalPhotoPages;
+  const dicabiPageNum = pagesBeforePhotos + 1 + totalPhotoPages;
   const totalRgpPages = rgpPages.length;
   const totalPages = dicabiPageNum + totalRgpPages;
 
@@ -1815,14 +1815,14 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               );
             })}
 
-            {/* Si la última página de fincas extras tenía 2 fincas, Servicios y Construcción van en su propia página */}
+            {/* Si la última página de fincas extras tenía 2 o 3 fincas, Servicios y Construcción fluyen sin cortes ni páginas en blanco */}
             {extraFincaPages[extraFincaPages.length - 1]?.length > 1 ? (
               <>
                 <section className="pdf-sheet-page">
                   <PageHeader />
                   <div className="pdf-sheet-content">
                     {renderServiciosBox()}
-                    {renderConstruccionTable(construccionItemsList, 'CARACTERÍSTICAS DE CONSTRUCCIÓN', '0.55rem')}
+                    {renderConstruccionTable(construccionItemsList.slice(0, 7), 'CARACTERÍSTICAS DE CONSTRUCCIÓN', '0.45rem')}
                   </div>
                   <PageFooter pageNum={5 + extraFincaPages.length} />
                 </section>
@@ -1830,6 +1830,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 <section className="pdf-sheet-page">
                   <PageHeader />
                   <div className="pdf-sheet-content">
+                    {renderConstruccionTable(construccionItemsList.slice(7), 'CARACTERÍSTICAS DE CONSTRUCCIÓN (CONTINUACIÓN)', '0')}
                     {renderValuacionesBox()}
                   </div>
                   <PageFooter pageNum={6 + extraFincaPages.length} />
