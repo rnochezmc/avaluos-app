@@ -470,7 +470,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
 
   const extraFincaPageCount = extraFincaPages.length;
   const totalPhotoPages = photoPages.length;
-  const dicabiPageNum = 8 + extraFincaPageCount + totalPhotoPages;
+  const dicabiPageNum = 7 + extraFincaPageCount + totalPhotoPages;
   const totalRgpPages = rgpPages.length;
   const totalPages = dicabiPageNum + totalRgpPages;
 
@@ -1525,54 +1525,43 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
 
               {/* Resumen Total al Pie de la Valuación Comercial */}
-              <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.85rem', background: '#f8fafc', border: `1.5px solid ${company.navyColor}`, borderRadius: '4px', textAlign: 'right' }}>
-                <div style={{ fontSize: '0.78rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+              <div style={{ marginTop: '0.35rem', padding: '0.35rem 0.75rem', background: '#f8fafc', border: `1.5px solid ${company.navyColor}`, borderRadius: '4px', textAlign: 'right' }}>
+                <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
                   SUMA TOTAL VALOR COMERCIAL:
                 </div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: company.navyColor, margin: '2px 0' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 800, color: company.navyColor, margin: '1px 0' }}>
                   {formatQ(computedComercialGTQ)}
                 </div>
-                <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#334155' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#334155' }}>
                   Equivalente en Dólares: <strong style={{ color: company.accentColor }}>{formatUSD(computedComercialUSD)}</strong> (T/C: {avaluo.tipoCambio})
                 </div>
               </div>
             </div>
-          </div>
 
-          <PageFooter pageNum={6 + extraFincaPageCount} />
-        </section>
-
-        {/* ==============================================================
-            PÁGINA 7: VALUACIÓN BANCARIA
-            ============================================================== */}
-        <section className="pdf-sheet-page">
-          <PageHeader />
-
-          <div className="pdf-sheet-content">
-            {/* SECCIÓN 2: VALUACIÓN BANCARIA */}
-            <div style={{ marginBottom: '0.65rem' }}>
-              <div style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.82rem', marginBottom: '0.35rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            {/* SECCIÓN 2: VALUACIÓN BANCARIA (CONTINUA INMEDIATAMENTE ABAJO) */}
+            <div style={{ marginTop: '0.5rem', marginBottom: '0.35rem' }}>
+              <div style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.82rem', marginBottom: '0.3rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                 2. VALUACIÓN BANCARIA
               </div>
 
               {/* TABLA DE VALORACIÓN DEL TERRENO: Solo si aplicaTerreno es true */}
               {aplicaTerreno && (
-                <div className="pdf-valuation-block" style={{ marginBottom: '0.5rem' }}>
+                <div className="pdf-valuation-block" style={{ marginBottom: '0.4rem' }}>
                   <table className="pdf-blue-table">
                     <thead>
                       <tr style={{ background: company.navyColor, color: '#ffffff' }}>
-                        <th colSpan={6} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.8rem', padding: '0.25rem', border: `1px solid ${company.navyColor}` }}>TERRENO</th>
+                        <th colSpan={6} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.8rem', padding: '0.22rem', border: `1px solid ${company.navyColor}` }}>TERRENO</th>
                       </tr>
-                      <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.74rem' }}>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>FINCA</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>EQUIVALENTE EN VARAS² (v²)</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
-                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
+                      <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.72rem' }}>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>FINCA</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>EQUIVALENTE EN VARAS² (v²)</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
+                        <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
                       </tr>
                     </thead>
-                    <tbody style={{ fontSize: '0.74rem' }}>
+                    <tbody style={{ fontSize: '0.72rem' }}>
                       {terrainItems.map((item, i) => {
                         const areaVal = Number(item.area || 0);
                         const varas = Number(item.varasCuadradas || (areaVal * 1.43115));
@@ -1581,27 +1570,27 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
 
                         return (
                           <tr key={i}>
-                            <td style={{ textAlign: 'center', fontWeight: 600, padding: '0.22rem 0.35rem' }}>{item.finca || `Finca ${i + 1}`}</td>
-                            <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{areaVal.toFixed(2)}</td>
-                            <td style={{ textAlign: 'center', fontWeight: 600, color: company.accentColor, padding: '0.22rem 0.35rem' }}>
+                            <td style={{ textAlign: 'center', fontWeight: 600, padding: '0.2rem 0.35rem' }}>{item.finca || `Finca ${i + 1}`}</td>
+                            <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{areaVal.toFixed(2)}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 600, color: company.accentColor, padding: '0.2rem 0.35rem' }}>
                               {varas.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
-                            <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{item.unidad || 'm²'}</td>
-                            <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>{formatQ(unit80)}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.22rem 0.35rem' }}>{formatQ(subtotal80)}</td>
+                            <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{item.unidad || 'm²'}</td>
+                            <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>{formatQ(unit80)}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.2rem 0.35rem' }}>{formatQ(subtotal80)}</td>
                           </tr>
                         );
                       })}
                       {terrainItems.length > 1 && (
                         <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
-                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>TOTAL:</td>
-                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{totalTerrenoArea.toFixed(2)}</td>
-                          <td style={{ textAlign: 'center', color: company.accentColor, padding: '0.22rem 0.35rem' }}>
+                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>TOTAL:</td>
+                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{totalTerrenoArea.toFixed(2)}</td>
+                          <td style={{ textAlign: 'center', color: company.accentColor, padding: '0.2rem 0.35rem' }}>
                             {totalTerrenoVaras.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>m²</td>
-                          <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>-</td>
-                          <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.22rem 0.35rem' }}>{formatQ(parseFloat((totalTerrenoSubtotal * 0.8).toFixed(2)))}</td>
+                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>m²</td>
+                          <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>-</td>
+                          <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.2rem 0.35rem' }}>{formatQ(parseFloat((totalTerrenoSubtotal * 0.8).toFixed(2)))}</td>
                         </tr>
                       )}
                     </tbody>
@@ -1610,66 +1599,61 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               )}
 
               {/* TABLA DE VALORACIÓN DE CONSTRUCCIÓN BANCARIA (80% DEL VALOR COMERCIAL) */}
-              <div className="pdf-valuation-block" style={{ marginBottom: '0.5rem' }}>
+              <div className="pdf-valuation-block" style={{ marginBottom: '0.4rem' }}>
                 <table className="pdf-blue-table">
                   <thead>
                     <tr style={{ background: company.navyColor, color: '#ffffff' }}>
-                      <th colSpan={5} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.8rem', padding: '0.25rem', border: `1px solid ${company.navyColor}` }}>CONSTRUCCION</th>
+                      <th colSpan={5} style={{ background: company.navyColor, color: '#ffffff', textAlign: 'center', fontSize: '0.8rem', padding: '0.22rem', border: `1px solid ${company.navyColor}` }}>CONSTRUCCION</th>
                     </tr>
-                    <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.74rem' }}>
-                      <th style={{ background: company.navyColor, color: '#ffffff', textAlign: 'left', paddingLeft: '8px', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>DESCRIPCIÓN</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
-                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.22rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
+                    <tr style={{ background: company.navyColor, color: '#ffffff', fontSize: '0.72rem' }}>
+                      <th style={{ background: company.navyColor, color: '#ffffff', textAlign: 'left', paddingLeft: '8px', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>DESCRIPCIÓN</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>AREA (m²)</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>UNIDAD</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>VALOR</th>
+                      <th style={{ background: company.navyColor, color: '#ffffff', padding: '0.2rem 0.35rem', border: `1px solid ${company.navyColor}` }}>TOTAL</th>
                     </tr>
                   </thead>
-                  <tbody style={{ fontSize: '0.74rem' }}>
+                  <tbody style={{ fontSize: '0.72rem' }}>
                     {constructionItems.map((item, i) => {
                       const unit80 = parseFloat((Number(item.valorUnitario || 0) * 0.8).toFixed(2));
                       const subtotal80 = parseFloat(((item.total != null ? Number(item.total) : (Number(item.area || 0) * Number(item.valorUnitario || 0))) * 0.8).toFixed(2));
                       return (
                         <tr key={i}>
-                          <td style={{ textAlign: 'left', paddingLeft: '8px', fontWeight: 600, padding: '0.22rem 0.35rem' }}>{item.descripcion || 'Construcción'}</td>
-                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{Number(item.area || 0).toFixed(2)}</td>
-                          <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{item.unidad || 'm²'}</td>
-                          <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>{formatQ(unit80)}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.22rem 0.35rem' }}>{formatQ(subtotal80)}</td>
+                          <td style={{ textAlign: 'left', paddingLeft: '8px', fontWeight: 600, padding: '0.2rem 0.35rem' }}>{item.descripcion || 'Construcción'}</td>
+                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{Number(item.area || 0).toFixed(2)}</td>
+                          <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{item.unidad || 'm²'}</td>
+                          <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>{formatQ(unit80)}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.2rem 0.35rem' }}>{formatQ(subtotal80)}</td>
                         </tr>
                       );
                     })}
                     <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
-                      <td style={{ textAlign: 'left', paddingLeft: '8px', padding: '0.22rem 0.35rem' }}>TOTAL CONSTRUCCIÓN:</td>
-                      <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>{totalConstruccionArea.toFixed(2)}</td>
-                      <td style={{ textAlign: 'center', padding: '0.22rem 0.35rem' }}>m²</td>
-                      <td style={{ textAlign: 'right', padding: '0.22rem 0.35rem' }}>-</td>
-                      <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.22rem 0.35rem' }}>{formatQ(parseFloat((totalConstruccionTotal * 0.8).toFixed(2)))}</td>
+                      <td style={{ textAlign: 'left', paddingLeft: '8px', padding: '0.2rem 0.35rem' }}>TOTAL CONSTRUCCIÓN:</td>
+                      <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>{totalConstruccionArea.toFixed(2)}</td>
+                      <td style={{ textAlign: 'center', padding: '0.2rem 0.35rem' }}>m²</td>
+                      <td style={{ textAlign: 'right', padding: '0.2rem 0.35rem' }}>-</td>
+                      <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.2rem 0.35rem' }}>{formatQ(parseFloat((totalConstruccionTotal * 0.8).toFixed(2)))}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
               {/* Resumen Total Bancario */}
-              <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.85rem', background: '#f8fafc', border: `1.5px solid ${company.navyColor}`, borderRadius: '4px', textAlign: 'right' }}>
-                <div style={{ fontSize: '0.78rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+              <div style={{ marginTop: '0.35rem', padding: '0.35rem 0.75rem', background: '#f8fafc', border: `1.5px solid ${company.navyColor}`, borderRadius: '4px', textAlign: 'right' }}>
+                <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
                   SUMA TOTAL VALOR BANCARIO:
                 </div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: company.navyColor, margin: '2px 0' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 800, color: company.navyColor, margin: '1px 0' }}>
                   {formatQ(computedBancarioGTQ)}
                 </div>
-                <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#334155' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#334155' }}>
                   Equivalente en Dólares: <strong style={{ color: company.accentColor }}>{formatUSD(computedBancarioUSD)}</strong> (T/C: {avaluo.tipoCambio})
                 </div>
               </div>
             </div>
-
-            {/* Cláusula de cierre de valoración para evitar alteraciones o adiciones */}
-            <div style={{ marginTop: '0.65rem', padding: '0.35rem', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '0.7rem', color: '#64748b', letterSpacing: '0.04em' }}>
-              <strong>*** ÚLTIMA LÍNEA DE CÁLCULO DE VALORACIÓN — FIN DEL CUADRO DE LIQUIDACIÓN ***</strong>
-            </div>
           </div>
 
-          <PageFooter pageNum={7 + extraFincaPageCount} />
+          <PageFooter pageNum={6 + extraFincaPageCount} />
         </section>
 
         {/* ==============================================================
@@ -1724,7 +1708,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </div>
             </div>
 
-            <PageFooter pageNum={8 + extraFincaPageCount + pIdx} />
+            <PageFooter pageNum={7 + extraFincaPageCount + pIdx} />
           </section>
         ))}
 
