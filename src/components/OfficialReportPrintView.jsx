@@ -479,36 +479,44 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
     return pages.length > 0 ? pages : [[]];
   }, [normalizedFotos]);
 
-  // Desglose oficial de fincas a ancho completo homologado por los bancos:
-  // Si aplica terreno y colindancias, en Página 4 cabe 1 finca completa con DICABI y Colindancias a ancho completo.
-  // Si no aplican colindancias, caben exactamente 2 fincas de DICABI a ancho completo.
-  const fincasOnPage4Count = showTerrenoSections ? 1 : 2;
-  const page4Fincas = fincas.slice(0, fincasOnPage4Count);
-  const extraFincas = fincas.slice(fincasOnPage4Count);
+  // Desglose oficial de fincas homologado por los bancos:
+  // Si hay más de 1 finca:
+  // En Página 4 va Finca 1 (Información, Áreas, Aspectos Legales, DICABI Finca 1).
+  // Las fincas adicionales de DICABI (Finca 2 en adelante) van continuas en hojas de continuación de DICABI.
+  // Y TODAS las colindancias (empezando desde Finca 1 hasta la última) van continuas en la sección de Colindancias.
+  const isMultiFinca = fincas.length > 1;
+  const page4Fincas = fincas.slice(0, 1);
+  const extraFincas = fincas.slice(1);
 
-  // Paginación continua de DICABI: todas las tablas de DICABI consecutivas (caben 5 cómodamente por página)
+  // Paginación continua de DICABI (Fincas 2 en adelante): caben 5 cómodamente por página
   const DICABIS_PER_PAGE = 5;
   const extraDicabiPages = React.useMemo(() => {
-    if (extraFincas.length === 0) return [];
+    if (!isMultiFinca) return [];
     const pages = [];
     for (let i = 0; i < extraFincas.length; i += DICABIS_PER_PAGE) {
       pages.push(extraFincas.slice(i, i + DICABIS_PER_PAGE));
     }
     return pages;
-  }, [extraFincas]);
+  }, [isMultiFinca, extraFincas]);
 
-  // Paginación continua de Colindancias: todas las tablas de colindancias consecutivas (caben 5 cómodamente por página)
-  const COLINDANCIAS_PER_PAGE = 5;
-  const extraColindanciasPages = React.useMemo(() => {
-    if (extraFincas.length === 0 || !showTerrenoSections) return [];
+  // Paginación continua de Colindancias (Fincas 1 hasta N, todas consecutivas empezando por la 1):
+  const FIRST_PAGE_COLINDANCIAS = 6;
+  const SUBSEQUENT_PAGE_COLINDANCIAS = 6;
+  const allColindanciasPages = React.useMemo(() => {
+    if (!showTerrenoSections || !isMultiFinca) return [];
     const pages = [];
-    for (let i = 0; i < extraFincas.length; i += COLINDANCIAS_PER_PAGE) {
-      pages.push(extraFincas.slice(i, i + COLINDANCIAS_PER_PAGE));
+    if (fincas.length <= FIRST_PAGE_COLINDANCIAS) {
+      pages.push(fincas);
+    } else {
+      pages.push(fincas.slice(0, FIRST_PAGE_COLINDANCIAS));
+      for (let i = FIRST_PAGE_COLINDANCIAS; i < fincas.length; i += SUBSEQUENT_PAGE_COLINDANCIAS) {
+        pages.push(fincas.slice(i, i + SUBSEQUENT_PAGE_COLINDANCIAS));
+      }
     }
     return pages;
-  }, [extraFincas, showTerrenoSections]);
+  }, [showTerrenoSections, isMultiFinca, fincas]);
 
-  const totalExtraPages = extraDicabiPages.length + extraColindanciasPages.length;
+  const totalExtraPages = extraDicabiPages.length + allColindanciasPages.length;
 
   // Cálculo dinámico y matemático exacto de páginas antes de fotos según fincas:
   const pagesBeforePhotos = 6 + totalExtraPages;
@@ -1471,8 +1479,8 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               })}
             </div>
 
-            {/* TERRENO Y COLINDANCIAS (Solo si aplica para lotes o fincas rústicas) */}
-            {showTerrenoSections && (
+            {/* TERRENO Y COLINDANCIAS (Solo para avalúos de 1 sola finca si aplica para lotes o fincas rústicas; con múltiples fincas van todas juntas en su sección) */}
+            {showTerrenoSections && !isMultiFinca && (
               <div style={{ marginTop: '0.35rem' }}>
                 <div className="pdf-boxed-table" style={{ marginBottom: '0.35rem' }}>
                   <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.18rem 0.4rem', fontSize: '0.72rem', letterSpacing: '0.04em' }}>
@@ -1603,9 +1611,9 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
             </section>
           </>
         ) : (
-          /* CASO CON 1 O MÁS FINCAS EXTRAS (Ej. 1, 2, 3 o más fincas adicionales) */
+          /* CASO CON MÚLTIPLES FINCAS (Ej. 2 a 6 o más fincas) */
           <>
-            {/* 1. TODAS LAS TABLAS DE DICABI CONSECUTIVAS */}
+            {/* 1. TODAS LAS TABLAS DE DICABI CONTINUAS (Fincas 2 en adelante) */}
             {extraDicabiPages.map((chunk, pageIdx) => (
               <section key={`dicabi-extra-${pageIdx}`} className="pdf-sheet-page">
                 <PageHeader />
@@ -1616,7 +1624,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                   </div>
 
                   {chunk.map((f, i) => {
-                    const fincaGlobalIdx = fincasOnPage4Count + (pageIdx * DICABIS_PER_PAGE) + i;
+                    const fincaGlobalIdx = 1 + (pageIdx * DICABIS_PER_PAGE) + i; // Inicia en finca index 1 (Finca 2)
                     const fNombre = f.dicabiNombre || '';
                     const fDireccion = f.dicabiDireccion || '';
                     const fMatricula = f.dicabiMatricula || '';
@@ -1626,32 +1634,32 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                       : 'Fincas no inscritas en DICABI';
 
                     return (
-                      <div key={i} style={{ marginTop: i > 0 ? '0.45rem' : '0' }}>
+                      <div key={i} style={{ marginTop: i > 0 ? '0.35rem' : '0' }}>
                         <div className="pdf-boxed-table" style={{ border: '1px solid #1e293b', width: '100%' }}>
-                          <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.14rem 0.45rem', textAlign: 'center', fontSize: '0.72rem', letterSpacing: '0.03em' }}>
+                          <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.12rem 0.45rem', textAlign: 'center', fontSize: '0.71rem', letterSpacing: '0.03em' }}>
                             DIRECCIÓN DE CATASTRO Y AVALÚO DE BIENES INMUEBLES (DICABI) — FINCA: {f.finca || (fincaGlobalIdx + 1)}
                           </div>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.68rem' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.67rem' }}>
                             <tbody>
                               <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                                <td style={{ width: '130px', padding: '0.1rem 0.45rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Nombre:</td>
-                                <td style={{ padding: '0.1rem 0.45rem', color: '#0f172a' }}>{fNombre || '-'}</td>
+                                <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Nombre:</td>
+                                <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a' }}>{fNombre || '-'}</td>
                               </tr>
                               <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                                <td style={{ width: '130px', padding: '0.1rem 0.45rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Dirección:</td>
-                                <td style={{ padding: '0.1rem 0.45rem', color: '#0f172a', lineHeight: 1.25 }}>{fDireccion || '-'}</td>
+                                <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Dirección:</td>
+                                <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a', lineHeight: 1.2 }}>{fDireccion || '-'}</td>
                               </tr>
                               <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                                <td style={{ width: '130px', padding: '0.1rem 0.45rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Matricula:</td>
-                                <td style={{ padding: '0.1rem 0.45rem', color: '#0f172a' }}>{fMatricula ? <strong>{fMatricula}</strong> : '-'}</td>
+                                <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Matricula:</td>
+                                <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a' }}>{fMatricula ? <strong>{fMatricula}</strong> : '-'}</td>
                               </tr>
                               <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                                <td style={{ width: '130px', padding: '0.1rem 0.45rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Área:</td>
-                                <td style={{ padding: '0.1rem 0.45rem', color: '#0f172a' }}>{fArea || '-'}</td>
+                                <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Área:</td>
+                                <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a' }}>{fArea || '-'}</td>
                               </tr>
                               <tr>
-                                <td style={{ width: '130px', padding: '0.1rem 0.45rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Observaciones:</td>
-                                <td style={{ padding: '0.1rem 0.45rem', color: '#0f172a', lineHeight: 1.25 }}>{fObservaciones}</td>
+                                <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Observaciones:</td>
+                                <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a', lineHeight: 1.2 }}>{fObservaciones}</td>
                               </tr>
                             </tbody>
                           </table>
@@ -1665,63 +1673,107 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               </section>
             ))}
 
-            {/* 2. TODAS LAS TABLAS DE COLINDANCIAS CONSECUTIVAS (Solo si aplica para lotes o fincas rústicas) */}
-            {extraColindanciasPages.map((chunk, colPageIdx) => (
-              <section key={`colindancias-extra-${colPageIdx}`} className="pdf-sheet-page">
+            {/* 2. TODAS LAS COLINDANCIAS CONTINUAS (Desde Finca 1 hasta la Finca N) */}
+            {allColindanciasPages.map((chunk, colPageIdx) => (
+              <section key={`colindancias-page-${colPageIdx}`} className="pdf-sheet-page">
                 <PageHeader />
 
                 <div className="pdf-sheet-content">
                   <div className="pdf-section-title-plain" style={{ fontWeight: 800, color: company.navyColor, fontSize: '0.85rem', borderBottom: `2px solid ${company.navyColor}`, paddingBottom: '0.25rem', marginBottom: '0.45rem' }}>
-                    CONTINUACIÓN DE COLINDANCIAS{extraColindanciasPages.length > 1 ? ` (PARTE ${colPageIdx + 1} DE ${extraColindanciasPages.length})` : ''}
+                    {colPageIdx === 0 
+                      ? 'DETALLES DEL TERRENO Y COLINDANCIAS' 
+                      : `CONTINUACIÓN DE COLINDANCIAS (PARTE ${colPageIdx + 1})`}
                   </div>
 
-                  {chunk.map((f, i) => {
-                    const fincaGlobalIdx = fincasOnPage4Count + (colPageIdx * COLINDANCIAS_PER_PAGE) + i;
-                    const col = f.colindancias || {};
-                    const rNorte = col.norte || 'S/D';
-                    const rSur = col.sur || 'S/D';
-                    const rEste = col.este || 'S/D';
-                    const rOeste = col.oeste || 'S/D';
+                  {/* En la primera página de Colindancias, incluir DETALLES DEL TERRENO */}
+                  {colPageIdx === 0 && (
+                    <div className="pdf-boxed-table" style={{ marginBottom: '0.35rem' }}>
+                      <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.14rem 0.4rem', fontSize: '0.71rem', letterSpacing: '0.04em' }}>
+                        DETALLES DEL TERRENO
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                        <div style={{ borderRight: '1px solid #cbd5e1' }}>
+                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Topografía / Pendiente:</span>
+                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.pendiente || '1 / Plana'}</span>
+                          </div>
+                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Forma:</span>
+                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.formaTerreno || 'Regular'}</span>
+                          </div>
+                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Ubicación de esquina:</span>
+                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.ubicacionEsquina || 'No'}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Uso del suelo:</span>
+                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.usoSuelo || 'Mixto'}</span>
+                          </div>
+                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Nivel socioeconómico:</span>
+                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.nivelSocioeconomico || 'Alto'}</span>
+                          </div>
+                          <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
+                            <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Desde la calle:</span>
+                            <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.desdeCalle || 'En frente'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                    const fNorte = col.norteFisica || rNorte || 'S/D';
-                    const fSur = col.surFisica || rSur || 'S/D';
-                    const fEste = col.esteFisica || rEste || 'S/D';
-                    const fOeste = col.oesteFisica || rOeste || 'S/D';
+                  {/* Renderizado consecutivo de las colindancias del chunk empezando por la Finca 1 */}
+                  {chunk.map((f, i) => {
+                    const fincaGlobalIdx = (colPageIdx === 0 ? 0 : FIRST_PAGE_COLINDANCIAS + (colPageIdx - 1) * SUBSEQUENT_PAGE_COLINDANCIAS) + i;
+                    const col = f.colindancias || (fincaGlobalIdx === 0 ? avaluo.colindancias : {}) || {};
+                    const rootCol = avaluo.colindancias || {};
+
+                    const rNorte = col.norte || (fincaGlobalIdx === 0 ? rootCol.norte : '') || 'S/D';
+                    const rSur = col.sur || (fincaGlobalIdx === 0 ? rootCol.sur : '') || 'S/D';
+                    const rEste = col.este || (fincaGlobalIdx === 0 ? rootCol.este : '') || 'S/D';
+                    const rOeste = col.oeste || (fincaGlobalIdx === 0 ? rootCol.oeste : '') || 'S/D';
+
+                    const fNorte = col.norteFisica || (fincaGlobalIdx === 0 ? rootCol.norteFisica : '') || rNorte || 'S/D';
+                    const fSur = col.surFisica || (fincaGlobalIdx === 0 ? rootCol.surFisica : '') || rSur || 'S/D';
+                    const fEste = col.esteFisica || (fincaGlobalIdx === 0 ? rootCol.esteFisica : '') || rEste || 'S/D';
+                    const fOeste = col.oesteFisica || (fincaGlobalIdx === 0 ? rootCol.oesteFisica : '') || rOeste || 'S/D';
 
                     return (
-                      <div key={i} style={{ marginTop: i > 0 ? '0.45rem' : '0' }}>
+                      <div key={i} style={{ marginTop: (colPageIdx === 0 && i === 0) ? '0' : '0.35rem' }}>
                         <div className="pdf-boxed-table" style={{ border: '1px solid #1e293b', width: '100%' }}>
-                          <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.14rem 0.45rem', fontSize: '0.72rem', textAlign: 'center' }}>
+                          <div className="pdf-subtable-header" style={{ background: company.navyColor, color: '#ffffff', fontWeight: 700, padding: '0.12rem 0.45rem', fontSize: '0.71rem', textAlign: 'center' }}>
                             COLINDANCIAS — FINCA: {f.finca || (fincaGlobalIdx + 1)}
                           </div>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.68rem' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.67rem' }}>
                             <thead>
                               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
-                                <th style={{ width: '15%', padding: '0.1rem 0.35rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>RUMBO</th>
-                                <th style={{ width: '42.5%', padding: '0.1rem 0.35rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>REGISTRAL</th>
-                                <th style={{ width: '42.5%', padding: '0.1rem 0.35rem', textAlign: 'left', fontWeight: 700, color: company.accentColor }}>FÍSICA</th>
+                                <th style={{ width: '15%', padding: '0.08rem 0.35rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>RUMBO</th>
+                                <th style={{ width: '42.5%', padding: '0.08rem 0.35rem', textAlign: 'left', fontWeight: 700, color: '#334155', borderRight: '1px solid #cbd5e1' }}>REGISTRAL</th>
+                                <th style={{ width: '42.5%', padding: '0.08rem 0.35rem', textAlign: 'left', fontWeight: 700, color: company.accentColor }}>FÍSICA</th>
                               </tr>
                             </thead>
                             <tbody>
                               <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                <td style={{ padding: '0.1rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Norte:</td>
-                                <td style={{ padding: '0.1rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rNorte}</td>
-                                <td style={{ padding: '0.1rem 0.35rem', color: '#0f172a' }}>{fNorte}</td>
+                                <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Norte:</td>
+                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rNorte}</td>
+                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fNorte}</td>
                               </tr>
                               <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                <td style={{ padding: '0.1rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Sur:</td>
-                                <td style={{ padding: '0.1rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rSur}</td>
-                                <td style={{ padding: '0.1rem 0.35rem', color: '#0f172a' }}>{fSur}</td>
+                                <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Sur:</td>
+                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rSur}</td>
+                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fSur}</td>
                               </tr>
                               <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                <td style={{ padding: '0.1rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Este:</td>
-                                <td style={{ padding: '0.1rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rEste}</td>
-                                <td style={{ padding: '0.1rem 0.35rem', color: '#0f172a' }}>{fEste}</td>
+                                <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Este:</td>
+                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rEste}</td>
+                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fEste}</td>
                               </tr>
                               <tr>
-                                <td style={{ padding: '0.1rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Oeste:</td>
-                                <td style={{ padding: '0.1rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rOeste}</td>
-                                <td style={{ padding: '0.1rem 0.35rem', color: '#0f172a' }}>{fOeste}</td>
+                                <td style={{ padding: '0.08rem 0.35rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Oeste:</td>
+                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>{rOeste}</td>
+                                <td style={{ padding: '0.08rem 0.35rem', color: '#0f172a' }}>{fOeste}</td>
                               </tr>
                             </tbody>
                           </table>
