@@ -28,10 +28,13 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               }
             });
 
+            const hasLocalPdfs = Array.isArray(localItem.consultasPdfs) && 
+              localItem.consultasPdfs.some(d => Array.isArray(d.pages) && d.pages.some(p => p.dataUrl));
+
             return {
               ...prev,
               fotos: mergedFotos,
-              consultasPdfs: localItem.consultasPdfs || prev.consultasPdfs
+              consultasPdfs: hasLocalPdfs ? localItem.consultasPdfs : prev.consultasPdfs
             };
           });
         }
@@ -1828,8 +1831,8 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 </span>
               </div>
 
-              {/* Imagen a página completa: 1 por hoja para máxima legibilidad */}
-              <div className="pdf-photo-frame" style={{ height: '780px', maxHeight: '810px', background: '#ffffff', border: '1.5px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Imagen a página completa: 1 por hoja calibrada milimétricamente para evitar saltos de página */}
+              <div className="pdf-rgp-page-frame" style={{ height: '180mm', maxHeight: '180mm', background: '#ffffff', border: '1.5px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 <img 
                   src={p.dataUrl} 
                   alt={`Certificación RGP - ${p.name} (Pág. ${p.pageIndex})`} 
