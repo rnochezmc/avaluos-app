@@ -1172,7 +1172,7 @@ export default function AvaluoDetailModal({
                         {[avaluo.formaTerreno || 'Regular / Rectangular', avaluo.pendiente || 'Plana (1%)'].filter(Boolean).join(' / ')}
                       </td>
                     </tr>
-                    <tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
                       <td style={{ width: '160px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
                         Nivel socio económico:
                       </td>
@@ -1184,6 +1184,14 @@ export default function AvaluoDetailModal({
                       </td>
                       <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
                         {[avaluo.esquina || 'No', avaluo.accesoCalle || 'Calle asfaltada con acera y bordillo'].filter(Boolean).join(' / ')}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: '160px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        Desde la calle:
+                      </td>
+                      <td colSpan={3} style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
+                        {avaluo.desdeCalle || 'En frente'}
                       </td>
                     </tr>
                   </tbody>
