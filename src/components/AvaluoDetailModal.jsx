@@ -1152,50 +1152,73 @@ export default function AvaluoDetailModal({
                 <MapPin size={16} />
                 <span>Detalles del Terreno (Sector y Características)</span>
               </div>
-              <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', marginBottom: '1.5rem' }}>
+              <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', marginBottom: '1.5rem', background: '#ffffff' }}>
                 <div style={{ background: '#0d2847', color: '#ffffff', padding: '0.45rem 0.85rem', fontWeight: 700, fontSize: '0.82rem', textAlign: 'center', letterSpacing: '0.04em' }}>
                   DETALLES DEL TERRENO
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
-                  <tbody>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ width: '160px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                        Uso:
-                      </td>
-                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>
-                        {avaluo.usoSuelo || avaluo.terreno?.uso || 'Comercial / Residencial'}
-                      </td>
-                      <td style={{ width: '160px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                        Forma / Pendiente:
-                      </td>
-                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        {[avaluo.formaTerreno || 'Regular / Rectangular', avaluo.pendiente || 'Plana (1%)'].filter(Boolean).join(' / ')}
-                      </td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ width: '160px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                        Nivel socio económico:
-                      </td>
-                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a', borderRight: '1px solid #e2e8f0' }}>
-                        {avaluo.nivelSocioeconomico || avaluo.terreno?.nivelSocioEconomico || 'Medio-Alto'}
-                      </td>
-                      <td style={{ width: '160px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                        Esquina / Acceso:
-                      </td>
-                      <td style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        {[avaluo.esquina || 'No', avaluo.accesoCalle || 'Calle asfaltada con acera y bordillo'].filter(Boolean).join(' / ')}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: '160px', padding: '0.4rem 0.6rem', fontWeight: 700, color: '#334155', borderRight: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                        Desde la calle:
-                      </td>
-                      <td colSpan={3} style={{ padding: '0.4rem 0.6rem', color: '#0f172a' }}>
-                        {avaluo.desdeCalle || 'En frente'}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div style={{ padding: '0.85rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
+                    {/* Panel Sector */}
+                    <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase', marginBottom: '0.6rem', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.3rem' }}>
+                        🏙️ Sector
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '0.15rem' }}>Uso</div>
+                          <div style={{ fontSize: '0.82rem', padding: '0.4rem 0.6rem', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#0f172a' }}>
+                            {avaluo.usoSuelo || avaluo.terreno?.uso || 'Comercial / Residencial'}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '0.15rem' }}>Nivel socio económico</div>
+                          <div style={{ fontSize: '0.82rem', padding: '0.4rem 0.6rem', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#0f172a' }}>
+                            {avaluo.nivelSocioeconomico || avaluo.terreno?.nivelSocioEconomico || 'Medio-Alto'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Panel Características */}
+                    <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase', marginBottom: '0.6rem', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.3rem' }}>
+                        📐 Características
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '0.15rem' }}>Forma</div>
+                          <div style={{ fontSize: '0.82rem', padding: '0.4rem 0.6rem', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#0f172a' }}>
+                            {avaluo.formaTerreno || 'Regular / Rectangular'}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '0.15rem' }}>Pendiente</div>
+                          <div style={{ fontSize: '0.82rem', padding: '0.4rem 0.6rem', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#0f172a' }}>
+                            {avaluo.pendiente || 'Plana (1%)'}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '0.15rem' }}>Esquina</div>
+                          <div style={{ fontSize: '0.82rem', padding: '0.4rem 0.6rem', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#0f172a' }}>
+                            {avaluo.esquina || avaluo.ubicacionEsquina || 'No'}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '0.15rem' }}>Desde la calle</div>
+                          <div style={{ fontSize: '0.82rem', padding: '0.4rem 0.6rem', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#0f172a' }}>
+                            {avaluo.desdeCalle || 'En frente'}
+                          </div>
+                        </div>
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '0.15rem' }}>Acceso</div>
+                          <div style={{ fontSize: '0.82rem', padding: '0.4rem 0.6rem', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#0f172a' }}>
+                            {avaluo.accesoCalle || 'Calle asfaltada con acera y bordillo'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Colindancias según cantidad de fincas con Registral y Física */}

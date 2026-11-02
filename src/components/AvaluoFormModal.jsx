@@ -2820,23 +2820,9 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                         </div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                      <div className="form-section-title" style={{ margin: 0 }}>
-                        <MapPin size={16} />
-                        <span>COLINDANCIAS</span>
-                      </div>
-                      {formData.fincas.length > 1 && (
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                          onClick={() => copyColindanciasToAll(0)}
-                          title="Copia las colindancias registrales y físicas de la Finca 1 a las demás fincas"
-                        >
-                          <Copy size={13} />
-                          <span>Copiar Colindancias de Finca 1 a las demás</span>
-                        </button>
-                      )}
+                    <div className="form-section-title">
+                      <MapPin size={16} />
+                      <span>COLINDANCIAS</span>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
