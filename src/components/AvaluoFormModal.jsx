@@ -172,7 +172,9 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
     nivelSocioeconomico: avaluo?.nivelSocioeconomico || 'Medio-Alto',
     formaTerreno: avaluo?.formaTerreno || 'Regular / Rectangular',
     pendiente: avaluo?.pendiente || 'Plana (1%)',
-    esquina: avaluo?.esquina || 'No',
+    esquina: avaluo?.esquina || avaluo?.ubicacionEsquina || 'No',
+    ubicacionEsquina: avaluo?.ubicacionEsquina || avaluo?.esquina || 'No',
+    desdeCalle: avaluo?.desdeCalle || 'En frente',
     accesoCalle: avaluo?.accesoCalle || 'Calle asfaltada con acera y bordillo',
     
     // Colindancias
@@ -2783,8 +2785,8 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                                 <select
                                   className="form-select"
                                   style={{ fontSize: '0.82rem' }}
-                                  value={formData.esquina || 'No'}
-                                  onChange={(e) => setFormData(prev => ({ ...prev, esquina: e.target.value }))}
+                                  value={formData.esquina || formData.ubicacionEsquina || 'No'}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, esquina: e.target.value, ubicacionEsquina: e.target.value }))}
                                 >
                                   <option value="No">No</option>
                                   <option value="Sí">Sí</option>
@@ -2792,6 +2794,17 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                                 </select>
                               </div>
                               <div className="form-field" style={{ margin: 0 }}>
+                                <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Desde la calle</label>
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  style={{ fontSize: '0.82rem' }}
+                                  value={formData.desdeCalle !== undefined ? formData.desdeCalle : 'En frente'}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, desdeCalle: e.target.value }))}
+                                  placeholder="Ej: En frente / Al fondo / Interior"
+                                />
+                              </div>
+                              <div className="form-field" style={{ margin: 0, gridColumn: 'span 2' }}>
                                 <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.15rem' }}>Acceso</label>
                                 <input
                                   type="text"

@@ -1543,7 +1543,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                       </div>
                       <div className="pdf-data-row" style={{ padding: '0.1rem 0.35rem', fontSize: '0.68rem' }}>
                         <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.68rem' }}>Ubicación de esquina:</span>
-                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.ubicacionEsquina || 'No'}</span>
+                        <span className="pdf-data-value" style={{ fontSize: '0.68rem' }}>{avaluo.ubicacionEsquina || avaluo.esquina || 'No'}</span>
                       </div>
                     </div>
                     <div>
@@ -1749,7 +1749,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                                   </div>
                                   <div className="pdf-data-row" style={{ padding: '0.08rem 0.35rem', fontSize: '0.67rem' }}>
                                     <span className="pdf-data-label" style={{ width: '130px', fontSize: '0.67rem' }}>Ubicación de esquina:</span>
-                                    <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.ubicacionEsquina || 'No'}</span>
+                                    <span className="pdf-data-value" style={{ fontSize: '0.67rem' }}>{avaluo.ubicacionEsquina || avaluo.esquina || 'No'}</span>
                                   </div>
                                 </div>
                                 <div>
