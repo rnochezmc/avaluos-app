@@ -169,10 +169,9 @@ export default function SearchAndFilters({
             onChange={(e) => setBankFilter(e.target.value)}
           >
             <option value="todos">Todas las Instituciones</option>
-            <option value="BANCO G&T CONTINENTAL">Banco G&T Continental</option>
-            <option value="BANCO INDUSTRIAL">Banco Industrial</option>
-            <option value="BANCO DE AMÉRICA CENTRAL (BAC)">Banco de América Central (BAC)</option>
-            <option value="COOPERATIVA DE AHORRO Y CREDITO INTEGRAL PARROQUIAL GUADALUPANA R.L.">Cooperativa Guadalupana</option>
+            <option value="Banco Industrial">Banco Industrial</option>
+            <option value="BANRURAL">BANRURAL</option>
+            <option value="Banco G&T Continental">Banco G&T Continental</option>
           </select>
         </div>
 

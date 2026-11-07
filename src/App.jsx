@@ -633,9 +633,18 @@ export default function App() {
           return false;
         }
 
-        // Bank filter
-        if (bankFilter !== 'todos' && item.solicitante !== bankFilter) {
-          return false;
+        // Bank filter (Banco Industrial, BANRURAL, Banco G&T Continental)
+        if (bankFilter !== 'todos') {
+          const bankText = normalize((item.solicitante || '') + ' ' + (item.dirigidoA || ''));
+          if (bankFilter === 'Banco Industrial') {
+            if (!bankText.includes('industrial') && !bankText.includes('bi')) return false;
+          } else if (bankFilter === 'BANRURAL') {
+            if (!bankText.includes('rural') && !bankText.includes('banrural')) return false;
+          } else if (bankFilter === 'Banco G&T Continental') {
+            if (!bankText.includes('g&t') && !bankText.includes('continental')) return false;
+          } else if (normalize(item.solicitante || '') !== normalize(bankFilter)) {
+            return false;
+          }
         }
 
         // Omnisearch matching
