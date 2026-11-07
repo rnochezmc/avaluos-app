@@ -518,7 +518,7 @@ export default function App() {
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('todos');
+  const [activeFilter, setActiveFilter] = useState('en_revision');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState('todos');
   const [bankFilter, setBankFilter] = useState('todos');
   const [sortBy, setSortBy] = useState('recientes');
@@ -1073,7 +1073,7 @@ export default function App() {
           setSortBy={setSortBy}
           viewMode={viewMode}
           setViewMode={setViewMode}
-          totalResults={filteredAvaluos.length}
+          totalResults={tenantFilteredAvaluos.length}
         />
 
         {/* Expedientes Results Section */}
