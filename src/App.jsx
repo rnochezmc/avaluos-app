@@ -10,6 +10,7 @@ import OfficialReportPrintView from './components/OfficialReportPrintView';
 import MobileBottomNav from './components/MobileBottomNav';
 import LoginScreen from './components/LoginScreen';
 import UserManagementModal from './components/UserManagementModal';
+import ReporteriaModal from './components/ReporteriaModal';
 import { initialAvaluos, DEFAULT_DICTAMEN_GARANTIA } from './data/mockAvaluos';
 import { getTenantConfig, DEFAULT_TENANT_ID } from './data/tenantsConfig';
 import { 
@@ -529,6 +530,7 @@ export default function App() {
   const [editingAvaluo, setEditingAvaluo] = useState(null);
   const [printingAvaluo, setPrintingAvaluo] = useState(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [showReporteriaModal, setShowReporteriaModal] = useState(false);
   const lastFichaIdRef = useRef(null);
 
   // Normalize string for accent-insensitive search
@@ -1046,6 +1048,7 @@ export default function App() {
         currentUser={currentUser}
         onSignOut={handleSignOut}
         onOpenUserManagement={() => setShowUserManagement(true)}
+        onOpenReporteria={() => setShowReporteriaModal(true)}
         currentTenant={currentTenantConfig}
         selectedTenantId={selectedTenantId}
         onSelectTenant={handleSelectTenant}
@@ -1074,6 +1077,7 @@ export default function App() {
           viewMode={viewMode}
           setViewMode={setViewMode}
           totalResults={tenantFilteredAvaluos.length}
+          onOpenReporteria={() => setShowReporteriaModal(true)}
         />
 
         {/* Expedientes Results Section */}
@@ -1285,6 +1289,18 @@ export default function App() {
           currentUser={currentUser}
           usuarios={usuarios}
           onClose={() => setShowUserManagement(false)}
+        />
+      )}
+
+      {/* Centro de Reportería y Exportación Oficial a Excel */}
+      {showReporteriaModal && (
+        <ReporteriaModal
+          isOpen={showReporteriaModal}
+          onClose={() => setShowReporteriaModal(false)}
+          avaluos={tenantFilteredAvaluos}
+          currentTenant={currentTenantConfig}
+          selectedTenantId={selectedTenantId}
+          currentUser={currentUser}
         />
       )}
 

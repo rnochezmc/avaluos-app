@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, UserCheck, ShieldCheck, ChevronDown, Check, 
-  Users, LogOut, Shield, User, HelpCircle 
+  Users, LogOut, Shield, User, HelpCircle, FileSpreadsheet 
 } from 'lucide-react';
 
 export default function Navbar({ 
   onNewAvaluo, 
+  onOpenReporteria,
   cloudStatus = 'conectado',
   currentRole = 'autorizador',
   onRoleChange,
@@ -244,6 +245,32 @@ export default function Navbar({
             </button>
           )}
 
+          {/* Botón de Reportería y Exportación a Excel */}
+          <button
+            type="button"
+            onClick={onOpenReporteria}
+            title="Generar reportes oficiales y exportar a Excel"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: 'rgba(255, 255, 255, 0.12)',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              color: '#ffffff',
+              padding: '0.45rem 0.8rem',
+              borderRadius: '8px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)'}
+          >
+            <FileSpreadsheet size={15} color="#34d399" />
+            <span className="desktop-only">Reportería</span>
+          </button>
+
           {/* User Profile & Account Menu */}
           <div ref={menuRef} style={{ position: 'relative' }}>
             <button
@@ -371,6 +398,36 @@ export default function Navbar({
                     <span>Control de Colaboradores</span>
                   </button>
                 )}
+
+                {/* Opción de Reportería en menú */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    if (onOpenReporteria) onOpenReporteria();
+                  }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontSize: '0.82rem',
+                    color: '#0d2847',
+                    fontWeight: 600,
+                    marginTop: '2px'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <FileSpreadsheet size={16} color="#059669" />
+                  <span>Reportería y Exportar a Excel</span>
+                </button>
 
                 {/* Simulador rápido de rol (útil para Aroldo probar la vista del auxiliar) */}
                 <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '6px', paddingTop: '6px' }}>

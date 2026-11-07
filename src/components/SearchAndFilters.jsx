@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, X, LayoutGrid, Table, ArrowUpDown } from 'lucide-react';
+import { Search, X, LayoutGrid, Table, ArrowUpDown, FileSpreadsheet } from 'lucide-react';
 
 export default function SearchAndFilters({
   searchTerm,
@@ -14,7 +14,8 @@ export default function SearchAndFilters({
   setSortBy,
   viewMode,
   setViewMode,
-  totalResults
+  totalResults,
+  onOpenReporteria
 }) {
   const searchInputRef = React.useRef(null);
 
@@ -71,6 +72,33 @@ export default function SearchAndFilters({
             <span className="desktop-only">Tabla</span>
           </button>
         </div>
+
+        {/* Botón de Reportería y Exportación */}
+        {onOpenReporteria && (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onOpenReporteria}
+            title="Generar reportes y exportar a Excel"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              padding: '0.45rem 0.85rem',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              color: '#0f172a',
+              background: '#ffffff',
+              cursor: 'pointer',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+            }}
+          >
+            <FileSpreadsheet size={16} color="#059669" />
+            <span className="desktop-only">Reportería Excel</span>
+          </button>
+        )}
       </div>
 
       {/* Quick Filter Pills Row */}
