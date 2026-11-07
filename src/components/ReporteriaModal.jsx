@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import ExcelJS from 'exceljs';
 import { 
   X, FileSpreadsheet, Download, Check, Plus, Trash2, 
   Layers, Filter, Eye, RefreshCw, FileText, Sparkles 
@@ -6,57 +7,57 @@ import {
 
 export const AVAILABLE_REPORT_FIELDS = [
   // Generales
-  { id: 'codigo', label: 'Código de Expediente', category: 'General', default: true },
-  { id: 'solicitante', label: 'Solicitante / Cliente', category: 'General', default: true },
-  { id: 'dirigidoA', label: 'Dirigido a (Entidad)', category: 'General', default: true },
-  { id: 'estado', label: 'Estado del Expediente', category: 'General', default: true },
-  { id: 'tipoAvaluo', label: 'Tipo de Avalúo', category: 'General', default: true },
-  { id: 'empresa', label: 'Empresa Emisora', category: 'General', default: false },
+  { id: 'codigo', label: 'Código de Expediente', category: 'General', default: true, width: 22 },
+  { id: 'solicitante', label: 'Solicitante / Cliente', category: 'General', default: true, width: 28 },
+  { id: 'dirigidoA', label: 'Dirigido a (Entidad)', category: 'General', default: true, width: 28 },
+  { id: 'estado', label: 'Estado del Expediente', category: 'General', default: true, width: 18 },
+  { id: 'tipoAvaluo', label: 'Tipo de Avalúo', category: 'General', default: true, width: 20 },
+  { id: 'empresa', label: 'Empresa Emisora', category: 'General', default: false, width: 22 },
 
   // Inmueble y Ubicación
-  { id: 'propietarioPrincipal', label: 'Propietario Registral', category: 'Inmueble', default: true },
-  { id: 'bienMostradoPor', label: 'Bien Mostrado Por', category: 'Inmueble', default: false },
-  { id: 'direccion', label: 'Dirección del Inmueble', category: 'Inmueble', default: true },
-  { id: 'coordenadas', label: 'Coordenadas GPS', category: 'Inmueble', default: false },
-  { id: 'descripcionGeneral', label: 'Descripción General', category: 'Inmueble', default: false },
+  { id: 'propietarioPrincipal', label: 'Propietario Registral', category: 'Inmueble', default: true, width: 30 },
+  { id: 'bienMostradoPor', label: 'Bien Mostrado Por', category: 'Inmueble', default: false, width: 26 },
+  { id: 'direccion', label: 'Dirección del Inmueble', category: 'Inmueble', default: true, width: 38 },
+  { id: 'coordenadas', label: 'Coordenadas GPS', category: 'Inmueble', default: false, width: 22 },
+  { id: 'descripcionGeneral', label: 'Descripción General', category: 'Inmueble', default: false, width: 40 },
 
   // Fechas
-  { id: 'fechaInspeccion', label: 'Fecha de Inspección', category: 'Fechas', default: true },
-  { id: 'fechaSolicitud', label: 'Fecha de Solicitud', category: 'Fechas', default: false },
-  { id: 'fechaEmision', label: 'Fecha de Emisión', category: 'Fechas', default: false },
+  { id: 'fechaInspeccion', label: 'Fecha de Inspección', category: 'Fechas', default: true, width: 20 },
+  { id: 'fechaSolicitud', label: 'Fecha de Solicitud', category: 'Fechas', default: false, width: 18 },
+  { id: 'fechaEmision', label: 'Fecha de Emisión', category: 'Fechas', default: false, width: 18 },
 
   // Registro y Áreas
-  { id: 'fincasResumen', label: 'Fincas (Finca / Folio / Libro)', category: 'Registro & Áreas', default: true },
-  { id: 'fincasCount', label: 'Cantidad de Fincas', category: 'Registro & Áreas', default: false },
-  { id: 'areaValuada', label: 'Área Valuada (m²)', category: 'Registro & Áreas', default: true },
-  { id: 'areaRegistrada', label: 'Área Registrada (m²)', category: 'Registro & Áreas', default: false },
-  { id: 'areaFisica', label: 'Área Física (m²)', category: 'Registro & Áreas', default: false },
+  { id: 'fincasResumen', label: 'Fincas (Finca / Folio / Libro)', category: 'Registro & Áreas', default: true, width: 35 },
+  { id: 'fincasCount', label: 'Cantidad de Fincas', category: 'Registro & Áreas', default: false, width: 18 },
+  { id: 'areaValuada', label: 'Área Valuada (m²)', category: 'Registro & Áreas', default: true, width: 18 },
+  { id: 'areaRegistrada', label: 'Área Registrada (m²)', category: 'Registro & Áreas', default: false, width: 18 },
+  { id: 'areaFisica', label: 'Área Física (m²)', category: 'Registro & Áreas', default: false, width: 18 },
 
   // Valores Financieros
-  { id: 'valorComercialGTQ', label: 'Valor Comercial (Q)', category: 'Valores Financieros', default: true, isCurrencyGTQ: true },
-  { id: 'valorBancarioGTQ', label: 'Valor Bancario (Q)', category: 'Valores Financieros', default: true, isCurrencyGTQ: true },
-  { id: 'valorComercialUSD', label: 'Valor Comercial ($)', category: 'Valores Financieros', default: true, isCurrencyUSD: true },
-  { id: 'valorBancarioUSD', label: 'Valor Bancario ($)', category: 'Valores Financieros', default: false, isCurrencyUSD: true },
-  { id: 'tipoCambio', label: 'Tipo de Cambio', category: 'Valores Financieros', default: false },
+  { id: 'valorComercialGTQ', label: 'Valor Comercial (Q)', category: 'Valores Financieros', default: true, isCurrencyGTQ: true, width: 22 },
+  { id: 'valorBancarioGTQ', label: 'Valor Bancario (Q)', category: 'Valores Financieros', default: true, isCurrencyGTQ: true, width: 22 },
+  { id: 'valorComercialUSD', label: 'Valor Comercial ($)', category: 'Valores Financieros', default: true, isCurrencyUSD: true, width: 22 },
+  { id: 'valorBancarioUSD', label: 'Valor Bancario ($)', category: 'Valores Financieros', default: false, isCurrencyUSD: true, width: 22 },
+  { id: 'tipoCambio', label: 'Tipo de Cambio', category: 'Valores Financieros', default: false, width: 16 },
 
   // Terreno y Sector
-  { id: 'usoSuelo', label: 'Uso del Suelo', category: 'Terreno', default: false },
-  { id: 'nivelSocioeconomico', label: 'Nivel Socioeconómico', category: 'Terreno', default: false },
-  { id: 'formaTerreno', label: 'Forma del Terreno', category: 'Terreno', default: false },
-  { id: 'pendiente', label: 'Topografía / Pendiente', category: 'Terreno', default: false },
-  { id: 'ubicacionEsquina', label: 'Ubicación de Esquina', category: 'Terreno', default: false },
-  { id: 'desdeCalle', label: 'Desde la Calle', category: 'Terreno', default: false },
-  { id: 'accesoCalle', label: 'Acceso de Calle', category: 'Terreno', default: false },
+  { id: 'usoSuelo', label: 'Uso del Suelo', category: 'Terreno', default: false, width: 20 },
+  { id: 'nivelSocioeconomico', label: 'Nivel Socioeconómico', category: 'Terreno', default: false, width: 20 },
+  { id: 'formaTerreno', label: 'Forma del Terreno', category: 'Terreno', default: false, width: 20 },
+  { id: 'pendiente', label: 'Topografía / Pendiente', category: 'Terreno', default: false, width: 22 },
+  { id: 'ubicacionEsquina', label: 'Ubicación de Esquina', category: 'Terreno', default: false, width: 18 },
+  { id: 'desdeCalle', label: 'Desde la Calle', category: 'Terreno', default: false, width: 18 },
+  { id: 'accesoCalle', label: 'Acceso de Calle', category: 'Terreno', default: false, width: 28 },
 
   // Legal
-  { id: 'gravamenes', label: 'Gravámenes', category: 'Aspectos Legales', default: false },
-  { id: 'limitaciones', label: 'Limitaciones', category: 'Aspectos Legales', default: false },
-  { id: 'anotaciones', label: 'Anotaciones', category: 'Aspectos Legales', default: false },
+  { id: 'gravamenes', label: 'Gravámenes', category: 'Aspectos Legales', default: false, width: 32 },
+  { id: 'limitaciones', label: 'Limitaciones', category: 'Aspectos Legales', default: false, width: 32 },
+  { id: 'anotaciones', label: 'Anotaciones', category: 'Aspectos Legales', default: false, width: 30 },
 
   // Control y Firmas
-  { id: 'valuadorPrincipal', label: 'Valuador Principal', category: 'Control & Firmas', default: false },
-  { id: 'autorizadoPor', label: 'Autorizado Por', category: 'Control & Firmas', default: false },
-  { id: 'creadoPorNombre', label: 'Ingresado Por', category: 'Control & Firmas', default: false }
+  { id: 'valuadorPrincipal', label: 'Valuador Principal', category: 'Control & Firmas', default: false, width: 28 },
+  { id: 'autorizadoPor', label: 'Autorizado Por', category: 'Control & Firmas', default: false, width: 28 },
+  { id: 'creadoPorNombre', label: 'Ingresado Por', category: 'Control & Firmas', default: false, width: 25 }
 ];
 
 export const REPORT_PRESETS = [
@@ -99,23 +100,7 @@ export default function ReporteriaModal({
   );
   const [scopeFilter, setScopeFilter] = useState('todos_tenant'); // 'todos_tenant' | 'en_revision' | 'autorizados'
   const [fieldToAdd, setFieldToAdd] = useState('');
-  const [logoBase64, setLogoBase64] = useState('');
   const [isExporting, setIsExporting] = useState(false);
-
-  // Cargar el logotipo actual en Base64 para incrustarlo nativamente en el Excel
-  useEffect(() => {
-    const logoPath = selectedTenantId === 'cverde' ? '/cverde-logo.jpg' : '/lex-rosam-logo.png';
-    fetch(logoPath)
-      .then(res => res.blob())
-      .then(blob => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setLogoBase64(reader.result);
-        };
-        reader.readAsDataURL(blob);
-      })
-      .catch(() => setLogoBase64(''));
-  }, [selectedTenantId]);
 
   if (!isOpen) return null;
 
@@ -204,11 +189,11 @@ export default function ReporteriaModal({
       case 'fincasCount':
         return item.fincas ? item.fincas.length : 1;
       case 'areaValuada':
-        return item.areaValuada ? Number(item.areaValuada).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m²' : '-';
+        return item.areaValuada ? Number(item.areaValuada) : null;
       case 'areaRegistrada':
-        return item.areaRegistrada ? Number(item.areaRegistrada).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m²' : '-';
+        return item.areaRegistrada ? Number(item.areaRegistrada) : null;
       case 'areaFisica':
-        return item.areaFisica ? Number(item.areaFisica).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m²' : '-';
+        return item.areaFisica ? Number(item.areaFisica) : null;
       case 'valorComercialGTQ':
         return Number(item.valorComercialGTQ) || 0;
       case 'valorBancarioGTQ':
@@ -218,7 +203,7 @@ export default function ReporteriaModal({
       case 'valorBancarioUSD':
         return Number(item.valorBancarioUSD) || 0;
       case 'tipoCambio':
-        return item.tipoCambio ? Number(item.tipoCambio).toFixed(5) : '-';
+        return item.tipoCambio ? Number(item.tipoCambio) : null;
       case 'usoSuelo':
         return item.usoSuelo || item.terreno?.uso || '-';
       case 'nivelSocioeconomico':
@@ -250,199 +235,272 @@ export default function ReporteriaModal({
     }
   };
 
-  // Generador de Excel oficial formateado con Logo a la izquierda
-  const handleExportToExcel = () => {
+  // Generador nativo OpenXML .xlsx con ExcelJS, logo incrustado y paneles congelados
+  const handleExportToExcel = async () => {
     setIsExporting(true);
 
     try {
       const isCV = selectedTenantId === 'cverde';
       const companyName = isCV ? 'C VERDE, SOCIEDAD ANÓNIMA' : 'LEX ROSAM, SOCIEDAD ANÓNIMA';
       const companySubtitle = isCV ? 'SERVICIOS INMOBILIARIOS Y AVALÚOS' : 'SERVICIOS TÉCNICOS Y AVALÚOS PROFESIONALES';
-      const headerColor = isCV ? '#004e3b' : '#0d2847';
-      const secondaryHeaderColor = isCV ? '#002c22' : '#07172b';
-      const accentColor = isCV ? '#00bb7f' : '#38bdf8';
+      
+      // Colores corporativos
+      const primaryHex = isCV ? '004E3B' : '0D2847';
+      const accentHex = isCV ? '00BB7F' : '38BDF8';
+      const zebraHex = 'F8FAFC';
 
       const activeColumns = AVAILABLE_REPORT_FIELDS.filter(f => selectedFields.includes(f.id));
-      const colSpanTotal = Math.max(activeColumns.length, 5);
 
       const todayStr = new Date().toLocaleDateString('es-GT', { 
         year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
       });
 
-      // Cálculo de totales si existen columnas monetarias
+      // 1. Crear el libro y la hoja de cálculo
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = isCV ? 'C VERDE S.A.' : 'LEX ROSAM S.A.';
+      workbook.lastModifiedBy = currentUser?.nombre || 'Usuario Autorizado';
+      workbook.created = new Date();
+      workbook.modified = new Date();
+
+      const worksheet = workbook.addWorksheet('Reporte de Avalúos', {
+        pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+        // INMOVILIZAR LAS PRIMERAS 5 FILAS (Títulos y Encabezados siempre visibles al scrollear)
+        views: [
+          { 
+            state: 'frozen', 
+            xSplit: 0, 
+            ySplit: 5, 
+            topLeftCell: 'A6', 
+            activeCell: 'A6' 
+          }
+        ]
+      });
+
+      // 2. Definir anchos de columnas
+      worksheet.columns = [
+        { key: 'no', width: 6 },
+        ...activeColumns.map(col => ({
+          key: col.id,
+          width: Math.max(col.width || 18, col.label.length + 3)
+        }))
+      ];
+
+      // 3. Incrustar el Logotipo real en el archivo .xlsx
+      try {
+        const logoPath = isCV ? '/cverde-logo.jpg' : '/lex-rosam-logo.png';
+        const response = await fetch(logoPath);
+        if (response.ok) {
+          const imageArrayBuffer = await response.arrayBuffer();
+          const imageId = workbook.addImage({
+            buffer: imageArrayBuffer,
+            extension: isCV ? 'jpeg' : 'png'
+          });
+
+          // Ubicar el logo en la parte superior izquierda (celda A1-B3) con tamaño proporcional
+          worksheet.addImage(imageId, {
+            tl: { col: 0.15, row: 0.15 },
+            ext: { width: 135, height: 46 },
+            editAs: 'absolute'
+          });
+        }
+      } catch (imgErr) {
+        console.warn('No se pudo cargar el logo para incrustar:', imgErr);
+      }
+
+      // 4. Bloque de Encabezado Superior (Filas 1 a 4)
+      // Fila 1: Nombre de la Empresa
+      worksheet.mergeCells(1, 3, 1, activeColumns.length + 1);
+      const row1Cell = worksheet.getCell(1, 3);
+      row1Cell.value = companyName;
+      row1Cell.font = { name: 'Calibri', size: 15, bold: true, color: { argb: primaryHex } };
+      row1Cell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+      // Fila 2: Título del Reporte
+      worksheet.mergeCells(2, 3, 2, activeColumns.length + 1);
+      const row2Cell = worksheet.getCell(2, 3);
+      row2Cell.value = `REPORTE OFICIAL DE EXPEDIENTES DE AVALÚOS · ${scopeFilter === 'en_revision' ? 'SOLO EN REVISIÓN' : (scopeFilter === 'autorizados' ? 'SOLO AUTORIZADOS' : 'CONSOLIDADO COMPLETO')}`;
+      row2Cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: '334155' } };
+      row2Cell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+      // Fila 3: Metadatos (Fecha, usuario, registros)
+      worksheet.mergeCells(3, 3, 3, activeColumns.length + 1);
+      const row3Cell = worksheet.getCell(3, 3);
+      row3Cell.value = `Emitido el: ${todayStr} | Por: ${currentUser?.nombre || 'Usuario Autorizado'} | Registros incluidos: ${expedientesParaReporte.length}`;
+      row3Cell.font = { name: 'Calibri', size: 8.5, italic: true, color: { argb: '64748B' } };
+      row3Cell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+      // Fila 4: Espaciador visual con línea sutil
+      worksheet.getRow(4).height = 8;
+
+      // 5. Fila 5: ENCABEZADOS DE LA TABLA (Esta es la fila fija)
+      const headerRow = worksheet.getRow(5);
+      headerRow.height = 28;
+
+      const headerValues = ['No.', ...activeColumns.map(col => col.label)];
+      headerRow.values = headerValues;
+
+      headerRow.eachCell((cell) => {
+        cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: primaryHex }
+        };
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+        cell.border = {
+          top: { style: 'thin', color: { argb: '1E293B' } },
+          left: { style: 'thin', color: { argb: '1E293B' } },
+          bottom: { style: 'medium', color: { argb: primaryHex } },
+          right: { style: 'thin', color: { argb: '1E293B' } }
+        };
+      });
+
+      // 6. Filas de Datos (A partir de la Fila 6)
       let sumComercialGTQ = 0;
       let sumBancarioGTQ = 0;
       let sumComercialUSD = 0;
 
-      expedientesParaReporte.forEach(item => {
-        sumComercialGTQ += Number(item.valorComercialGTQ) || 0;
-        sumBancarioGTQ += Number(item.valorBancarioGTQ) || 0;
-        sumComercialUSD += Number(item.valorComercialUSD) || 0;
-      });
-
-      // Construcción del documento HTML con formato para Microsoft Excel / Numbers
-      let excelHtml = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" 
-            xmlns:x="urn:schemas-microsoft-com:office:excel" 
-            xmlns="http://www.w3.org/TR/REC-html40">
-      <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <!--[if gte mso 9]>
-        <xml>
-          <x:ExcelWorkbook>
-            <x:ExcelWorksheets>
-              <x:ExcelWorksheet>
-                <x:Name>Reporte de Avalúos</x:Name>
-                <x:WorksheetOptions>
-                  <x:DisplayGridlines/>
-                </x:WorksheetOptions>
-              </x:ExcelWorksheet>
-            </x:ExcelWorksheets>
-          </x:ExcelWorkbook>
-        </xml>
-        <![endif]-->
-        <style>
-          body { font-family: Calibri, Arial, sans-serif; }
-          .title-company { font-size: 16pt; font-weight: bold; color: ${headerColor}; }
-          .subtitle-company { font-size: 10pt; color: #475569; }
-          .report-meta { font-size: 9pt; color: #64748b; }
-          .table-header { background-color: ${headerColor}; color: #ffffff; font-weight: bold; font-size: 10pt; text-align: center; border: 1px solid #1e293b; padding: 8px 6px; }
-          .data-cell { font-size: 9pt; border: 1px solid #cbd5e1; padding: 6px 8px; vertical-align: middle; }
-          .cell-code { font-weight: bold; color: ${headerColor}; text-align: center; }
-          .cell-status-autorizado { background-color: #ecfdf5; color: #047857; font-weight: bold; text-align: center; }
-          .cell-status-revision { background-color: #fffbeb; color: #b45309; font-weight: bold; text-align: center; }
-          .cell-status-devuelto { background-color: #fef2f2; color: #b91c1c; font-weight: bold; text-align: center; }
-          .cell-status-borrador { background-color: #f1f5f9; color: #475569; font-weight: bold; text-align: center; }
-          .cell-currency { text-align: right; font-weight: 500; }
-          .cell-number { text-align: right; }
-          .row-zebra { background-color: #f8fafc; }
-          .row-total { background-color: #f1f5f9; font-weight: bold; border-top: 2px solid ${headerColor}; border-bottom: 2px solid ${headerColor}; font-size: 10pt; }
-        </style>
-      </head>
-      <body>
-        <table>
-          <!-- Fila de Encabezado con Logo a la izquierda -->
-          <tr>
-            <td colspan="2" rowspan="3" style="vertical-align: middle; text-align: center; padding: 10px; background-color: #ffffff; border-bottom: 3px solid ${headerColor};">
-              ${logoBase64 ? `<img src="${logoBase64}" width="140" height="42" alt="Logo" />` : `<strong>${isCV ? 'C VERDE' : 'LEX ROSAM'}</strong>`}
-            </td>
-            <td colspan="${colSpanTotal - 2}" style="font-size: 15pt; font-weight: bold; color: ${headerColor}; padding-top: 10px; padding-left: 12px;">
-              ${companyName}
-            </td>
-          </tr>
-          <tr>
-            <td colspan="${colSpanTotal - 2}" style="font-size: 10pt; font-weight: bold; color: #334155; padding-left: 12px;">
-              REPORTE OFICIAL DE EXPEDIENTES DE AVALÚOS · ${scopeFilter === 'en_revision' ? 'SOLO EN REVISIÓN' : (scopeFilter === 'autorizados' ? 'SOLO AUTORIZADOS' : 'CONSOLIDADO COMPLETO')}
-            </td>
-          </tr>
-          <tr>
-            <td colspan="${colSpanTotal - 2}" style="font-size: 8.5pt; color: #64748b; padding-left: 12px; padding-bottom: 10px; border-bottom: 3px solid ${headerColor};">
-              Generado el: ${todayStr} | Emitido por: ${currentUser?.nombre || 'Usuario Autorizado'} | Registros incluidos: ${expedientesParaReporte.length}
-            </td>
-          </tr>
-
-          <!-- Espacio en blanco antes de la tabla -->
-          <tr style="height: 12px;"><td colspan="${colSpanTotal}"></td></tr>
-
-          <!-- Encabezados de Columnas -->
-          <tr>
-            <th class="table-header" style="width: 40px;">No.</th>
-            ${activeColumns.map(col => `
-              <th class="table-header">${col.label}</th>
-            `).join('')}
-          </tr>
-      `;
-
-      // Filas de Datos
       expedientesParaReporte.forEach((item, index) => {
-        const isZebra = index % 2 === 1;
-        const rowClass = isZebra ? 'row-zebra' : '';
+        const rowNum = 6 + index;
+        const row = worksheet.getRow(rowNum);
+        row.height = 22;
 
-        excelHtml += `<tr class="${rowClass}">
-          <td class="data-cell" style="text-align: center; color: #64748b;">${index + 1}</td>
-        `;
+        const isZebra = index % 2 === 1;
+        const rowBgColor = isZebra ? zebraHex : 'FFFFFF';
+
+        const rowValues = [index + 1];
 
         activeColumns.forEach(col => {
-          const rawVal = getFieldValue(item, col.id);
+          const val = getFieldValue(item, col.id);
+          rowValues.push(val);
 
-          if (col.id === 'codigo') {
-            excelHtml += `<td class="data-cell cell-code">${rawVal}</td>`;
-          } else if (col.id === 'estado') {
-            const st = (item.estado || '').toLowerCase();
-            let stClass = 'cell-status-borrador';
-            if (st === 'autorizado' || st === 'completado') stClass = 'cell-status-autorizado';
-            else if (st === 'en_revision' || st === 'proceso') stClass = 'cell-status-revision';
-            else if (st === 'devuelto') stClass = 'cell-status-devuelto';
-
-            excelHtml += `<td class="data-cell ${stClass}">${rawVal}</td>`;
-          } else if (col.isCurrencyGTQ) {
-            const num = Number(rawVal) || 0;
-            excelHtml += `<td class="data-cell cell-currency" style="mso-number-format:'Q\\ #\\,##0\\.00';">
-              Q ${num.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </td>`;
-          } else if (col.isCurrencyUSD) {
-            const num = Number(rawVal) || 0;
-            excelHtml += `<td class="data-cell cell-currency" style="mso-number-format:'\\$\\ #\\,##0\\.00';">
-              $ ${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </td>`;
-          } else {
-            excelHtml += `<td class="data-cell">${rawVal}</td>`;
-          }
+          if (col.id === 'valorComercialGTQ') sumComercialGTQ += Number(val) || 0;
+          if (col.id === 'valorBancarioGTQ') sumBancarioGTQ += Number(val) || 0;
+          if (col.id === 'valorComercialUSD') sumComercialUSD += Number(val) || 0;
         });
 
-        excelHtml += `</tr>`;
+        row.values = rowValues;
+
+        // Estilos celda por celda
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const colIndex = colNumber - 2; // -1 por 1-based, -1 por columna "No."
+          const colDef = activeColumns[colIndex];
+
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: rowBgColor }
+          };
+
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'E2E8F0' } },
+            left: { style: 'thin', color: { argb: 'E2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'E2E8F0' } },
+            right: { style: 'thin', color: { argb: 'E2E8F0' } }
+          };
+
+          cell.font = { name: 'Calibri', size: 9, color: { argb: '0F172A' } };
+          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+          if (colNumber === 1) {
+            // Columna "No."
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.font = { name: 'Calibri', size: 8.5, color: { argb: '64748B' } };
+          } else if (colDef) {
+            if (colDef.id === 'codigo') {
+              cell.alignment = { vertical: 'middle', horizontal: 'center' };
+              cell.font = { name: 'Calibri', size: 9, bold: true, color: { argb: primaryHex } };
+            } else if (colDef.id === 'estado') {
+              cell.alignment = { vertical: 'middle', horizontal: 'center' };
+              const st = (cell.value || '').toString().toLowerCase();
+              if (st.includes('autorizado')) {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'DCFCE7' } };
+                cell.font = { name: 'Calibri', size: 8.5, bold: true, color: { argb: '15803D' } };
+              } else if (st.includes('revisi') || st.includes('proceso')) {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FEF3C7' } };
+                cell.font = { name: 'Calibri', size: 8.5, bold: true, color: { argb: 'B45309' } };
+              } else if (st.includes('devuelto')) {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FEE2E2' } };
+                cell.font = { name: 'Calibri', size: 8.5, bold: true, color: { argb: 'B91C1C' } };
+              }
+            } else if (colDef.isCurrencyGTQ) {
+              cell.numFmt = '"Q" #,##0.00';
+              cell.alignment = { vertical: 'middle', horizontal: 'right' };
+              cell.font = { name: 'Calibri', size: 9, bold: true };
+            } else if (colDef.isCurrencyUSD) {
+              cell.numFmt = '"$" #,##0.00';
+              cell.alignment = { vertical: 'middle', horizontal: 'right' };
+              cell.font = { name: 'Calibri', size: 9, bold: true };
+            } else if (colDef.id === 'tipoCambio') {
+              cell.numFmt = '0.00000';
+              cell.alignment = { vertical: 'middle', horizontal: 'right' };
+            } else if (colDef.id === 'fincasCount') {
+              cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            }
+          }
+        });
       });
 
-      // Fila de Totales si hay columnas de moneda
+      // 7. Fila de Totales si hay columnas monetarias
       const hasCurrency = activeColumns.some(c => c.isCurrencyGTQ || c.isCurrencyUSD);
       if (hasCurrency && expedientesParaReporte.length > 0) {
-        excelHtml += `
-          <tr class="row-total">
-            <td class="data-cell" colspan="2" style="text-align: right; font-weight: bold; color: ${headerColor};">
-              TOTALES:
-            </td>
-        `;
+        const totalRowNum = 6 + expedientesParaReporte.length;
+        const totalRow = worksheet.getRow(totalRowNum);
+        totalRow.height = 24;
+
+        const totalValues = [''];
+        totalValues.push('TOTALES:');
 
         activeColumns.slice(1).forEach(col => {
-          if (col.id === 'valorComercialGTQ') {
-            excelHtml += `<td class="data-cell cell-currency" style="font-weight: bold; color: ${headerColor};">
-              Q ${sumComercialGTQ.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </td>`;
-          } else if (col.id === 'valorBancarioGTQ') {
-            excelHtml += `<td class="data-cell cell-currency" style="font-weight: bold; color: ${headerColor};">
-              Q ${sumBancarioGTQ.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </td>`;
-          } else if (col.id === 'valorComercialUSD') {
-            excelHtml += `<td class="data-cell cell-currency" style="font-weight: bold; color: ${headerColor};">
-              $ ${sumComercialUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </td>`;
-          } else {
-            excelHtml += `<td class="data-cell" style="background-color: #f1f5f9;">-</td>`;
-          }
+          if (col.id === 'valorComercialGTQ') totalValues.push(sumComercialGTQ);
+          else if (col.id === 'valorBancarioGTQ') totalValues.push(sumBancarioGTQ);
+          else if (col.id === 'valorComercialUSD') totalValues.push(sumComercialUSD);
+          else totalValues.push('-');
         });
 
-        excelHtml += `</tr>`;
+        totalRow.values = totalValues;
+
+        totalRow.eachCell((cell, colNumber) => {
+          cell.font = { name: 'Calibri', size: 9.5, bold: true, color: { argb: primaryHex } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F1F5F9' } };
+          cell.border = {
+            top: { style: 'medium', color: { argb: primaryHex } },
+            bottom: { style: 'double', color: { argb: primaryHex } },
+            left: { style: 'thin', color: { argb: 'CBD5E1' } },
+            right: { style: 'thin', color: { argb: 'CBD5E1' } }
+          };
+
+          const colIndex = colNumber - 2;
+          const colDef = activeColumns[colIndex];
+          if (colDef?.isCurrencyGTQ) {
+            cell.numFmt = '"Q" #,##0.00';
+            cell.alignment = { vertical: 'middle', horizontal: 'right' };
+          } else if (colDef?.isCurrencyUSD) {
+            cell.numFmt = '"$" #,##0.00';
+            cell.alignment = { vertical: 'middle', horizontal: 'right' };
+          } else if (colNumber === 2) {
+            cell.alignment = { vertical: 'middle', horizontal: 'right' };
+          } else {
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          }
+        });
       }
 
-      excelHtml += `
-          </table>
-        </body>
-      </html>
-      `;
-
-      // Descarga del archivo .xls
-      const blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      // 8. Generar buffer y descargar archivo nativo .xlsx
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const link = document.createElement('a');
-      const filename = `Reporte_${isCV ? 'C_VERDE' : 'LEX_ROSAM'}_${new Date().toISOString().slice(0, 10)}.xls`;
+      const filename = `Reporte_${isCV ? 'C_VERDE' : 'LEX_ROSAM'}_${new Date().toISOString().slice(0, 10)}.xlsx`;
       link.href = URL.createObjectURL(blob);
       link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
+
     } catch (err) {
-      console.error('Error al generar Excel:', err);
-      alert('Ocurrió un error al generar el archivo Excel. Por favor intente nuevamente.');
+      console.error('Error al exportar con ExcelJS:', err);
+      alert('Ocurrió un error al generar el archivo Excel (.xlsx). Por favor verifique e intente nuevamente.');
     } finally {
       setIsExporting(false);
     }
@@ -499,10 +557,10 @@ export default function ReporteriaModal({
             </div>
             <div>
               <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, letterSpacing: '0.02em' }}>
-                Reportería Personalizada y Exportación a Excel
+                Reportería Personalizada y Exportación a Excel (.xlsx)
               </h2>
               <p style={{ margin: 0, fontSize: '0.78rem', color: '#94a3b8' }}>
-                Empresa activa: <strong>{selectedTenantId === 'cverde' ? 'C VERDE, S.A.' : 'LEX ROSAM, S.A.'}</strong> · Seleccione las columnas que desea ver en su reporte
+                Empresa activa: <strong>{selectedTenantId === 'cverde' ? 'C VERDE, S.A.' : 'LEX ROSAM, S.A.'}</strong> · Inmoviliza títulos automáticamente al scrollear
               </p>
             </div>
           </div>
@@ -730,7 +788,7 @@ export default function ReporteriaModal({
                           >
                             {isCurGTQ ? `Q ${Number(val).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` :
                              isCurUSD ? `$ ${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` :
-                             val}
+                             (val !== null && val !== undefined ? val.toString() : '-')}
                           </td>
                         );
                       })}
@@ -757,7 +815,7 @@ export default function ReporteriaModal({
           }}
         >
           <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-            Se generará un archivo Excel nativo con <strong>{expedientesParaReporte.length} expedientes</strong> y <strong>{selectedFields.length} columnas</strong>, con el membrete y logo oficial.
+            Se generará un archivo Excel nativo (<strong>.xlsx</strong>) con <strong>{expedientesParaReporte.length} expedientes</strong>, <strong>{selectedFields.length} columnas</strong>, logotipo oficial incrustado y <strong>las primeras 5 filas inmovilizadas</strong> para desplazamiento cómodo.
           </div>
 
           <div style={{ display: 'flex', gap: '0.65rem' }}>
@@ -792,7 +850,7 @@ export default function ReporteriaModal({
               }}
             >
               <Download size={18} />
-              <span>{isExporting ? 'Generando Excel...' : 'Descargar Reporte en Excel (.xls)'}</span>
+              <span>{isExporting ? 'Generando Excel (.xlsx)...' : 'Descargar Reporte en Excel (.xlsx)'}</span>
             </button>
           </div>
         </div>
@@ -801,4 +859,3 @@ export default function ReporteriaModal({
     </div>
   );
 }
-
