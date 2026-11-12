@@ -2570,7 +2570,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                             ...f,
                             dicabiNombre: f.dicabiNombre || baseNombre,
                             dicabiDireccion: f.dicabiDireccion || baseDir,
-                            dicabiObservaciones: f.dicabiObservaciones || (f.dicabiMatricula ? '' : 'Finca no inscrita en DICABI.')
+                            dicabiObservaciones: f.dicabiObservaciones || ''
                           })
                         }));
                       }}

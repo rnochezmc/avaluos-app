@@ -1453,7 +1453,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 const fArea = f.dicabiArea || (isFirst ? (avaluo.dicabiArea || '') : '');
                 const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
                   ? f.dicabiObservaciones 
-                  : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : 'Fincas no inscritas en DICABI');
+                  : (isFirst && avaluo.dicabiObservaciones ? avaluo.dicabiObservaciones : '');
 
                 return (
                   <div 
@@ -1514,7 +1514,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                             Observaciones:
                           </td>
                           <td style={{ padding: '0.14rem 0.45rem', color: '#0f172a', lineHeight: 1.25 }}>
-                            {fObservaciones}
+                            {fObservaciones || '-'}
                           </td>
                         </tr>
                       </tbody>
@@ -1690,7 +1690,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                         const fArea = f.dicabiArea || '';
                         const fObservaciones = f.dicabiObservaciones !== undefined && f.dicabiObservaciones !== '' 
                           ? f.dicabiObservaciones 
-                          : 'Fincas no inscritas en DICABI';
+                          : '';
 
                         return (
                           <div key={`item-${i}`} style={{ marginTop: i > 0 ? '0.35rem' : '0' }}>
@@ -1718,7 +1718,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                                   </tr>
                                   <tr>
                                     <td style={{ width: '125px', padding: '0.08rem 0.4rem', fontWeight: 700, color: '#1e293b', borderRight: '1px solid #cbd5e1' }}>Observaciones:</td>
-                                    <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a', lineHeight: 1.2 }}>{fObservaciones}</td>
+                                    <td style={{ padding: '0.08rem 0.4rem', color: '#0f172a', lineHeight: 1.2 }}>{fObservaciones || '-'}</td>
                                   </tr>
                                 </tbody>
                               </table>
