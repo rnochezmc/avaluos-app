@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Printer, ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
-import { extractAllRgpPages, numeroALetras, formatFechaEnLetras } from '../utils/pdfHelper';
+import { extractAllRgpPages, numeroALetras, formatFechaEnLetras, formatArea } from '../utils/pdfHelper';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
 import { getTenantConfig } from '../data/tenantsConfig';
 import { getAvaluoFromLocalDb } from '../utils/localDb';
@@ -697,7 +697,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                   return (
                     <tr key={i}>
                       <td style={{ textAlign: 'center', fontWeight: 600, padding: '0.18rem 0.35rem' }}>{item.finca || `Finca ${i + 1}`}</td>
-                      <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{areaVal.toFixed(2)}</td>
+                      <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{formatArea(item.area || areaVal)}</td>
                       <td style={{ textAlign: 'center', fontWeight: 600, color: company.accentColor, padding: '0.18rem 0.35rem' }}>
                         {varas.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
@@ -710,7 +710,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 {terrainItems.length > 1 && (
                   <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
                     <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>TOTAL:</td>
-                    <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{totalTerrenoArea.toFixed(2)}</td>
+                    <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{formatArea(totalTerrenoArea)}</td>
                     <td style={{ textAlign: 'center', color: company.accentColor, padding: '0.18rem 0.35rem' }}>
                       {totalTerrenoVaras.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
@@ -743,7 +743,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               {constructionItems.map((item, i) => (
                 <tr key={i}>
                   <td style={{ textAlign: 'left', paddingLeft: '8px', fontWeight: 600, padding: '0.18rem 0.35rem' }}>{item.descripcion || 'Construcción'}</td>
-                  <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{Number(item.area || 0).toFixed(2)}</td>
+                  <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{formatArea(item.area)}</td>
                   <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{item.unidad || 'm²'}</td>
                   <td style={{ textAlign: 'right', padding: '0.18rem 0.35rem' }}>{formatQ(item.valorUnitario)}</td>
                   <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.18rem 0.35rem' }}>
@@ -753,7 +753,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               ))}
               <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
                 <td style={{ textAlign: 'left', paddingLeft: '8px', padding: '0.18rem 0.35rem' }}>TOTAL CONSTRUCCIÓN:</td>
-                <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{totalConstruccionArea.toFixed(2)}</td>
+                <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{formatArea(totalConstruccionArea)}</td>
                 <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>m²</td>
                 <td style={{ textAlign: 'right', padding: '0.18rem 0.35rem' }}>-</td>
                 <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.18rem 0.35rem' }}>{formatQ(totalConstruccionTotal)}</td>
@@ -809,7 +809,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                   return (
                     <tr key={i}>
                       <td style={{ textAlign: 'center', fontWeight: 600, padding: '0.18rem 0.35rem' }}>{item.finca || `Finca ${i + 1}`}</td>
-                      <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{areaVal.toFixed(2)}</td>
+                      <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{formatArea(item.area || areaVal)}</td>
                       <td style={{ textAlign: 'center', fontWeight: 600, color: company.accentColor, padding: '0.18rem 0.35rem' }}>
                         {varas.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
@@ -822,7 +822,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 {terrainItems.length > 1 && (
                   <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
                     <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>TOTAL:</td>
-                    <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{totalTerrenoArea.toFixed(2)}</td>
+                    <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{formatArea(totalTerrenoArea)}</td>
                     <td style={{ textAlign: 'center', color: company.accentColor, padding: '0.18rem 0.35rem' }}>
                       {totalTerrenoVaras.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
@@ -858,7 +858,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                 return (
                   <tr key={i}>
                     <td style={{ textAlign: 'left', paddingLeft: '8px', fontWeight: 600, padding: '0.18rem 0.35rem' }}>{item.descripcion || 'Construcción'}</td>
-                    <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{Number(item.area || 0).toFixed(2)}</td>
+                    <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{formatArea(item.area)}</td>
                     <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{item.unidad || 'm²'}</td>
                     <td style={{ textAlign: 'right', padding: '0.18rem 0.35rem' }}>{formatQ(unit80)}</td>
                     <td style={{ textAlign: 'right', fontWeight: 700, padding: '0.18rem 0.35rem' }}>{formatQ(subtotal80)}</td>
@@ -867,7 +867,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
               })}
               <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
                 <td style={{ textAlign: 'left', paddingLeft: '8px', padding: '0.18rem 0.35rem' }}>TOTAL CONSTRUCCIÓN:</td>
-                <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{totalConstruccionArea.toFixed(2)}</td>
+                <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>{formatArea(totalConstruccionArea)}</td>
                 <td style={{ textAlign: 'center', padding: '0.18rem 0.35rem' }}>m²</td>
                 <td style={{ textAlign: 'right', padding: '0.18rem 0.35rem' }}>-</td>
                 <td style={{ textAlign: 'right', color: company.navyColor, padding: '0.18rem 0.35rem' }}>{formatQ(parseFloat((totalConstruccionTotal * 0.8).toFixed(2)))}</td>

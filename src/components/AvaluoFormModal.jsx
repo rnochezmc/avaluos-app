@@ -5,7 +5,7 @@ import {
   ShieldCheck, Layers, Scale
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST, getDefaultServicios } from '../data/serviciosConstants';
-import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
+import { convertPdfOrImageToPageImages, formatArea } from '../utils/pdfHelper';
 import { fetchRgpPagesFromCloud, fetchFotosFromCloud } from '../firebase';
 import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { DEFAULT_DICTAMEN_GARANTIA, DICTAMEN_PRESETS } from '../data/mockAvaluos';
@@ -231,7 +231,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
         const sumTotal = items.reduce((acc, it) => acc + (parseFloat(it.total) || 0), 0);
         return {
           ...avaluo.desgloseTerreno,
-          area: parseFloat(sumArea.toFixed(2)),
+          area: parseFloat(sumArea.toFixed(4)),
           varasCuadradas: parseFloat((sumArea * 1.43115).toFixed(2)),
           total: parseFloat(sumTotal.toFixed(2)),
           items
@@ -257,7 +257,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
       const sumArea = items.reduce((acc, it) => acc + (parseFloat(it.area) || 0), 0);
       const sumTotal = items.reduce((acc, it) => acc + (parseFloat(it.total) || 0), 0);
       return {
-        area: parseFloat(sumArea.toFixed(2)),
+        area: parseFloat(sumArea.toFixed(4)),
         unidad: 'm²',
         valorUnitario: items.length === 1 ? items[0].valorUnitario : (sumArea > 0 ? parseFloat((sumTotal / sumArea).toFixed(2)) : defaultUnit),
         total: parseFloat(sumTotal.toFixed(2)),
@@ -719,12 +719,13 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
   const recalculateConstruction = (prev, items) => {
     const sumArea = items.reduce((acc, it) => acc + (parseFloat(it.area) || 0), 0);
     const sumTotal = items.reduce((acc, it) => acc + (parseFloat(it.total) || 0), 0);
-    const avgUnit = sumArea > 0 ? parseFloat((sumTotal / sumArea).toFixed(2)) : 0;
+    const cleanSumArea = parseFloat(sumArea.toFixed(4));
+    const avgUnit = cleanSumArea > 0 ? parseFloat((sumTotal / cleanSumArea).toFixed(2)) : 0;
 
     const nextDesglose = {
       ...prev.desgloseConstruccion,
       items,
-      area: parseFloat(sumArea.toFixed(2)),
+      area: cleanSumArea,
       valorUnitario: avgUnit,
       total: parseFloat(sumTotal.toFixed(2))
     };
@@ -791,7 +792,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
       const nextTerreno = {
         ...prev.desgloseTerreno,
         items,
-        area: parseFloat(sumArea.toFixed(2)),
+        area: parseFloat(sumArea.toFixed(4)),
         varasCuadradas: parseFloat((sumArea * 1.43115).toFixed(2)),
         valorUnitario: avgUnit,
         total: parseFloat(sumTotal.toFixed(2))
@@ -849,7 +850,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
       const nextTerreno = {
         ...prev.desgloseTerreno,
         items,
-        area: parseFloat(sumArea.toFixed(2)),
+        area: parseFloat(sumArea.toFixed(4)),
         varasCuadradas: parseFloat((sumArea * 1.43115).toFixed(2)),
         valorUnitario: avgUnit,
         total: parseFloat(sumTotal.toFixed(2))
@@ -898,7 +899,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
       const nextTerreno = {
         ...prev.desgloseTerreno,
         items: nextItems,
-        area: parseFloat(sumArea.toFixed(2)),
+        area: parseFloat(sumArea.toFixed(4)),
         varasCuadradas: parseFloat((sumArea * 1.43115).toFixed(2)),
         valorUnitario: avgUnit,
         total: parseFloat(sumTotal.toFixed(2))
@@ -1746,12 +1747,12 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                   <div style={{ fontSize: '0.82rem', color: '#334155' }}>
                     {formData.fincas.map((f, i) => (
                       <span key={i} style={{ display: 'inline-block', marginRight: '0.75rem', background: '#ffffff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                        Finca: <strong>{f.finca || (i + 1)}</strong> (Folio: {f.folio || '-'}, Libro: {f.libro || '-'}) — <strong>{Number(f.areaValuada || 0).toFixed(2)} m²</strong>
+                        Finca: <strong>{f.finca || (i + 1)}</strong> (Folio: {f.folio || '-'}, Libro: {f.libro || '-'}) — <strong>{formatArea(f.areaValuada || 0)} m²</strong>
                       </span>
                     ))}
                   </div>
                   <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#1e3a8a', fontWeight: 700 }}>
-                    Área Valuada Total: {Number(formData.areaValuada || 0).toFixed(2)} m² ({parseFloat(((Number(formData.areaValuada) || 0) * 1.43115).toFixed(2))} v²)
+                    Área Valuada Total: {formatArea(formData.areaValuada || 0)} m² ({parseFloat(((Number(formData.areaValuada) || 0) * 1.43115).toFixed(2))} v²)
                   </div>
                 </div>
               </div>
@@ -3484,7 +3485,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                             <tr style={{ background: '#f1f5f9', fontWeight: 700, borderTop: '2px solid #cbd5e1' }}>
                               <td style={{ padding: '0.45rem', textAlign: 'center' }}>TOTAL:</td>
                               <td style={{ padding: '0.45rem', textAlign: 'center' }}>
-                                {(formData.desgloseTerreno?.items || []).reduce((acc, it) => acc + (parseFloat(it.area) || 0), 0).toFixed(2)} m²
+                                {formatArea((formData.desgloseTerreno?.items || []).reduce((acc, it) => acc + (parseFloat(it.area) || 0), 0))} m²
                               </td>
                               <td style={{ padding: '0.45rem', textAlign: 'center', color: '#1e40af' }}>
                                 {(formData.desgloseTerreno?.items || []).reduce((acc, it) => acc + (parseFloat(it.varasCuadradas || ((parseFloat(it.area) || 0) * 1.43115)) || 0), 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} v²
@@ -3633,7 +3634,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
                             TOTAL CONSTRUCCIÓN ({formData.desgloseConstruccion?.items?.length || 1} {(formData.desgloseConstruccion?.items?.length || 1) === 1 ? 'renglón' : 'renglones'})
                           </td>
                           <td style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#0d2847' }}>
-                            {Number(formData.desgloseConstruccion?.area || 0).toFixed(2)} m²
+                            {formatArea(formData.desgloseConstruccion?.area || 0)} m²
                           </td>
                           <td style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#64748b' }}>-</td>
                           <td style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#1e40af', fontSize: '0.95rem' }}>

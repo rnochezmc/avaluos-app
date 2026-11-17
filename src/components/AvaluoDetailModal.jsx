@@ -6,7 +6,7 @@ import {
   Upload, Loader, ZoomIn, Layers
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
-import { convertPdfOrImageToPageImages } from '../utils/pdfHelper';
+import { convertPdfOrImageToPageImages, formatArea } from '../utils/pdfHelper';
 import { fetchRgpPagesFromCloud, fetchFotosFromCloud } from '../firebase';
 import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
@@ -1368,7 +1368,7 @@ export default function AvaluoDetailModal({
                         {terrainItems.map((item, idx) => (
                           <tr key={idx}>
                             <td style={{ fontWeight: 600 }}>{item.finca}</td>
-                            <td style={{ textAlign: 'center' }}>{Number(item.area || 0).toFixed(2)}</td>
+                            <td style={{ textAlign: 'center' }}>{formatArea(item.area)}</td>
                             <td style={{ textAlign: 'center', color: '#1e40af', fontWeight: 600 }}>{Number(item.varasCuadradas || 0).toFixed(2)}</td>
                             <td style={{ textAlign: 'center' }}>{item.unidad || 'm²'}</td>
                             <td style={{ textAlign: 'right' }}>{formatQ(item.valorUnitario)}</td>
@@ -1377,7 +1377,7 @@ export default function AvaluoDetailModal({
                         ))}
                         <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
                           <td>TOTAL TERRENO:</td>
-                          <td style={{ textAlign: 'center' }}>{Number(totalTerrenoArea).toFixed(2)} m²</td>
+                          <td style={{ textAlign: 'center' }}>{formatArea(totalTerrenoArea)} m²</td>
                           <td style={{ textAlign: 'center', color: '#1e40af' }}>{Number(totalTerrenoVaras).toFixed(2)} v²</td>
                           <td style={{ textAlign: 'center' }}>m²</td>
                           <td style={{ textAlign: 'right' }}>-</td>
@@ -1415,7 +1415,7 @@ export default function AvaluoDetailModal({
                       }]).map((c, i) => (
                         <tr key={i}>
                           <td style={{ fontWeight: 600 }}>{c.descripcion || 'Construcción'}</td>
-                          <td style={{ textAlign: 'center' }}>{Number(c.area || 0).toFixed(2)}</td>
+                          <td style={{ textAlign: 'center' }}>{formatArea(c.area)}</td>
                           <td style={{ textAlign: 'center' }}>{c.unidad || 'm²'}</td>
                           <td style={{ textAlign: 'right' }}>{formatQ(c.valorUnitario)}</td>
                           <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(c.total != null ? c.total : (Number(c.area || 0) * Number(c.valorUnitario || 0)))}</td>
@@ -1423,7 +1423,7 @@ export default function AvaluoDetailModal({
                       ))}
                       <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
                         <td>TOTAL CONSTRUCCIÓN:</td>
-                        <td style={{ textAlign: 'center' }}>{Number(avaluo.desgloseConstruccion?.area || 0).toFixed(2)} m²</td>
+                        <td style={{ textAlign: 'center' }}>{formatArea(avaluo.desgloseConstruccion?.area)} m²</td>
                         <td style={{ textAlign: 'center' }}>m²</td>
                         <td style={{ textAlign: 'right' }}>-</td>
                         <td style={{ textAlign: 'right', color: '#1e40af' }}>{formatQ(avaluo.desgloseConstruccion?.total)}</td>
@@ -1464,7 +1464,7 @@ export default function AvaluoDetailModal({
                           return (
                             <tr key={idx}>
                               <td style={{ fontWeight: 600 }}>{item.finca}</td>
-                              <td style={{ textAlign: 'center' }}>{Number(item.area || 0).toFixed(2)}</td>
+                              <td style={{ textAlign: 'center' }}>{formatArea(item.area)}</td>
                               <td style={{ textAlign: 'center', color: '#1e40af', fontWeight: 600 }}>{Number(item.varasCuadradas || 0).toFixed(2)}</td>
                               <td style={{ textAlign: 'center' }}>{item.unidad || 'm²'}</td>
                               <td style={{ textAlign: 'right' }}>{formatQ(unit80)}</td>
@@ -1474,7 +1474,7 @@ export default function AvaluoDetailModal({
                         })}
                         <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
                           <td>TOTAL TERRENO BANCARIO:</td>
-                          <td style={{ textAlign: 'center' }}>{Number(totalTerrenoArea).toFixed(2)} m²</td>
+                          <td style={{ textAlign: 'center' }}>{formatArea(totalTerrenoArea)} m²</td>
                           <td style={{ textAlign: 'center', color: '#1e40af' }}>{Number(totalTerrenoVaras).toFixed(2)} v²</td>
                           <td style={{ textAlign: 'center' }}>m²</td>
                           <td style={{ textAlign: 'right' }}>-</td>
@@ -1515,7 +1515,7 @@ export default function AvaluoDetailModal({
                         return (
                           <tr key={i}>
                             <td style={{ fontWeight: 600 }}>{c.descripcion || 'Construcción'}</td>
-                            <td style={{ textAlign: 'center' }}>{Number(c.area || 0).toFixed(2)}</td>
+                            <td style={{ textAlign: 'center' }}>{formatArea(c.area)}</td>
                             <td style={{ textAlign: 'center' }}>{c.unidad || 'm²'}</td>
                             <td style={{ textAlign: 'right' }}>{formatQ(unit80)}</td>
                             <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatQ(subtotal80)}</td>
@@ -1524,7 +1524,7 @@ export default function AvaluoDetailModal({
                       })}
                       <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
                         <td>TOTAL CONSTRUCCIÓN BANCARIA:</td>
-                        <td style={{ textAlign: 'center' }}>{Number(avaluo.desgloseConstruccion?.area || 0).toFixed(2)} m²</td>
+                        <td style={{ textAlign: 'center' }}>{formatArea(avaluo.desgloseConstruccion?.area)} m²</td>
                         <td style={{ textAlign: 'center' }}>m²</td>
                         <td style={{ textAlign: 'right' }}>-</td>
                         <td style={{ textAlign: 'right', color: '#1e40af' }}>{formatQ(Number(avaluo.desgloseConstruccion?.total || 0) * 0.8)}</td>

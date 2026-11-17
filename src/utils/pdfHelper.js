@@ -520,3 +520,34 @@ export function formatFechaEnLetras(dateStr) {
   }
   return trimmed.replace(/^el\s+/i, '');
 }
+
+/**
+ * Formatea un área numérica o string preservando exactamente los decimales registrados
+ * (e.g. 4.882, 12.500, 103.03, 132.912) con un mínimo de 2 decimales para enteros.
+ */
+export function formatArea(val) {
+  if (val === null || val === undefined || val === '') return '0.00';
+  const rawStr = String(val).trim().replace(/,/g, '');
+  const num = parseFloat(rawStr);
+  if (isNaN(num)) return '0.00';
+
+  let str = rawStr;
+  if (typeof val === 'number') {
+    str = parseFloat(val.toFixed(6)).toString();
+  }
+
+  if (str.includes('.')) {
+    const parts = str.split('.');
+    const intNum = parseInt(parts[0], 10) || 0;
+    const formattedInt = intNum.toLocaleString('es-GT');
+    let decPart = parts[1];
+    if (decPart.length < 2) {
+      decPart = decPart.padEnd(2, '0');
+    }
+    return `${formattedInt}.${decPart}`;
+  }
+
+  const intNum = parseInt(str, 10) || 0;
+  return `${intNum.toLocaleString('es-GT')}.00`;
+}
+
