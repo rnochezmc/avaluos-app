@@ -69,6 +69,13 @@ La plataforma soporta la operación independiente de dos firmas con identidades,
   - **Páginas 8+**: Registro fotográfico numerado.
   - **Páginas Finales**: Matrícula DICABI y certificaciones electrónicas del RGP (desglosadas a página completa).
 * **Colores Corporativos Dinámicos**: Tanto en pantalla como al imprimir (`Cmd + P` o exportar PDF), los encabezados y recuadros de valuación adoptan el color de la empresa emisora (**Verde Bosque** `#004e3b` para C VERDE, **Azul Marino** `#0d2847` para LEX ROSAM).
+* **Precisión Decimal de Auditoría Bancaria**: Módulo de formateo de áreas (`formatArea`) que preserva la cantidad exacta de decimales ingresados (2, 3 o 4 decimales en bodegas, parqueos y fincas en PH, ej. `4.882 m²`), asegurando que la multiplicación `Área × Valor Unitario = Subtotal` cuadre al centavo exacto con las calculadoras de los auditores bancarios.
+
+### 5. Centro de Reportería Ejecutiva en Excel
+* **Descarga de Reportes en Excel (.xlsx)**: Exportación binaria profesional con `exceljs`.
+* **Configuración Dinámica de Columnas**: Selector de campos que permite al usuario escoger exactamente qué variables incluir en su reporte consolidado.
+* **Presentación Corporativa**: Inclusión de membrete con logotipo oficial según el tenant activo y paneles inmovilizados (primeras 5 filas congeladas) para navegación cómoda en hojas de datos extensas.
+* **Filtros Institucionales Especializados**: Segmentación rápida para las entidades bancarias principales de Guatemala (Banco Industrial, BANRURAL y Banco G&T Continental).
 
 ---
 
