@@ -429,53 +429,55 @@ export default function Navbar({
                   <span>Reportería y Exportar a Excel</span>
                 </button>
 
-                {/* Simulador rápido de rol (útil para Aroldo probar la vista del auxiliar) */}
-                <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '6px', paddingTop: '6px' }}>
-                  <div style={{ padding: '4px 12px', fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
-                    Simular vista de rol
-                  </div>
-                  <div 
-                    onClick={() => {
-                      if (onRoleChange) onRoleChange('autorizador');
-                      setShowUserMenu(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '6px 12px',
-                      fontSize: '0.8rem',
-                      cursor: 'pointer',
-                      borderRadius: '6px',
-                      background: currentRole === 'autorizador' ? '#eff6ff' : 'transparent',
-                      color: '#1e293b'
-                    }}
-                  >
-                    <span>Lic. Aroldo Ruiz (Autorizador)</span>
-                    {currentRole === 'autorizador' && <Check size={14} color="#2563eb" />}
-                  </div>
+                {/* Simulador rápido de rol: EXCLUSIVO para Soporte Técnico / Administrador (Ramiro Nóchez) */}
+                {(currentUser?.email === 'rnochezmc@gmail.com' || currentUser?.rol === 'soporte') && (
+                  <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '6px', paddingTop: '6px' }}>
+                    <div style={{ padding: '4px 12px', fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                      Simular vista de rol (Soporte)
+                    </div>
+                    <div 
+                      onClick={() => {
+                        if (onRoleChange) onRoleChange('autorizador');
+                        setShowUserMenu(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 12px',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        borderRadius: '6px',
+                        background: currentRole === 'autorizador' ? '#eff6ff' : 'transparent',
+                        color: '#1e293b'
+                      }}
+                    >
+                      <span>Lic. Aroldo Ruiz (Autorizador)</span>
+                      {currentRole === 'autorizador' && <Check size={14} color="#2563eb" />}
+                    </div>
 
-                  <div 
-                    onClick={() => {
-                      if (onRoleChange) onRoleChange('ingreso');
-                      setShowUserMenu(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '6px 12px',
-                      fontSize: '0.8rem',
-                      cursor: 'pointer',
-                      borderRadius: '6px',
-                      background: currentRole === 'ingreso' ? '#eff6ff' : 'transparent',
-                      color: '#1e293b'
-                    }}
-                  >
-                    <span>Ing. Auxiliar (Valuador Técnico)</span>
-                    {currentRole === 'ingreso' && <Check size={14} color="#2563eb" />}
+                    <div 
+                      onClick={() => {
+                        if (onRoleChange) onRoleChange('ingreso');
+                        setShowUserMenu(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 12px',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        borderRadius: '6px',
+                        background: currentRole === 'ingreso' ? '#eff6ff' : 'transparent',
+                        color: '#1e293b'
+                      }}
+                    >
+                      <span>Ing. Auxiliar (Valuador Técnico)</span>
+                      {currentRole === 'ingreso' && <Check size={14} color="#2563eb" />}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Cerrar Sesión */}
                 <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '6px', paddingTop: '4px' }}>
