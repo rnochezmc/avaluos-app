@@ -11,6 +11,9 @@ import MobileBottomNav from './components/MobileBottomNav';
 import LoginScreen from './components/LoginScreen';
 import UserManagementModal from './components/UserManagementModal';
 import ReporteriaModal from './components/ReporteriaModal';
+import CertificacionValorModal from './components/CertificacionValorModal';
+import CertificacionPrintView from './components/CertificacionPrintView';
+import { canUserEditAvaluo } from './utils/permissions';
 import { initialAvaluos, DEFAULT_DICTAMEN_GARANTIA } from './data/mockAvaluos';
 import { getTenantConfig, DEFAULT_TENANT_ID } from './data/tenantsConfig';
 import { 
@@ -529,6 +532,8 @@ export default function App() {
   const [viewingAvaluo, setViewingAvaluo] = useState(null);
   const [editingAvaluo, setEditingAvaluo] = useState(null);
   const [printingAvaluo, setPrintingAvaluo] = useState(null);
+  const [certificandoAvaluo, setCertificandoAvaluo] = useState(null);
+  const [printingCertificacion, setPrintingCertificacion] = useState(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [showReporteriaModal, setShowReporteriaModal] = useState(false);
   const lastFichaIdRef = useRef(null);
@@ -736,6 +741,36 @@ export default function App() {
       await saveAvaluoToCloud(itemWithCreator);
     } catch (err) {
       console.error('Error guardando en Firebase:', err);
+    }
+  };
+
+  // Control de inicio de edición con bloqueo para asistentes en casos autorizados (Requerimiento 2)
+  const handleStartEdit = (item) => {
+    if (!item) return;
+    if (item.estado === 'autorizado' && !canUserEditAvaluo(item, currentUser, currentRole)) {
+      alert('Este expediente ya fue autorizado por el Lic. Aroldo Ruiz y se encuentra bloqueado para edición. Solo el autorizador puede modificarlo.');
+      return;
+    }
+    setEditingAvaluo(item);
+  };
+
+  // Guardar Certificación de Valor asociada al avalúo
+  const handleSaveCertificacion = async (certData) => {
+    try {
+      const baseId = certData.avaluoId;
+      const target = avaluos.find(a => a.id === baseId);
+      if (target) {
+        const updated = {
+          ...target,
+          certificacion: certData,
+          updatedAt: new Date().toISOString()
+        };
+        setAvaluos(prev => prev.map(a => a.id === baseId ? updated : a));
+        await saveAvaluoToLocalDb(updated);
+        await saveAvaluoToCloud(updated);
+      }
+    } catch (err) {
+      console.warn('Error al guardar certificación:', err);
     }
   };
 
@@ -1122,20 +1157,26 @@ export default function App() {
               <AvaluoCard
                 key={av.id}
                 avaluo={av}
+                currentUser={currentUser}
+                currentRole={currentRole}
                 onView={(item) => setViewingAvaluo(item)}
-                onEdit={(item) => setEditingAvaluo(item)}
+                onEdit={handleStartEdit}
                 onDelete={canDeleteExpedientes ? handleDeleteAvaluoClick : null}
                 onPrint={(item) => setPrintingAvaluo(item)}
+                onCertificar={(item) => setCertificandoAvaluo(item)}
               />
             ))}
           </div>
         ) : (
           <AvaluoTable
             avaluos={filteredAvaluos}
+            currentUser={currentUser}
+            currentRole={currentRole}
             onView={(item) => setViewingAvaluo(item)}
-            onEdit={(item) => setEditingAvaluo(item)}
+            onEdit={handleStartEdit}
             onDelete={canDeleteExpedientes ? handleDeleteAvaluoClick : null}
             onPrint={(item) => setPrintingAvaluo(item)}
+            onCertificar={(item) => setCertificandoAvaluo(item)}
           />
         )}
       </main>
@@ -1151,11 +1192,15 @@ export default function App() {
           onEdit={(item) => {
             lastFichaIdRef.current = item.id;
             setViewingAvaluo(null);
-            setEditingAvaluo(item);
+            handleStartEdit(item);
           }}
           onPrint={(item) => {
             setViewingAvaluo(null);
             setPrintingAvaluo(item);
+          }}
+          onCertificar={(item) => {
+            setViewingAvaluo(null);
+            setCertificandoAvaluo(item);
           }}
           onRemovePdf={handleRemovePdfFromAvaluo}
           onUploadPdf={handleUploadPdfToAvaluo}
@@ -1167,6 +1212,8 @@ export default function App() {
       {printingAvaluo && (
         <OfficialReportPrintView
           avaluo={printingAvaluo}
+          currentUser={currentUser}
+          currentRole={currentRole}
           onClose={() => setPrintingAvaluo(null)}
         />
       )}
@@ -1179,6 +1226,7 @@ export default function App() {
           currentUser={currentUser}
           usuarios={usuarios}
           currentTenant={currentTenantConfig}
+          currentRole={currentRole}
           onClose={() => {
             if (lastFichaIdRef.current) {
               const previousItem = avaluos.find(a => a.id === lastFichaIdRef.current);
@@ -1310,6 +1358,36 @@ export default function App() {
           currentTenant={currentTenantConfig}
           selectedTenantId={selectedTenantId}
           currentUser={currentUser}
+          onOpenCertificacion={(item) => {
+            setShowReporteriaModal(false);
+            setCertificandoAvaluo(item);
+          }}
+        />
+      )}
+
+      {/* Formulario de Captura de Certificación de Valor */}
+      {certificandoAvaluo && (
+        <CertificacionValorModal
+          avaluoBase={certificandoAvaluo}
+          allAvaluos={tenantFilteredAvaluos}
+          currentUser={currentUser}
+          currentRole={currentRole}
+          onClose={() => setCertificandoAvaluo(null)}
+          onPreviewPrint={(certData, baseItem) => {
+            setPrintingCertificacion({ certData, baseItem });
+          }}
+          onSaveCertificacion={handleSaveCertificacion}
+        />
+      )}
+
+      {/* Impresión / Vista Previa de Certificación de Valor (PDF) */}
+      {printingCertificacion && (
+        <CertificacionPrintView
+          certificacion={printingCertificacion.certData}
+          avaluoBase={printingCertificacion.baseItem}
+          currentUser={currentUser}
+          currentRole={currentRole}
+          onClose={() => setPrintingCertificacion(null)}
         />
       )}
 

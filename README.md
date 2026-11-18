@@ -77,6 +77,17 @@ La plataforma soporta la operación independiente de dos firmas con identidades,
 * **Presentación Corporativa**: Inclusión de membrete con logotipo oficial según el tenant activo y paneles inmovilizados (primeras 5 filas congeladas) para navegación cómoda en hojas de datos extensas.
 * **Filtros Institucionales Especializados**: Segmentación rápida para las entidades bancarias principales de Guatemala (Banco Industrial, BANRURAL y Banco G&T Continental).
 
+### 6. Emisión Oficial de Certificaciones de Valor (PDF)
+* **Formato Dictamen Oficial**: Diseñado con base en los estándares legales y dictámenes de C VERDE, S.A. y LEX ROSAM, S.A. para entidades financieras.
+* **Prellenado Automático**: Extracción ágil de datos desde un avalúo base existente (solicitante bancario, dirección física, descripción del inmueble, fincas registrales y valores comerciales).
+* **Selector Dinámico de Empresa**: Alternancia en un clic entre **C VERDE, S.A.** y **LEX ROSAM, S.A.** con actualización automática de membrete, logotipo y reemplazo de razones sociales en las 3 viñetas legales de observaciones.
+* **Tablas Dinámicas de Fincas y Valores**: Capacidad para agregar, remover o editar renglones de fincas registrales y desglose de valores de terreno y construcción con cálculo automático de totales.
+* **Digitalización RGP**: Opción para adjuntar automáticamente las certificaciones electrónicas registrales a 1 página por hoja.
+
+### 7. Control de Acceso y Protección de Firmas para Asistentes
+* **Bloqueo Estricto de Expedientes Autorizados**: Una vez un caso es aprobado y autorizado por el Lic. Aroldo Ruiz, los asistentes y personal técnico quedan inhabilitados para editarlo (candado de protección y advertencias en tarjetas, tabla y ficha). Solo el autorizador puede realizar modificaciones posteriores.
+* **Ocultamiento de Firmas Gráficas**: Cuando los colaboradores o asistentes generan, visualizan o imprimen un informe oficial o certificación en PDF, las firmas y sellos de los abogados firmantes no se muestran, dejando únicamente la línea de firma con la leyenda legal `[Firma y sello oficiales reservados al autorizador]`.
+
 ---
 
 ## 🛠️ Tecnologías Utilizadas

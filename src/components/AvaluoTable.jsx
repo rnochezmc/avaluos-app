@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Edit3, Trash2, Printer, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Eye, Edit3, Trash2, Printer, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Lock, Award } from 'lucide-react';
+import { canUserEditAvaluo } from '../utils/permissions';
 
-export default function AvaluoTable({ avaluos = [], onView, onEdit, onDelete, onPrint }) {
+export default function AvaluoTable({ avaluos = [], onView, onEdit, onDelete, onPrint, onCertificar, currentUser, currentRole }) {
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -136,15 +137,38 @@ export default function AvaluoTable({ avaluos = [], onView, onEdit, onDelete, on
                       >
                         <Printer size={14} />
                       </button>
-                      <button
-                        type="button"
-                        className="card-action-btn"
-                        onClick={() => onEdit(av)}
-                        title="Editar"
-                        style={{ padding: '0.35rem 0.5rem' }}
-                      >
-                        <Edit3 size={14} />
-                      </button>
+                      {onCertificar && (
+                        <button
+                          type="button"
+                          className="card-action-btn"
+                          onClick={() => onCertificar(av)}
+                          title="Emitir Certificación de Valor"
+                          style={{ padding: '0.35rem 0.5rem', color: '#0284c7' }}
+                        >
+                          <Award size={14} />
+                        </button>
+                      )}
+                      {canUserEditAvaluo(av, currentUser, currentRole) ? (
+                        <button
+                          type="button"
+                          className="card-action-btn"
+                          onClick={() => onEdit(av)}
+                          title="Editar Expediente"
+                          style={{ padding: '0.35rem 0.5rem' }}
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="card-action-btn"
+                          onClick={() => alert('Este expediente ya fue autorizado por el Lic. Aroldo Ruiz y se encuentra bloqueado para edición. Solo el autorizador puede modificarlo.')}
+                          title="Expediente Autorizado (Bloqueado para Asistentes)"
+                          style={{ padding: '0.35rem 0.5rem', opacity: 0.5, cursor: 'not-allowed', color: '#64748b' }}
+                        >
+                          <Lock size={14} />
+                        </button>
+                      )}
                       {onDelete && (
                         <button
                           type="button"

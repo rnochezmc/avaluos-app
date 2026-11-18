@@ -10,8 +10,9 @@ import { fetchRgpPagesFromCloud, fetchFotosFromCloud } from '../firebase';
 import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { DEFAULT_DICTAMEN_GARANTIA, DICTAMEN_PRESETS } from '../data/mockAvaluos';
 import { getTenantConfig } from '../data/tenantsConfig';
+import { canUserEditAvaluo } from '../utils/permissions';
 
-export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], onClose, onSave, currentTenant }) {
+export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], onClose, onSave, currentTenant, currentRole = 'autorizador' }) {
   const isEditing = Boolean(avaluo?.id);
   const activeTenantId = avaluo?.tenantId || (avaluo?.codigo?.startsWith('CV-') ? 'cverde' : (currentTenant?.id || 'lex-rosam'));
   const tenantConfig = getTenantConfig(activeTenantId);
@@ -1158,6 +1159,10 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (avaluo?.estado === 'autorizado' && !canUserEditAvaluo(avaluo, currentUser, currentRole)) {
+      alert('Este expediente ya fue autorizado por el Lic. Aroldo Ruiz y se encuentra bloqueado para edición. Solo el autorizador puede modificarlo.');
+      return;
+    }
     if (!formData.codigo) {
       alert('Por favor especifique el código del avalúo.');
       return;

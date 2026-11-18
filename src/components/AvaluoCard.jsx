@@ -1,7 +1,8 @@
 import React from 'react';
-import { MapPin, Building, Eye, Edit3, Trash2, Calendar, Printer } from 'lucide-react';
+import { MapPin, Building, Eye, Edit3, Trash2, Calendar, Printer, Lock, Award } from 'lucide-react';
+import { canUserEditAvaluo } from '../utils/permissions';
 
-export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint }) {
+export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint, onCertificar, currentUser, currentRole }) {
   const formatQ = (val) => {
     return 'Q. ' + Number(val || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
@@ -144,15 +145,40 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint }
           <Printer size={14} />
           <span>Imprimir</span>
         </button>
-        <button
-          type="button"
-          className="card-action-btn"
-          onClick={() => onEdit(avaluo)}
-          title="Editar Datos del Avalúo"
-        >
-          <Edit3 size={14} />
-          <span>Editar</span>
-        </button>
+        {onCertificar && (
+          <button
+            type="button"
+            className="card-action-btn"
+            onClick={() => onCertificar(avaluo)}
+            title="Emitir Certificación de Valor (PDF)"
+            style={{ color: '#0284c7' }}
+          >
+            <Award size={14} />
+            <span>Certificar</span>
+          </button>
+        )}
+        {canUserEditAvaluo(avaluo, currentUser, currentRole) ? (
+          <button
+            type="button"
+            className="card-action-btn"
+            onClick={() => onEdit(avaluo)}
+            title="Editar Datos del Avalúo"
+          >
+            <Edit3 size={14} />
+            <span>Editar</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="card-action-btn"
+            onClick={() => alert('Este expediente ya fue autorizado por el Lic. Aroldo Ruiz y se encuentra bloqueado para edición. Solo el autorizador puede modificarlo.')}
+            title="Expediente Autorizado (Bloqueado para Asistentes)"
+            style={{ opacity: 0.5, cursor: 'not-allowed', color: '#64748b' }}
+          >
+            <Lock size={14} />
+            <span>Bloqueado</span>
+          </button>
+        )}
         {onDelete && (
           <button
             type="button"

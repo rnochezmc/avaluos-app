@@ -3,10 +3,11 @@ import {
   X, Printer, Edit3, MapPin, Building, Calendar, Sparkles, 
   CheckCircle, FileText, Camera, DollarSign, Scale, ExternalLink,
   ShieldCheck, AlertTriangle, ArrowRight, CornerDownLeft, Download, Trash2,
-  Upload, Loader, ZoomIn, Layers
+  Upload, Loader, ZoomIn, Layers, Lock, Award
 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 import { convertPdfOrImageToPageImages, formatArea } from '../utils/pdfHelper';
+import { canUserEditAvaluo } from '../utils/permissions';
 import { fetchRgpPagesFromCloud, fetchFotosFromCloud } from '../firebase';
 import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
@@ -18,6 +19,7 @@ export default function AvaluoDetailModal({
   onClose, 
   onEdit, 
   onPrint, 
+  onCertificar,
   currentRole = 'autorizador',
   onStatusChange,
   onRemovePdf,
@@ -379,6 +381,18 @@ export default function AvaluoDetailModal({
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {onCertificar && (
+              <button
+                type="button"
+                className="card-action-btn"
+                onClick={() => { onClose(); onCertificar(avaluo); }}
+                title="Emitir Certificación de Valor (PDF)"
+                style={{ backgroundColor: '#0284c7', color: 'white', borderColor: 'transparent', fontWeight: 600 }}
+              >
+                <Award size={15} />
+                <span className="desktop-only">Certificación</span>
+              </button>
+            )}
             <button
               type="button"
               className="card-action-btn"
@@ -389,16 +403,29 @@ export default function AvaluoDetailModal({
               <Printer size={15} />
               <span className="desktop-only">Imprimir (9 Páginas)</span>
             </button>
-            <button
-              type="button"
-              className="card-action-btn"
-              onClick={() => { onClose(); onEdit(avaluo); }}
-              title="Editar Expediente"
-              style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)', color: 'white', borderColor: 'transparent' }}
-            >
-              <Edit3 size={15} />
-              <span className="desktop-only">Editar</span>
-            </button>
+            {canUserEditAvaluo(avaluo, currentUser, currentRole) ? (
+              <button
+                type="button"
+                className="card-action-btn"
+                onClick={() => { onClose(); onEdit(avaluo); }}
+                title="Editar Expediente"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)', color: 'white', borderColor: 'transparent' }}
+              >
+                <Edit3 size={15} />
+                <span className="desktop-only">Editar</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="card-action-btn"
+                onClick={() => alert('Este expediente ya fue autorizado por el Lic. Aroldo Ruiz y se encuentra bloqueado para edición. Solo el autorizador puede modificarlo.')}
+                title="Expediente Autorizado (Bloqueado para Asistentes)"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)', color: '#cbd5e1', borderColor: 'transparent', cursor: 'not-allowed' }}
+              >
+                <Lock size={15} />
+                <span className="desktop-only">Autorizado (Bloqueado)</span>
+              </button>
+            )}
             <button
               type="button"
               className="modal-close-btn"

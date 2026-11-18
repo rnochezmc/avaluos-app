@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ExcelJS from 'exceljs';
 import { 
   X, FileSpreadsheet, Download, Check, Plus, Trash2, 
-  Layers, Filter, Eye, RefreshCw, FileText, Sparkles 
+  Layers, Filter, Eye, RefreshCw, FileText, Sparkles, Award, ArrowRight
 } from 'lucide-react';
 
 export const AVAILABLE_REPORT_FIELDS = [
@@ -93,14 +93,21 @@ export default function ReporteriaModal({
   avaluos = [],
   currentTenant,
   selectedTenantId = 'lex-rosam',
-  currentUser
+  currentUser,
+  onOpenCertificacion
 }) {
+  const [mainTab, setMainTab] = useState('excel'); // 'excel' | 'certificacion'
+  const [certSelectedId, setCertSelectedId] = useState(avaluos[0]?.id || '');
   const [selectedFields, setSelectedFields] = useState(
     AVAILABLE_REPORT_FIELDS.filter(f => f.default).map(f => f.id)
   );
   const [scopeFilter, setScopeFilter] = useState('todos_tenant'); // 'todos_tenant' | 'en_revision' | 'autorizados'
   const [fieldToAdd, setFieldToAdd] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+
+  const isCV = selectedTenantId === 'cverde';
+  const primaryColor = isCV ? '#004e3b' : '#0d2847';
+  const primaryHex = isCV ? '004E3B' : '0D2847';
 
   if (!isOpen) return null;
 
@@ -580,8 +587,182 @@ export default function ReporteriaModal({
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        {/* Navigation Tabs */}
+        <div style={{
+          display: 'flex',
+          borderBottom: '1px solid #e2e8f0',
+          background: '#f8fafc',
+          padding: '0 1.5rem'
+        }}>
+          <button
+            type="button"
+            onClick={() => setMainTab('excel')}
+            style={{
+              padding: '0.75rem 1.25rem',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: mainTab === 'excel' ? `3px solid ${primaryColor}` : '3px solid transparent',
+              color: mainTab === 'excel' ? primaryColor : '#64748b',
+              fontWeight: mainTab === 'excel' ? 700 : 500,
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <FileSpreadsheet size={16} />
+            <span>📊 Reporte Consolidado en Excel (.xlsx)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMainTab('certificacion')}
+            style={{
+              padding: '0.75rem 1.25rem',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: mainTab === 'certificacion' ? `3px solid ${primaryColor}` : '3px solid transparent',
+              color: mainTab === 'certificacion' ? primaryColor : '#64748b',
+              fontWeight: mainTab === 'certificacion' ? 700 : 500,
+              fontSize: '0.88rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <Award size={16} />
+            <span>📜 Certificación de Valor (PDF)</span>
+          </button>
+        </div>
+
+        {mainTab === 'certificacion' ? (
+          <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{
+              background: '#f0f9ff',
+              border: '1.5px solid #bae6fd',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              display: 'flex',
+              gap: '1rem',
+              alignItems: 'flex-start'
+            }}>
+              <div style={{ background: '#0284c7', color: '#ffffff', padding: '10px', borderRadius: '10px' }}>
+                <Award size={24} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: '0 0 0.35rem 0', fontSize: '1.05rem', color: '#0369a1', fontWeight: 700 }}>
+                  Emisión de Certificaciones de Valor Oficiales
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: '#334155', lineHeight: 1.45 }}>
+                  Genera una <strong>Certificación de Valor oficial</strong> vinculada a un avalúo existente en la base de datos.
+                  El sistema extrae automáticamente el solicitante, dirección, descripción del inmueble, fincas registrales, observaciones legales y desglose de valores para emitir el dictamen membretado y firmado en PDF (con opción de adjuntar las certificaciones RGP).
+                </p>
+              </div>
+            </div>
+
+            {/* Selección del Avalúo Base */}
+            <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                Seleccione el Avalúo que servirá como base para la Certificación:
+              </label>
+
+              <select
+                className="form-select"
+                value={certSelectedId}
+                onChange={(e) => setCertSelectedId(e.target.value)}
+                style={{ width: '100%', fontSize: '0.9rem', padding: '0.6rem 0.8rem', borderRadius: '8px', fontWeight: 600, color: '#0f172a', marginBottom: '1rem' }}
+              >
+                {avaluos.map(a => (
+                  <option key={a.id} value={a.id}>
+                    {a.codigo} — {a.solicitante || 'Sin solicitante'} — {a.direccion ? a.direccion.slice(0, 45) + '...' : 'Sin dir'} ({a.estado?.toUpperCase() || 'BORRADOR'})
+                  </option>
+                ))}
+              </select>
+
+              {/* Ficha rápida del avalúo seleccionado */}
+              {(() => {
+                const selectedItem = avaluos.find(a => a.id === (certSelectedId || avaluos[0]?.id));
+                if (!selectedItem) return null;
+                return (
+                  <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.95rem', fontWeight: 800, color: primaryColor }}>
+                        {selectedItem.codigo}
+                      </span>
+                      <span style={{ fontSize: '0.74rem', background: '#ecfdf5', color: '#047857', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                        {selectedItem.tenantId === 'cverde' ? 'C VERDE, S.A.' : 'LEX ROSAM, S.A.'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#334155' }}>
+                      <strong>Solicitante:</strong> {selectedItem.solicitante || '-'}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#334155' }}>
+                      <strong>Dirección:</strong> {selectedItem.direccion || '-'}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#334155' }}>
+                      <strong>Fincas:</strong> {selectedItem.fincas && selectedItem.fincas.length > 0 ? selectedItem.fincas.map(f => `Finca ${f.finca || '-'} Folio ${f.folio || '-'} Libro ${f.libro || '-'}`).join(', ') : (selectedItem.finca || '1 finca')}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e40af', marginTop: '4px' }}>
+                      Valor Comercial: Q. {Number(selectedItem.valorComercialGTQ || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Botón de acción */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  padding: '0.6rem 1.25rem',
+                  borderRadius: '8px',
+                  fontSize: '0.88rem',
+                  fontWeight: 600,
+                  color: '#475569',
+                  cursor: 'pointer'
+                }}
+              >
+                Cerrar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const targetAvaluo = avaluos.find(a => a.id === (certSelectedId || avaluos[0]?.id));
+                  if (targetAvaluo && onOpenCertificacion) {
+                    onOpenCertificacion(targetAvaluo);
+                  }
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '0.75rem 1.6rem',
+                  borderRadius: '10px',
+                  fontSize: '0.92rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)'
+                }}
+              >
+                <span>Continuar al Formulario de Captura de Certificación</span>
+                <ArrowRight size={18} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Modal Body */}
+            <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
           {/* Fila 1: Alcance de los datos + Plantillas rápidas */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
@@ -854,6 +1035,8 @@ export default function ReporteriaModal({
             </button>
           </div>
         </div>
+        </>
+        )}
 
       </div>
     </div>

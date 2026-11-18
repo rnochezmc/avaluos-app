@@ -2,12 +2,13 @@ import React from 'react';
 import { X, Printer, ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { SERVICIOS_INFRAESTRUCTURA_LIST } from '../data/serviciosConstants';
 import { extractAllRgpPages, numeroALetras, formatFechaEnLetras, formatArea } from '../utils/pdfHelper';
+import { canUserViewSignatures } from '../utils/permissions';
 import { DEFAULT_DICTAMEN_GARANTIA } from '../data/mockAvaluos';
 import { getTenantConfig } from '../data/tenantsConfig';
 import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { fetchFotosFromCloud } from '../firebase';
 
-export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, config = {} }) {
+export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, config = {}, currentUser, currentRole = 'autorizador' }) {
   const [hydratedAvaluo, setHydratedAvaluo] = React.useState(propAvaluo);
 
   React.useEffect(() => {
@@ -206,8 +207,12 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
     ? avaluo.registroRevisor
     : (avaluoTenant.registroRevisor || 'Valuador autorizado 2571-M-2026');
 
+  // Determinar si el usuario tiene permiso para ver las firmas (Aroldo/Autorizador vs Asistente)
+  const canShowSignatures = canUserViewSignatures(currentUser, currentRole);
+
   // Determinar imágenes oficiales de firma y sello
   const getFirmaPrincipalSrc = () => {
+    if (!canShowSignatures) return null;
     if (avaluo?.firmaPrincipalImg) return avaluo.firmaPrincipalImg;
     const name = (valPrincipalNombre || '').toLowerCase();
     if (name.includes('aroldo') || name.includes('ruiz') || avaluoTenant?.id === 'cverde' || avaluoTenant?.id === 'lex-rosam') {
@@ -217,6 +222,7 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
   };
 
   const getFirmaRevisorSrc = () => {
+    if (!canShowSignatures) return null;
     if (avaluo?.firmaRevisorImg) return avaluo.firmaRevisorImg;
     const name = (valRevisorNombre || '').toLowerCase();
     if (name.includes('edgar') || name.includes('martinez') || name.includes('larios') || name.includes('tolaque') || name.includes('morales') || avaluoTenant?.id === 'cverde' || avaluoTenant?.id === 'lex-rosam') {
@@ -1183,7 +1189,14 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                       style={{ maxHeight: '115px', maxWidth: '230px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
                     />
                   ) : (
-                    <div className="pdf-signature-line" style={{ width: '210px', height: '1px', background: '#000000', marginBottom: '8px' }}></div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div className="pdf-signature-line" style={{ width: '210px', height: '1px', background: '#000000', marginBottom: '8px' }}></div>
+                      {!canShowSignatures && (
+                        <div style={{ fontSize: '0.64rem', color: '#64748b', fontStyle: 'italic', marginBottom: '6px' }}>
+                          [Firma y sello oficiales reservados al autorizador]
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#000000', fontSize: '0.88rem', lineHeight: 1.25 }}>
@@ -1205,7 +1218,14 @@ export default function OfficialReportPrintView({ avaluo: propAvaluo, onClose, c
                         style={{ maxHeight: '115px', maxWidth: '230px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
                       />
                     ) : (
-                      <div className="pdf-signature-line" style={{ width: '210px', height: '1px', background: '#000000', marginBottom: '8px' }}></div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div className="pdf-signature-line" style={{ width: '210px', height: '1px', background: '#000000', marginBottom: '8px' }}></div>
+                        {!canShowSignatures && (
+                          <div style={{ fontSize: '0.64rem', color: '#64748b', fontStyle: 'italic', marginBottom: '6px' }}>
+                            [Firma y sello oficiales reservados al autorizador]
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div className="pdf-sig-name" style={{ fontWeight: 700, color: '#000000', fontSize: '0.88rem', lineHeight: 1.25 }}>
