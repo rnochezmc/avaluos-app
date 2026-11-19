@@ -153,3 +153,47 @@ export function resolveUniqueCodigo(desiredCodigo, tenantId, avaluosList = [], c
     previousCodigo: cleanDesired
   };
 }
+
+/**
+ * Genera el siguiente correlativo automático para Certificaciones de Valor.
+ * Formato estándar: CV-XXXXX (o LR-XXXXX para Lex Rosam).
+ * Examina las certificaciones existentes en avaluosList para encontrar el número más alto y sugerir el siguiente libre.
+ */
+export function getNextCertificacionCodigo(tenantId, avaluosList = []) {
+  const prefix = getTenantPrefix(tenantId);
+  const baseStart = 10001;
+
+  if (!Array.isArray(avaluosList) || avaluosList.length === 0) {
+    return `${prefix}-${baseStart}`;
+  }
+
+  const isTargetCV = prefix === 'CV';
+  const usedNumbers = [];
+
+  avaluosList.forEach(item => {
+    if (!item) return;
+    const isCert = item.tipoAvaluo === 'Certificación de Valor' || 
+                   item.tipoAvaluo === 'Certificación' || 
+                   item.certificacion ||
+                   (item.codigo && item.codigo.startsWith('CV-'));
+    
+    if (isCert) {
+      const isItemCV = item.tenantId === 'cverde' || item.tenantId === 'cv' || (item.codigo && item.codigo.startsWith('CV-'));
+      if (isTargetCV === isItemCV) {
+        const code = item.codigo || item.numeroReferencia || item.certificacion?.numeroReferencia || '';
+        const num = extractCorrelativoNumber(code);
+        if (num >= 1000) {
+          usedNumbers.push(num);
+        }
+      }
+    }
+  });
+
+  if (usedNumbers.length === 0) {
+    return `${prefix}-${baseStart}`;
+  }
+
+  const maxNum = Math.max(...usedNumbers);
+  const nextNum = Math.max(maxNum + 1, baseStart);
+  return `${prefix}-${nextNum}`;
+}

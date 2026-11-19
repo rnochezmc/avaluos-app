@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Award, Printer, Save, Plus, Trash2, RefreshCw, FileText, 
-  Building, Calendar, DollarSign, Check, AlertCircle, FileUp, Paperclip, ChevronDown, ChevronRight, Shield 
+  Building, Calendar, DollarSign, Check, AlertCircle, FileUp, Paperclip, ChevronDown, ChevronRight, Shield, Sparkles 
 } from 'lucide-react';
 import { formatFechaEnLetras, convertPdfOrImageToPageImages } from '../utils/pdfHelper';
 import { isAroldoOrAdminUser } from '../utils/permissions';
+import { getNextCertificacionCodigo } from '../utils/correlativos';
 
 export const TIPOS_SOLICITUD = [
   'CERTIFICACIÓN DE VALOR'
@@ -88,6 +89,7 @@ export default function CertificacionValorModal({
       const base = initialAvaluoBase;
       const isCV = base.tenantId === 'cverde' || base.codigo?.startsWith('CV-');
       const emp = isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.';
+      const initialCertCode = getNextCertificacionCodigo(isCV ? 'cverde' : 'lex-rosam', allAvaluos);
       
       const fechaBase = base.fechaInspeccion || base.fecha || base.fechaSolicitud || '';
       let mesNombre = 'noviembre de 2026';
@@ -127,7 +129,7 @@ export default function CertificacionValorModal({
         empresaNombre: emp,
         solicitante: base.solicitante || 'BANCO G&T CONTINENTAL, S.A.',
         tipoSolicitud: 'CERTIFICACIÓN DE VALOR',
-        numeroReferencia: base.codigo ? base.codigo.replace('LR-2026-', 'CV-').replace('AVALUO-', '').replace('AVALÚO-', '') : 'CV-10001',
+        numeroReferencia: initialCertCode,
         direccion: base.direccion || '',
         descripcionInmueble: base.descripcionGeneral || base.direccion || '',
         fechaEmision: new Date().toISOString().split('T')[0],
@@ -141,6 +143,7 @@ export default function CertificacionValorModal({
     }
 
     // Caso 3: Nueva Certificación Manual independiente (Formulario en blanco listo para llenar)
+    const initialManualCode = getNextCertificacionCodigo('cverde', allAvaluos);
     return {
       id: `cert-${Date.now()}`,
       avaluoId: 'manual',
@@ -150,7 +153,7 @@ export default function CertificacionValorModal({
       empresaNombre: 'CVERDE, S.A.',
       solicitante: 'BANCO G&T CONTINENTAL, S.A.',
       tipoSolicitud: 'CERTIFICACIÓN DE VALOR',
-      numeroReferencia: 'CV-10001',
+      numeroReferencia: initialManualCode,
       direccion: '',
       descripcionInmueble: '',
       fechaEmision: new Date().toISOString().split('T')[0],
@@ -305,10 +308,14 @@ export default function CertificacionValorModal({
       } else {
         obs = obs.replace(/CVERDE, S\.A\./g, 'LEX ROSAM, S.A.').replace(/C VERDE, S\.A\./g, 'LEX ROSAM, S.A.');
       }
+      const updatedCode = !isEditingExistingCert 
+        ? getNextCertificacionCodigo(tId, allAvaluos)
+        : prev.numeroReferencia;
       return {
         ...prev,
         tenantId: tId,
         empresaNombre: emp,
+        numeroReferencia: updatedCode,
         observaciones: obs
       };
     });
@@ -599,9 +606,14 @@ export default function CertificacionValorModal({
 
             {/* Número de Referencia (Código Certificación) */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
-                2. Número de Referencia (Dictamen):
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase' }}>
+                  2. Número de Referencia (Dictamen):
+                </label>
+                <span style={{ fontSize: '0.68rem', color: '#059669', background: '#ecfdf5', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, border: '1px solid #a7f3d0' }}>
+                  ✨ Correlativo Automático
+                </span>
+              </div>
               <input
                 type="text"
                 className="form-input"
