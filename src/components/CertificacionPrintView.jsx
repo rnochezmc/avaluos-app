@@ -211,7 +211,7 @@ export default function CertificacionPrintView({
             width: '216mm',
             minHeight: '279mm',
             maxHeight: '279mm',
-            padding: '12mm 16mm 10mm 16mm',
+            padding: '10mm 16mm 8mm 16mm',
             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
             boxSizing: 'border-box',
             fontFamily: '"Calibri", "Segoe UI", Arial, sans-serif',
@@ -226,39 +226,39 @@ export default function CertificacionPrintView({
           {/* Parte superior y contenido estructurado */}
           <div>
             {/* Header: Logotipo Oficial */}
-            <div style={{ textAlign: 'center', marginBottom: '0.55rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '0.45rem' }}>
               {isCVerde ? (
                 <img 
                   src="/cverde-logo.jpg" 
                   alt="C VERDE S.A." 
-                  style={{ height: '62px', objectFit: 'contain', margin: '0 auto', display: 'block' }} 
+                  style={{ height: '56px', objectFit: 'contain', margin: '0 auto', display: 'block' }} 
                 />
               ) : (
                 <img 
                   src="/lex-rosam-logo.png" 
                   alt="LEX ROSAM S.A." 
-                  style={{ height: '62px', objectFit: 'contain', margin: '0 auto', display: 'block' }} 
+                  style={{ height: '56px', objectFit: 'contain', margin: '0 auto', display: 'block' }} 
                 />
               )}
             </div>
 
             {/* Solicitante (Línea limpia exactamente como el Word de Aroldo) */}
-            <div style={{ marginBottom: '0.45rem', fontSize: '0.82rem', lineHeight: 1.3 }}>
+            <div style={{ marginBottom: '0.4rem', fontSize: '0.82rem', lineHeight: 1.3 }}>
               <span style={{ fontWeight: 700 }}>SOLICITANTE: </span>
               <span style={{ textTransform: 'uppercase' }}>{certificacion?.solicitante || 'BANCO G&T CONTINENTAL, S.A.'}</span>
             </div>
 
             {/* Ficha Descriptiva del Inmueble */}
-            <div style={{ fontSize: '0.79rem', lineHeight: 1.35, marginBottom: '0.55rem' }}>
-              <div style={{ marginBottom: '0.25rem' }}>
+            <div style={{ fontSize: '0.78rem', lineHeight: 1.32, marginBottom: '0.45rem' }}>
+              <div style={{ marginBottom: '0.2rem' }}>
                 <span style={{ fontWeight: 700 }}>DIRECCIÓN: </span>
                 <span style={{ textTransform: 'uppercase' }}>{certificacion?.direccion || '-'}</span>
               </div>
-              <div style={{ marginBottom: '0.25rem' }}>
+              <div style={{ marginBottom: '0.2rem' }}>
                 <span style={{ fontWeight: 700 }}>DESCRIPCIÓN DEL INMUEBLE: </span>
                 <span style={{ textTransform: 'uppercase' }}>{certificacion?.descripcionInmueble || certificacion?.direccion || '-'}</span>
               </div>
-              <div style={{ marginBottom: '0.25rem' }}>
+              <div style={{ marginBottom: '0.2rem' }}>
                 <span style={{ fontWeight: 700 }}>TIPO DE SOLICITUD: </span>
                 <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>{certificacion?.tipoSolicitud || 'CERTIFICACIÓN DE VALOR'}</span>
               </div>
@@ -269,8 +269,8 @@ export default function CertificacionPrintView({
             </div>
 
             {/* TABLA DE FINCAS (Encabezado verde #70AD47 y texto blanco en negrita) */}
-            <div style={{ marginBottom: '0.55rem' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.74rem' }}>
+            <div style={{ marginBottom: '0.45rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.73rem' }}>
                 <thead>
                   <tr className="cert-table-header-tr">
                     <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 6px', textAlign: 'center', fontWeight: 700, width: '12%' }}>FINCA</th>
@@ -297,11 +297,11 @@ export default function CertificacionPrintView({
             </div>
 
             {/* SECCIÓN OBSERVACIONES (Título verde #538135 y Viñetas) */}
-            <div style={{ marginBottom: '0.55rem' }}>
-              <div style={{ fontWeight: 700, fontSize: '0.76rem', color: '#538135', marginBottom: '0.2rem', letterSpacing: '0.02em' }}>
+            <div style={{ marginBottom: '0.45rem' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#538135', marginBottom: '0.15rem', letterSpacing: '0.02em' }}>
                 OBSERVACIONES:
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.28rem', fontSize: '0.71rem', lineHeight: 1.32, textAlign: 'justify', color: '#1e293b' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.70rem', lineHeight: 1.3, textAlign: 'justify', color: '#1e293b' }}>
                 {observacionesLines.map((line, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
                     <span style={{ color: '#538135', fontWeight: 700, fontSize: '0.72rem', lineHeight: 1.3 }}>➤</span>
@@ -312,11 +312,11 @@ export default function CertificacionPrintView({
             </div>
 
             {/* TABLA DE VALORES (Título verde #538135, Encabezado verde #70AD47 y letras blancas) */}
-            <div style={{ marginBottom: '0.65rem' }}>
-              <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#538135', textAlign: 'center', marginBottom: '0.2rem', letterSpacing: '0.04em' }}>
+            <div style={{ marginBottom: '0.55rem' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.76rem', color: '#538135', textAlign: 'center', marginBottom: '0.15rem', letterSpacing: '0.04em' }}>
                 VALORES
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.74rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.73rem' }}>
                 <thead>
                   <tr className="cert-table-header-tr">
                     <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 8px', textAlign: 'left', fontWeight: 700, width: '40%' }}>FINCA</th>
@@ -338,7 +338,7 @@ export default function CertificacionPrintView({
                   ))}
                   <tr style={{ background: '#f8fafc', fontWeight: 700 }}>
                     <td colSpan={3} style={{ border: '1px solid #a6a6a6', padding: '4px 8px', textAlign: 'left' }}>TOTAL</td>
-                    <td style={{ border: '1px solid #a6a6a6', padding: '4px 8px', textAlign: 'right', color: '#538135', fontSize: '0.82rem', fontWeight: 800 }}>{formatQ(totalValores)}</td>
+                    <td style={{ border: '1px solid #a6a6a6', padding: '4px 8px', textAlign: 'right', color: '#538135', fontSize: '0.80rem', fontWeight: 800 }}>{formatQ(totalValores)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -346,43 +346,58 @@ export default function CertificacionPrintView({
           </div>
 
           {/* Pie de página y Firma Oficial (Siempre al pie de la Página 1) */}
-          <div style={{ marginTop: 'auto', paddingTop: '0.2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.4rem' }}>
+          <div style={{ marginTop: 'auto', paddingTop: '0.15rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.35rem' }}>
               
               {/* Firma y Sello Oficial */}
               <div style={{ textAlign: 'center', minWidth: '220px' }}>
-                <div style={{ minHeight: '80px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '3px' }}>
+                <div style={{ minHeight: '75px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '2px' }}>
                   {canShowSignatures ? (
                     <img 
                       src="/signatures/firma_aroldo_ruiz.png" 
                       alt="Firma y Sello Oficial" 
-                      style={{ maxHeight: '80px', maxWidth: '185px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
+                      style={{ maxHeight: '75px', maxWidth: '180px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
                     />
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <div style={{ width: '185px', height: '1px', background: '#000000', marginBottom: '6px' }}></div>
+                      <div style={{ width: '180px', height: '1px', background: '#000000', marginBottom: '6px' }}></div>
                       <span style={{ fontSize: '0.64rem', color: '#64748b', fontStyle: 'italic', marginBottom: '4px' }}>
                         [Firma y sello oficiales reservados al autorizador]
                       </span>
                     </div>
                   )}
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#000000', lineHeight: 1.2 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.76rem', color: '#000000', lineHeight: 1.2 }}>
                   Licenciado<br />
                   Aroldo Oliverio Ruiz Orozco
                 </div>
-                <div style={{ fontSize: '0.72rem', color: '#334155' }}>
+                <div style={{ fontSize: '0.70rem', color: '#334155' }}>
                   Valuador
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '0.72rem', color: '#000000' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.70rem', color: '#000000' }}>
                   Reg. 2572-R-2026
                 </div>
               </div>
 
               {/* Fecha de Emisión */}
-              <div style={{ textAlign: 'right', fontSize: '0.78rem', fontWeight: 600, color: '#1e293b', paddingBottom: '0.4rem' }}>
+              <div style={{ textAlign: 'right', fontSize: '0.76rem', fontWeight: 600, color: '#1e293b', paddingBottom: '0.35rem' }}>
                 {formattedDate}
               </div>
+            </div>
+
+            {/* Footer institucional oficial centrado en verde #538135 negrita (idéntico al Word footer1.xml) */}
+            <div style={{ textAlign: 'center', fontSize: '0.72rem', color: '#538135', fontWeight: 700, lineHeight: 1.35, paddingTop: '0.2rem' }}>
+              {isCVerde ? (
+                <>
+                  <div>jmmorales@cverde.com.gt  oruiz@cverde.com.gt  cel. 5839 4800</div>
+                  <div>www.cverde.com.gt</div>
+                </>
+              ) : (
+                <>
+                  <div>solicituddeavaluos@lexrosam.com  tel. +502 6203-0795</div>
+                  <div>www.lexrosam.com</div>
+                </>
+              )}
             </div>
           </div>
         </div>
