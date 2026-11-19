@@ -269,16 +269,18 @@ export default function CertificacionPrintView({
                     <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}>LIBRO</th>
                     <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}>ÁREA REGISTRADA</th>
                     <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}>PROPIETARIO</th>
+                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}>ÁREA VALUADA</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(certificacion?.fincas && certificacion.fincas.length > 0 ? certificacion.fincas : [{ finca: '-', folio: '-', libro: '-', areaRegistrada: '-', propietario: '-' }]).map((f, i) => (
+                  {(certificacion?.fincas && certificacion.fincas.length > 0 ? certificacion.fincas : [{ finca: '-', folio: '-', libro: '-', areaRegistrada: '-', propietario: '-', areaValuada: '-' }]).map((f, i) => (
                     <tr key={i}>
                       <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'center', fontWeight: 600 }}>{f.finca || '-'}</td>
                       <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'center' }}>{f.folio || '-'}</td>
                       <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'center' }}>{f.libro || '-'}</td>
                       <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'center' }}>{f.areaRegistrada || '-'}</td>
                       <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'left', textTransform: 'uppercase' }}>{f.propietario || '-'}</td>
+                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'center' }}>{f.areaValuada || f.areaRegistrada || '-'}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -112,6 +112,14 @@ export default function SearchAndFilters({
         </button>
         <button
           type="button"
+          className={`filter-pill ${activeFilter === 'certificaciones' ? 'active' : ''}`}
+          onClick={() => setActiveFilter('certificaciones')}
+          style={activeFilter === 'certificaciones' ? { background: '#0f766e', color: '#ffffff', borderColor: '#0f766e' } : {}}
+        >
+          📜 Certificaciones
+        </button>
+        <button
+          type="button"
           className={`filter-pill ${activeFilter === 'autorizado' || activeFilter === 'completado' ? 'active' : ''}`}
           onClick={() => setActiveFilter('autorizado')}
         >

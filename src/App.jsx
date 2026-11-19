@@ -605,7 +605,8 @@ export default function App() {
     }
     if (selectedTenantId === 'todos') return list;
     return list.filter((item) => {
-      const itemTenant = item.tenantId || (item.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
+      const rawTenant = item.tenantId === 'lexrosam' ? 'lex-rosam' : item.tenantId;
+      const itemTenant = rawTenant || (item.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
       return itemTenant === selectedTenantId;
     });
   }, [avaluos, selectedTenantId, isAroldo, currentUser]);
@@ -621,27 +622,40 @@ export default function App() {
           return false;
         }
 
+        const rawTenant = item.tenantId === 'lexrosam' ? 'lex-rosam' : item.tenantId;
+        const itemTenant = rawTenant || (item.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
+
         // Multi-tenant company filter (al escribir una búsqueda, busca globalmente para no perder de vista ningún expediente)
         if (selectedTenantId !== 'todos' && !term) {
-          const itemTenant = item.tenantId || (item.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
           if (itemTenant !== selectedTenantId) {
             return false;
           }
         }
 
+        const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || item.codigo?.startsWith('CV-');
+
         // Status filter matching new workflow
-        if (activeFilter !== 'todos') {
-          if (activeFilter === 'autorizado' && item.estado !== 'autorizado' && item.estado !== 'completado') {
-            return false;
-          }
-          if (activeFilter === 'en_revision' && item.estado !== 'en_revision' && item.estado !== 'proceso') {
-            return false;
-          }
-          if (activeFilter === 'devuelto' && item.estado !== 'devuelto') {
-            return false;
-          }
-          if (activeFilter === 'borrador' && item.estado !== 'borrador' && item.estado) {
-            return false;
+        if (activeFilter === 'certificaciones') {
+          if (!isCert) return false;
+        } else if (activeFilter !== 'todos') {
+          if (isCert) {
+            // Las certificaciones aparecen en la pestaña de Certificaciones, o en Autorizado, o en Todos
+            if (activeFilter !== 'autorizado' && activeFilter !== 'completado') {
+              return false;
+            }
+          } else {
+            if (activeFilter === 'autorizado' && item.estado !== 'autorizado' && item.estado !== 'completado') {
+              return false;
+            }
+            if (activeFilter === 'en_revision' && item.estado !== 'en_revision' && item.estado !== 'proceso') {
+              return false;
+            }
+            if (activeFilter === 'devuelto' && item.estado !== 'devuelto') {
+              return false;
+            }
+            if (activeFilter === 'borrador' && item.estado !== 'borrador' && item.estado) {
+              return false;
+            }
           }
         }
 
@@ -769,52 +783,88 @@ export default function App() {
   // Guardar Certificación de Valor asociada al avalúo o independiente
   const handleSaveCertificacion = async (certData) => {
     try {
-      const baseId = certData.avaluoId;
-      const target = avaluos.find(a => a.id === baseId);
-      if (target) {
-        const updated = {
-          ...target,
-          certificacion: certData,
-          updatedAt: new Date().toISOString()
-        };
-        setAvaluos(prev => prev.map(a => a.id === baseId ? updated : a));
-        await saveAvaluoToLocalDb(updated);
-        await saveAvaluoToCloud(updated);
-      } else {
-        // Certificación manual independiente (sin avalúo previo en base de datos)
-        const isCV = certData.empresaNombre?.includes('CVERDE') || certData.tenantId === 'cverde';
-        const manualId = certData.id || `cert-${Date.now()}`;
-        const newRecord = {
-          id: manualId,
-          codigo: certData.numeroReferencia || `CV-${Date.now().toString().slice(-4)}`,
-          tenantId: isCV ? 'cverde' : 'lexrosam',
-          solicitante: certData.solicitante || '',
-          direccion: certData.direccion || '',
-          descripcionGeneral: certData.descripcionInmueble || '',
-          fincas: certData.fincas || [],
-          finca: certData.fincas?.[0]?.finca || '',
-          folio: certData.fincas?.[0]?.folio || '',
-          libro: certData.fincas?.[0]?.libro || '',
-          areaValuada: certData.valores?.[0]?.area || '0',
-          valorComercialGTQ: certData.valores?.reduce((acc, v) => acc + (Number(v.total) || 0), 0) || 0,
-          valorBancarioGTQ: certData.valores?.reduce((acc, v) => acc + (Number(v.total) || 0), 0) || 0,
-          estado: 'autorizado',
-          tipoAvaluo: 'Certificación de Valor',
-          tipoInmueble: certData.valores?.[0]?.descripcion || 'Apartamento',
-          certificacion: certData,
-          consultasPdfs: certData.consultasPdfs || [],
-          creadoPor: currentUser?.email || 'admin',
-          creadoPorNombre: currentUser?.displayName || 'Lic. Aroldo Ruiz',
-          fechaEmision: certData.fechaEmision || new Date().toISOString().split('T')[0],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        setAvaluos(prev => [newRecord, ...prev]);
-        await saveAvaluoToLocalDb(newRecord);
-        await saveAvaluoToCloud(newRecord);
-      }
+      const isCV = certData.empresaNombre?.includes('CVERDE') || certData.tenantId === 'cverde';
+      const tenantId = isCV ? 'cverde' : 'lex-rosam';
+      const recordId = certData.id || `cert-${Date.now()}`;
+      
+      const newRecord = {
+        id: recordId,
+        codigo: certData.numeroReferencia || `CV-${Date.now().toString().slice(-4)}`,
+        tenantId: tenantId,
+        empresaNombre: isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.',
+        solicitante: certData.solicitante || '',
+        direccion: certData.direccion || '',
+        descripcionGeneral: certData.descripcionInmueble || '',
+        fincas: certData.fincas || [],
+        finca: certData.fincas?.[0]?.finca || '',
+        folio: certData.fincas?.[0]?.folio || '',
+        libro: certData.fincas?.[0]?.libro || '',
+        areaValuada: certData.fincas?.[0]?.areaValuada || certData.valores?.[0]?.area || '0',
+        valorComercialGTQ: certData.valores?.reduce((acc, v) => acc + (Number(v.total) || 0), 0) || 0,
+        valorBancarioGTQ: certData.valores?.reduce((acc, v) => acc + (Number(v.total) || 0), 0) || 0,
+        estado: 'autorizado',
+        tipoAvaluo: 'Certificación de Valor',
+        tipoInmueble: certData.valores?.[0]?.descripcion || 'Certificación',
+        certificacion: certData,
+        consultasPdfs: certData.consultasPdfs || [],
+        creadoPor: currentUser?.email || 'admin',
+        creadoPorNombre: currentUser?.nombre || currentUser?.displayName || 'Lic. Aroldo Ruiz',
+        fechaEmision: certData.fechaEmision || new Date().toISOString().split('T')[0],
+        createdAt: certData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      setAvaluos((prev) => {
+        const idx = prev.findIndex(a => a.id === recordId || (a.codigo && a.codigo === newRecord.codigo));
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = { ...updated[idx], ...newRecord };
+          return updated;
+        } else {
+          return [newRecord, ...prev];
+        }
+      });
+
+      await saveAvaluoToLocalDb(newRecord);
+      await saveAvaluoToCloud(newRecord);
+
+      // Auto-seleccionar la pestaña de certificaciones para que se visualice de inmediato
+      setActiveFilter('certificaciones');
+      setCertificandoAvaluo(null);
+      alert('Certificación de Valor guardada exitosamente.');
     } catch (err) {
       console.warn('Error al guardar certificación:', err);
+    }
+  };
+
+  // Enrutadores de acciones unificadas para Avalúos y Certificaciones
+  const handlePrintItem = (item) => {
+    if (!item) return;
+    const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || item.codigo?.startsWith('CV-');
+    if (isCert) {
+      setPrintingCertificacion({ certData: item.certificacion || item, baseItem: item });
+    } else {
+      setPrintingAvaluo(item);
+    }
+  };
+
+  const handleEditItem = (item) => {
+    if (!item) return;
+    const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || item.codigo?.startsWith('CV-');
+    if (isCert) {
+      setCertificandoAvaluo(item.certificacion ? { ...item.certificacion, id: item.id } : item);
+    } else {
+      handleStartEdit(item);
+    }
+  };
+
+  const handleViewItem = (item) => {
+    if (!item) return;
+    const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || item.codigo?.startsWith('CV-');
+    if (isCert) {
+      setPrintingCertificacion({ certData: item.certificacion || item, baseItem: item });
+    } else {
+      setViewingAvaluo(item);
     }
   };
 
@@ -1130,6 +1180,7 @@ export default function App() {
       {/* Top Navbar with Multi-Tenant Branding & Role Selector */}
       <Navbar
         onNewAvaluo={() => setIsCreatingNew(true)}
+        onNewCertificacion={() => setCertificandoAvaluo({ id: '__manual__' })}
         cloudStatus={cloudStatus}
         currentRole={currentRole}
         onRoleChange={setCurrentRole}
@@ -1203,11 +1254,10 @@ export default function App() {
                 avaluo={av}
                 currentUser={currentUser}
                 currentRole={currentRole}
-                onView={(item) => setViewingAvaluo(item)}
-                onEdit={handleStartEdit}
+                onView={handleViewItem}
+                onEdit={handleEditItem}
                 onDelete={canDeleteExpedientes ? handleDeleteAvaluoClick : null}
-                onPrint={(item) => setPrintingAvaluo(item)}
-                onCertificar={(item) => setCertificandoAvaluo(item)}
+                onPrint={handlePrintItem}
               />
             ))}
           </div>
@@ -1216,11 +1266,10 @@ export default function App() {
             avaluos={filteredAvaluos}
             currentUser={currentUser}
             currentRole={currentRole}
-            onView={(item) => setViewingAvaluo(item)}
-            onEdit={handleStartEdit}
+            onView={handleViewItem}
+            onEdit={handleEditItem}
             onDelete={canDeleteExpedientes ? handleDeleteAvaluoClick : null}
-            onPrint={(item) => setPrintingAvaluo(item)}
-            onCertificar={(item) => setCertificandoAvaluo(item)}
+            onPrint={handlePrintItem}
           />
         )}
       </main>

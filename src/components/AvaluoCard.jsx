@@ -59,6 +59,154 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint, 
     return avaluo.fotoPortada ? 1 : 0;
   })();
 
+  const isCertificacion = avaluo.tipoAvaluo === 'Certificación de Valor' || 
+                          avaluo.tipoAvaluo === 'Certificación' || 
+                          avaluo.codigo?.startsWith('CV-');
+
+  if (isCertificacion) {
+    const isCV = avaluo.tenantId === 'cverde' || avaluo.codigo?.startsWith('CV-');
+    const headerBg = isCV ? 'linear-gradient(135deg, #004e3b 0%, #007956 100%)' : 'linear-gradient(135deg, #0d2847 0%, #1e40af 100%)';
+    return (
+      <div className="aval-card" onClick={() => onPrint ? onPrint(avaluo) : onView(avaluo)} style={{ border: isCV ? '1.5px solid #a7f3d0' : '1.5px solid #bfdbfe' }}>
+        <div style={{
+          background: headerBg,
+          color: '#ffffff',
+          padding: '1rem',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          minHeight: '85px',
+          borderTopLeftRadius: '12px',
+          borderTopRightRadius: '12px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              color: '#ffffff',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              backdropFilter: 'blur(4px)'
+            }}>
+              <Award size={13} color="#fde047" />
+              <span>CERTIFICACIÓN DE VALOR</span>
+            </span>
+            <span style={{
+              background: '#ffffff',
+              color: isCV ? '#004e3b' : '#0d2847',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: '4px'
+            }}>
+              {isCV ? 'C VERDE' : 'LEX ROSAM'}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '0.65rem' }}>
+            <span style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '0.04em' }}>
+              {avaluo.codigo}
+            </span>
+            <span style={{ fontSize: '0.7rem', color: '#e2e8f0' }}>
+              Emitido: {avaluo.fechaEmision || avaluo.fechaActualizacion || avaluo.fechaSolicitud || '2026'}
+            </span>
+          </div>
+        </div>
+
+        <div className="aval-card-body">
+          <div className="aval-card-title-row">
+            <h3 className="aval-card-title">{avaluo.propietarioPrincipal || avaluo.fincas?.[0]?.propietario || avaluo.descripcionGeneral || 'Inmueble Certificado'}</h3>
+            <span className="aval-card-type-tag" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
+              Dictamen Oficial
+            </span>
+          </div>
+
+          <div className="aval-meta-row">
+            <Building size={14} />
+            <span><strong>Solicitante:</strong> {avaluo.solicitante}</span>
+          </div>
+
+          <div className="aval-meta-row">
+            <MapPin size={14} />
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {avaluo.direccion || 'Dirección registrada en dictamen'}
+            </span>
+          </div>
+
+          {/* Registral Capsule */}
+          <div className="registral-capsule">
+            <div className="registral-item">
+              <span>Finca</span>
+              <span>{firstFinca.finca}</span>
+            </div>
+            <div className="registral-item">
+              <span>Folio</span>
+              <span>{firstFinca.folio}</span>
+            </div>
+            <div className="registral-item">
+              <span>Libro</span>
+              <span>{firstFinca.libro}</span>
+            </div>
+            <div className="registral-item">
+              <span>Fincas</span>
+              <span>{avaluo.fincas?.length || 1} reg.</span>
+            </div>
+          </div>
+
+          {/* Financial Section */}
+          <div className="aval-card-financial" style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '8px' }}>
+            <div>
+              <div className="val-commercial-label" style={{ color: '#0f766e', fontWeight: 700 }}>Total Valor Certificado</div>
+              <div className="val-commercial-amount" style={{ color: isCV ? '#004e3b' : '#0d2847' }}>{formatQ(avaluo.valorComercialGTQ)}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <span className="aval-badge-status badge-completado">Autorizado</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="aval-card-actions" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="card-action-btn"
+            onClick={() => onPrint && onPrint(avaluo)}
+            title="Ver e Imprimir Certificación Oficial (PDF)"
+            style={{ color: '#0f766e', fontWeight: 700, flex: 2 }}
+          >
+            <Printer size={15} />
+            <span>Imprimir Certificación</span>
+          </button>
+          <button
+            type="button"
+            className="card-action-btn"
+            onClick={() => onEdit(avaluo)}
+            title="Editar Datos de la Certificación"
+            style={{ flex: 1 }}
+          >
+            <Edit3 size={14} />
+            <span>Editar</span>
+          </button>
+          {onDelete && (
+            <button
+              type="button"
+              className="card-action-btn"
+              onClick={() => onDelete(avaluo.id)}
+              title="Eliminar Certificación"
+              style={{ color: 'var(--status-danger)' }}
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="aval-card" onClick={() => onView(avaluo)}>
       <div className="aval-card-header">
@@ -188,18 +336,6 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint, 
           <Printer size={14} />
           <span>Imprimir</span>
         </button>
-        {onCertificar && (
-          <button
-            type="button"
-            className="card-action-btn"
-            onClick={() => onCertificar(avaluo)}
-            title="Emitir Certificación de Valor (PDF)"
-            style={{ color: '#0284c7' }}
-          >
-            <Award size={14} />
-            <span>Certificar</span>
-          </button>
-        )}
         {canUserEditAvaluo(avaluo, currentUser, currentRole) ? (
           <button
             type="button"

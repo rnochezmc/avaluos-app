@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, UserCheck, ShieldCheck, ChevronDown, Check, 
-  Users, LogOut, Shield, User, HelpCircle, FileSpreadsheet 
+  Users, LogOut, Shield, User, HelpCircle, FileSpreadsheet, Award 
 } from 'lucide-react';
 
 export default function Navbar({ 
   onNewAvaluo, 
+  onNewCertificacion,
   onOpenReporteria,
   cloudStatus = 'conectado',
   currentRole = 'autorizador',
@@ -399,6 +400,36 @@ export default function Navbar({
                   </button>
                 )}
 
+                {/* Opción de Nueva Certificación en menú */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    if (onNewCertificacion) onNewCertificacion();
+                  }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontSize: '0.82rem',
+                    color: '#0d2847',
+                    fontWeight: 600,
+                    marginTop: '2px'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <Award size={16} color="#0f766e" />
+                  <span>Nueva Certificación de Valor</span>
+                </button>
+
                 {/* Opción de Reportería en menú */}
                 <button
                   type="button"
@@ -512,6 +543,31 @@ export default function Navbar({
               </div>
             )}
           </div>
+
+          {/* Nueva Certificación Button (visible para Aroldo / autorizadores) */}
+          <button 
+            type="button" 
+            className="btn-new-certificacion" 
+            onClick={onNewCertificacion}
+            title="Crear nueva Certificación de Valor (dictamen para entidades financieras)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+              boxShadow: '0 4px 12px rgba(13, 148, 136, 0.35)',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              color: '#ffffff',
+              padding: '0.5rem 0.95rem',
+              borderRadius: '8px',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            <Award size={17} />
+            <span className="desktop-only">Nueva Certificación</span>
+          </button>
 
           {/* New Avaluo Button (visible if user can create) */}
           <button 

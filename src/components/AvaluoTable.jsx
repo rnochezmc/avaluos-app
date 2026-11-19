@@ -132,22 +132,11 @@ export default function AvaluoTable({ avaluos = [], onView, onEdit, onDelete, on
                         type="button"
                         className="card-action-btn"
                         onClick={() => onPrint && onPrint(av)}
-                        title="Imprimir Formato Oficial (9 Páginas)"
-                        style={{ padding: '0.35rem 0.5rem', color: 'var(--cverde-primary)' }}
+                        title={av.tipoAvaluo === 'Certificación de Valor' ? "Imprimir Certificación Oficial" : "Imprimir Formato Oficial (9 Páginas)"}
+                        style={{ padding: '0.35rem 0.5rem', color: av.tipoAvaluo === 'Certificación de Valor' ? '#0f766e' : 'var(--cverde-primary)' }}
                       >
                         <Printer size={14} />
                       </button>
-                      {onCertificar && (
-                        <button
-                          type="button"
-                          className="card-action-btn"
-                          onClick={() => onCertificar(av)}
-                          title="Emitir Certificación de Valor"
-                          style={{ padding: '0.35rem 0.5rem', color: '#0284c7' }}
-                        >
-                          <Award size={14} />
-                        </button>
-                      )}
                       {canUserEditAvaluo(av, currentUser, currentRole) ? (
                         <button
                           type="button"
