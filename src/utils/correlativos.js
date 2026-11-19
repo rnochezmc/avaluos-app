@@ -56,24 +56,22 @@ export function extractCorrelativoNumber(codigo) {
  * Calcula el siguiente correlativo sugerido para una empresa basándose en la lista de avaluos existentes
  */
 export function getNextCorrelativoNumber(tenantId, avaluosList = []) {
-  const isCV = getTenantPrefix(tenantId) === 'CV';
-  const baseStart = isCV ? BASE_START_CVERDE : BASE_START_LEX_ROSAM;
-  const targetPrefix = isCV ? 'CV' : 'LR';
+  const isTargetCV = getTenantPrefix(tenantId) === 'CV';
+  const baseStart = isTargetCV ? BASE_START_CVERDE : BASE_START_LEX_ROSAM;
 
   if (!Array.isArray(avaluosList) || avaluosList.length === 0) {
     return baseStart;
   }
 
-  // Filtrar expedientes pertenecientes a esta empresa
+  // Filtrar expedientes pertenecientes estrictamente a esta empresa
   const usedNumbers = new Set();
 
   avaluosList.forEach(item => {
     if (!item) return;
-    const rawTenant = item.tenantId || (item.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
-    const itemPrefix = getTenantPrefix(rawTenant);
+    const isItemCV = item.tenantId === 'cverde' || item.tenantId === 'cv' || (item.codigo && item.codigo.startsWith('CV-'));
 
-    // Solo considerar si coincide con la empresa
-    if (itemPrefix === targetPrefix || (item.codigo && item.codigo.includes(targetPrefix))) {
+    // Separación estricta entre Lex Rosam y C Verde
+    if (isTargetCV === isItemCV) {
       const num = extractCorrelativoNumber(item.codigo);
       if (num >= 1000) {
         usedNumbers.add(num);
