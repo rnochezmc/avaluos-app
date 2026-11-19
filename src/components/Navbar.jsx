@@ -544,6 +544,21 @@ export default function Navbar({
             )}
           </div>
 
+          {/* New Avaluo Button (visible if user can create) */}
+          <button 
+            type="button" 
+            className="btn-new-expediente" 
+            onClick={onNewAvaluo}
+            style={{
+              background: 'linear-gradient(135deg, #1b497d 0%, #2563eb 100%)',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}
+          >
+            <Plus size={18} />
+            <span>Nuevo Avalúo</span>
+          </button>
+
           {/* Nueva Certificación Button (visible para Aroldo / autorizadores) */}
           <button 
             type="button" 
@@ -567,21 +582,6 @@ export default function Navbar({
           >
             <Award size={17} />
             <span className="desktop-only">Nueva Certificación</span>
-          </button>
-
-          {/* New Avaluo Button (visible if user can create) */}
-          <button 
-            type="button" 
-            className="btn-new-expediente" 
-            onClick={onNewAvaluo}
-            style={{
-              background: 'linear-gradient(135deg, #1b497d 0%, #2563eb 100%)',
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}
-          >
-            <Plus size={18} />
-            <span>Nuevo Avalúo</span>
           </button>
         </div>
       </div>
