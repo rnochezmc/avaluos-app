@@ -218,6 +218,12 @@ export async function saveAvaluoToCloud(avaluo) {
 
   if (leanConsultasPdfs) {
     finalData.consultasPdfs = leanConsultasPdfs;
+    if (finalData.certificacion && Array.isArray(finalData.certificacion.consultasPdfs)) {
+      finalData.certificacion = {
+        ...finalData.certificacion,
+        consultasPdfs: leanConsultasPdfs
+      };
+    }
   }
 
   // En el documento principal se mantiene fotoPortada y arrays limpios para no exceder 1MB

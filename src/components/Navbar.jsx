@@ -581,7 +581,7 @@ export default function Navbar({
             }}
           >
             <Award size={17} />
-            <span className="desktop-only">Nueva Certificación</span>
+            <span>+ Certificación</span>
           </button>
         </div>
       </div>

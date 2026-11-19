@@ -634,38 +634,40 @@ export default function App() {
 
         const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || item.codigo?.startsWith('CV-');
 
-        // Status filter matching new workflow
-        if (activeFilter === 'certificaciones') {
-          if (!isCert) return false;
-        } else if (activeFilter !== 'todos') {
-          if (isCert) {
-            // Las certificaciones aparecen en la pestaña de Certificaciones, o en Autorizado, o en Todos
-            if (activeFilter !== 'autorizado' && activeFilter !== 'completado') {
-              return false;
-            }
-          } else {
-            if (activeFilter === 'autorizado' && item.estado !== 'autorizado' && item.estado !== 'completado') {
-              return false;
-            }
-            if (activeFilter === 'en_revision' && item.estado !== 'en_revision' && item.estado !== 'proceso') {
-              return false;
-            }
-            if (activeFilter === 'devuelto' && item.estado !== 'devuelto') {
-              return false;
-            }
-            if (activeFilter === 'borrador' && item.estado !== 'borrador' && item.estado) {
-              return false;
+        // Status filter matching new workflow (si hay un término de búsqueda, busca en todos los estados para no ocultar nada)
+        if (!term) {
+          if (activeFilter === 'certificaciones') {
+            if (!isCert) return false;
+          } else if (activeFilter !== 'todos') {
+            if (isCert) {
+              // Las certificaciones aparecen en la pestaña de Certificaciones, o en Autorizado, o en Todos
+              if (activeFilter !== 'autorizado' && activeFilter !== 'completado') {
+                return false;
+              }
+            } else {
+              if (activeFilter === 'autorizado' && item.estado !== 'autorizado' && item.estado !== 'completado') {
+                return false;
+              }
+              if (activeFilter === 'en_revision' && item.estado !== 'en_revision' && item.estado !== 'proceso') {
+                return false;
+              }
+              if (activeFilter === 'devuelto' && item.estado !== 'devuelto') {
+                return false;
+              }
+              if (activeFilter === 'borrador' && item.estado !== 'borrador' && item.estado) {
+                return false;
+              }
             }
           }
         }
 
         // Property type filter
-        if (propertyTypeFilter !== 'todos' && item.tipoAvaluo !== propertyTypeFilter) {
+        if (propertyTypeFilter !== 'todos' && !term && item.tipoAvaluo !== propertyTypeFilter) {
           return false;
         }
 
         // Bank filter (Banco Industrial, BANRURAL, Banco G&T Continental)
-        if (bankFilter !== 'todos') {
+        if (bankFilter !== 'todos' && !term) {
           const bankText = normalize((item.solicitante || '') + ' ' + (item.dirigidoA || ''));
           if (bankFilter === 'Banco Industrial') {
             if (!bankText.includes('industrial') && !bankText.includes('bi')) return false;
@@ -681,10 +683,20 @@ export default function App() {
         // Omnisearch matching
         if (!term) return true;
 
-        const matchCode = normalize(item.codigo).includes(term);
-        const matchOwner = normalize(item.propietarioPrincipal).includes(term);
+        const matchCode = normalize(item.codigo).includes(term) ||
+                          normalize(item.codigoInterno).includes(term) ||
+                          normalize(item.numeroReferencia).includes(term) ||
+                          normalize(item.certificacion?.numeroReferencia).includes(term) ||
+                          normalize(item.id).includes(term);
+        const matchOwner = normalize(item.propietarioPrincipal).includes(term) ||
+                           normalize(item.dirigidoA).includes(term);
         const matchBank = normalize(item.solicitante).includes(term);
-        const matchAddress = normalize(item.direccion).includes(term);
+        const matchAddress = normalize(item.direccion).includes(term) ||
+                             normalize(item.descripcionGeneral).includes(term) ||
+                             normalize(item.certificacion?.descripcionInmueble).includes(term);
+        const matchCreator = normalize(item.creadoPorNombre).includes(term) ||
+                             normalize(item.creadoPorEmail).includes(term) ||
+                             normalize(item.creadoPor).includes(term);
         const matchSector = normalize(item.sector).includes(term);
         const matchDicabi = normalize(item.dicabiMatricula).includes(term);
         const matchDpi = normalize(item.dpi).includes(term);
@@ -698,7 +710,7 @@ export default function App() {
           normalize(f.dicabiMatricula).includes(term)
         );
 
-        return matchCode || matchOwner || matchBank || matchAddress || matchSector || matchDicabi || matchDpi || matchFincas;
+        return matchCode || matchOwner || matchBank || matchAddress || matchCreator || matchSector || matchDicabi || matchDpi || matchFincas;
       })
       .sort((a, b) => {
         if (sortBy === 'recientes') {

@@ -172,22 +172,50 @@ export default function CertificacionValorModal({
     });
   };
 
-  // Manejadores de Fincas
+  // Manejadores de Fincas con Auto-Sincronización a Cuadro de Valores (Requerimiento de Aroldo: que jale las fincas)
   const handleAddFinca = () => {
-    setFormData(prev => ({
-      ...prev,
-      fincas: [
+    setFormData(prev => {
+      const nextFincas = [
         ...prev.fincas,
         { finca: '', folio: '', libro: '', areaRegistrada: '', propietario: '', areaValuada: '' }
-      ]
-    }));
+      ];
+      const nextValores = [
+        ...prev.valores,
+        { descripcion: `Finca ${nextFincas.length}`, area: '0.00', unidad: 'm²', valorUnitario: 0, total: 0 }
+      ];
+      return {
+        ...prev,
+        fincas: nextFincas,
+        valores: nextValores
+      };
+    });
   };
 
   const handleUpdateFinca = (index, field, value) => {
     setFormData(prev => {
-      const next = [...prev.fincas];
-      next[index] = { ...next[index], [field]: value };
-      return { ...prev, fincas: next };
+      const nextFincas = [...prev.fincas];
+      nextFincas[index] = { ...nextFincas[index], [field]: value };
+
+      // Sincronizar automáticamente con el renglón correspondiente en la tabla de Valores
+      const nextValores = [...(prev.valores || [])];
+      if (nextValores[index]) {
+        const itemVal = { ...nextValores[index] };
+        if (field === 'finca' && value) {
+          itemVal.descripcion = `Finca ${value}`;
+        }
+        if (field === 'areaValuada' || (field === 'areaRegistrada' && !nextFincas[index].areaValuada)) {
+          const clean = (value || '').replace(/[^\d.]/g, '');
+          if (clean) {
+            itemVal.area = clean;
+            const a = parseFloat(clean) || 0;
+            const u = parseFloat(itemVal.valorUnitario || 0) || 0;
+            itemVal.total = parseFloat((a * u).toFixed(2));
+          }
+        }
+        nextValores[index] = itemVal;
+      }
+
+      return { ...prev, fincas: nextFincas, valores: nextValores };
     });
   };
 
@@ -197,7 +225,9 @@ export default function CertificacionValorModal({
         alert('Debe mantener al menos una finca registral.');
         return prev;
       }
-      return { ...prev, fincas: prev.fincas.filter((_, i) => i !== index) };
+      const nextFincas = prev.fincas.filter((_, i) => i !== index);
+      const nextValores = prev.valores.length > 1 ? prev.valores.filter((_, i) => i !== index) : prev.valores;
+      return { ...prev, fincas: nextFincas, valores: nextValores };
     });
   };
 
@@ -280,7 +310,7 @@ export default function CertificacionValorModal({
     });
   };
 
-  // Carga Múltiple de PDFs RGP
+  // Carga Múltiple de PDFs RGP (procesamiento robusto archivo por archivo)
   const handleUploadRgpFiles = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -289,16 +319,20 @@ export default function CertificacionValorModal({
       const newDocs = [];
       let totalPagesAdded = 0;
       for (const file of files) {
-        const pages = await convertPdfOrImageToPageImages(file);
-        if (pages && pages.length > 0) {
-          totalPagesAdded += pages.length;
-          newDocs.push({
-            id: `rgp-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-            name: file.name,
-            pages,
-            fecha: new Date().toLocaleDateString('es-GT'),
-            size: `${(file.size / 1024 / 1024).toFixed(2)} MB`
-          });
+        try {
+          const pages = await convertPdfOrImageToPageImages(file);
+          if (pages && pages.length > 0) {
+            totalPagesAdded += pages.length;
+            newDocs.push({
+              id: `rgp-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+              name: file.name,
+              pages,
+              fecha: new Date().toLocaleDateString('es-GT'),
+              size: `${(file.size / 1024 / 1024).toFixed(2)} MB`
+            });
+          }
+        } catch (fileErr) {
+          console.warn(`Error al procesar archivo PDF ${file.name}:`, fileErr);
         }
       }
       if (newDocs.length > 0) {
@@ -308,6 +342,8 @@ export default function CertificacionValorModal({
           incluirAnexosRgp: true
         }));
         alert(`Se cargaron exitosamente ${newDocs.length} documento(s) con un total de ${totalPagesAdded} página(s).`);
+      } else {
+        alert('No se pudieron procesar los archivos seleccionados. Verifique que sean archivos PDF o imágenes válidas.');
       }
     } catch (err) {
       alert('Error al procesar archivos PDF: ' + err.message);
