@@ -13,6 +13,7 @@ export default function CertificacionPrintView({
 }) {
   const [rgpPages, setRgpPages] = useState([]);
   const [isLoadingRgp, setIsLoadingRgp] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const tenantId = certificacion?.tenantId || avaluoBase?.tenantId || (certificacion?.empresaNombre?.includes('CVERDE') || certificacion?.empresaNombre?.includes('C VERDE') ? 'cverde' : 'lex-rosam');
   const tenantConfig = getTenantConfig(tenantId);
@@ -48,7 +49,13 @@ export default function CertificacionPrintView({
   }, [certificacion?.consultasPdfs, avaluoBase?.consultasPdfs, certificacion?.incluirAnexosRgp, avaluoBase?.id, certificacion?.id]);
 
   const handlePrint = () => {
-    window.print();
+    setIsPrinting(true);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        setIsPrinting(false);
+      }, 1000);
+    }, 150);
   };
 
   const formatQ = (val) => {
@@ -139,23 +146,25 @@ export default function CertificacionPrintView({
           <button
             type="button"
             onClick={handlePrint}
+            disabled={isPrinting}
             style={{
               background: isCVerde ? '#007956' : '#2563eb',
               border: 'none',
               color: '#ffffff',
               padding: '8px 18px',
               borderRadius: '8px',
-              cursor: 'pointer',
+              cursor: isPrinting ? 'wait' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               fontSize: '0.9rem',
               fontWeight: 700,
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+              opacity: isPrinting ? 0.8 : 1
             }}
           >
-            <Printer size={16} />
-            <span>Imprimir / Exportar a PDF</span>
+            {isPrinting ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Printer size={16} />}
+            <span>{isPrinting ? 'Generando PDF...' : 'Imprimir / Exportar a PDF'}</span>
           </button>
           <button
             type="button"
