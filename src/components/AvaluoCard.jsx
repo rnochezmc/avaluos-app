@@ -165,7 +165,7 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint, 
               <div className="val-commercial-amount" style={{ color: isCV ? '#004e3b' : '#0d2847' }}>{formatQ(avaluo.valorComercialGTQ)}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <span className="aval-badge-status badge-completado">Autorizado</span>
+              {getStatusBadge(avaluo.estado || 'en_revision')}
             </div>
           </div>
         </div>
@@ -181,16 +181,29 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint, 
             <Printer size={15} />
             <span>Imprimir Certificación</span>
           </button>
-          <button
-            type="button"
-            className="card-action-btn"
-            onClick={() => onEdit(avaluo)}
-            title="Editar Datos de la Certificación"
-            style={{ flex: 1 }}
-          >
-            <Edit3 size={14} />
-            <span>Editar</span>
-          </button>
+          {canUserEditAvaluo(avaluo, currentUser, currentRole) ? (
+            <button
+              type="button"
+              className="card-action-btn"
+              onClick={() => onEdit(avaluo)}
+              title="Editar Datos de la Certificación"
+              style={{ flex: 1 }}
+            >
+              <Edit3 size={14} />
+              <span>Editar</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="card-action-btn"
+              onClick={() => alert('Esta certificación ya fue autorizada por el Lic. Aroldo Ruiz y se encuentra bloqueada para edición. Solo el autorizador puede modificarla.')}
+              title="Certificación Autorizada (Bloqueada para Asistentes)"
+              style={{ opacity: 0.5, cursor: 'not-allowed', color: '#64748b', flex: 1 }}
+            >
+              <Lock size={14} />
+              <span>Bloqueado</span>
+            </button>
+          )}
           {onDelete && (
             <button
               type="button"

@@ -813,6 +813,20 @@ export default function App() {
       const tenantId = isCV ? 'cverde' : 'lex-rosam';
       const recordId = certData.id || `cert-${Date.now()}`;
       
+      const isAroldoUser = isAroldoOrAdminUser(currentUser) && currentRole !== 'ingreso';
+      // Las certificaciones nuevas no se autorizan automáticamente; requieren aprobación explícita de Aroldo
+      const certStatus = certData.estado || (isAroldoUser ? (certData.autorizadoDirecto ? 'autorizado' : 'en_revision') : 'en_revision');
+      
+      const authorizedFields = certStatus === 'autorizado' ? {
+        fechaAutorizacion: certData.fechaAutorizacion || new Date().toISOString().slice(0, 10),
+        autorizadoPor: currentUser?.nombre 
+          ? `${currentUser.nombre} (Reg. 2572-R-2026)` 
+          : 'Lic. Aroldo Ruiz (Reg. 2572-R-2026)'
+      } : {
+        fechaAutorizacion: null,
+        autorizadoPor: null
+      };
+      
       const newRecord = {
         id: recordId,
         codigo: certData.numeroReferencia || `CV-${Date.now().toString().slice(-4)}`,
@@ -828,13 +842,14 @@ export default function App() {
         areaValuada: certData.fincas?.[0]?.areaValuada || certData.valores?.[0]?.area || '0',
         valorComercialGTQ: certData.valores?.reduce((acc, v) => acc + (Number(v.total) || 0), 0) || 0,
         valorBancarioGTQ: certData.valores?.reduce((acc, v) => acc + (Number(v.total) || 0), 0) || 0,
-        estado: 'autorizado',
+        estado: certStatus,
+        ...authorizedFields,
         tipoAvaluo: 'Certificación de Valor',
         tipoInmueble: certData.valores?.[0]?.descripcion || 'Certificación',
-        certificacion: certData,
+        certificacion: { ...certData, id: recordId, estado: certStatus },
         consultasPdfs: certData.consultasPdfs || [],
-        creadoPor: currentUser?.email || 'admin',
-        creadoPorNombre: currentUser?.nombre || currentUser?.displayName || 'Lic. Aroldo Ruiz',
+        creadoPor: certData.creadoPor || currentUser?.email || 'admin',
+        creadoPorNombre: certData.creadoPorNombre || currentUser?.nombre || currentUser?.displayName || 'Lic. Aroldo Ruiz',
         fechaEmision: certData.fechaEmision || new Date().toISOString().split('T')[0],
         createdAt: certData.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -857,7 +872,10 @@ export default function App() {
       // Auto-seleccionar la pestaña de certificaciones para que se visualice de inmediato
       setActiveFilter('certificaciones');
       setCertificandoAvaluo(null);
-      alert('Certificación de Valor guardada exitosamente.');
+      const msg = certStatus === 'autorizado'
+        ? 'Certificación de Valor guardada y autorizada exitosamente.'
+        : 'Certificación de Valor guardada en Revisión (pendiente de autorización).';
+      alert(msg);
     } catch (err) {
       console.warn('Error al guardar certificación:', err);
     }
@@ -878,7 +896,11 @@ export default function App() {
     if (!item) return;
     const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || item.codigo?.startsWith('CV-');
     if (isCert) {
-      setCertificandoAvaluo(item.certificacion ? { ...item.certificacion, id: item.id } : item);
+      if (item.estado === 'autorizado' && !canUserEditAvaluo(item, currentUser, currentRole)) {
+        alert('Esta certificación ya fue autorizada por el Lic. Aroldo Ruiz y se encuentra bloqueada para edición. Solo el autorizador puede modificarla.');
+        return;
+      }
+      setCertificandoAvaluo(item.certificacion ? { ...item.certificacion, id: item.id, estado: item.estado } : item);
     } else {
       handleStartEdit(item);
     }
@@ -909,11 +931,22 @@ export default function App() {
       updatedAt: new Date().toISOString()
     };
 
+    if (currentItem.certificacion) {
+      next.certificacion = {
+        ...currentItem.certificacion,
+        estado: newStatus
+      };
+    }
+
     if (newStatus === 'autorizado') {
       next.fechaAutorizacion = new Date().toISOString().slice(0, 10);
       next.autorizadoPor = currentUser?.nombre 
         ? `${currentUser.nombre} (${currentItem.registroPrincipal || 'Reg. 2572-R-2026'})` 
         : `${currentItem.valuadorPrincipal || 'Lic. Aroldo Ruiz'} (${currentItem.registroPrincipal || 'Reg. 2572-R-2026'})`;
+      if (next.certificacion) {
+        next.certificacion.fechaAutorizacion = next.fechaAutorizacion;
+        next.certificacion.autorizadoPor = next.autorizadoPor;
+      }
     }
 
     // 1. Actualizar estado reactivo de inmediato
@@ -921,6 +954,16 @@ export default function App() {
 
     // 2. Actualizar modal en pantalla
     setViewingAvaluo((cur) => (cur?.id === id ? next : cur));
+    setPrintingCertificacion((cur) => {
+      if (!cur) return null;
+      const match = cur.baseItem?.id === id || cur.certData?.id === id;
+      if (!match) return cur;
+      return {
+        ...cur,
+        certData: { ...cur.certData, estado: newStatus },
+        baseItem: { ...(cur.baseItem || {}), ...next }
+      };
+    });
 
     // 3. Persistir de forma garantizada en IndexedDB local
     try {
@@ -1507,6 +1550,7 @@ export default function App() {
           avaluoBase={printingCertificacion.baseItem}
           currentUser={currentUser}
           currentRole={currentRole}
+          onStatusChange={handleStatusChange}
           onClose={() => setPrintingCertificacion(null)}
         />
       )}

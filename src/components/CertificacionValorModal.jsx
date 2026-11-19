@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Award, Printer, Save, Plus, Trash2, RefreshCw, FileText, 
-  Building, Calendar, DollarSign, Check, AlertCircle, FileUp, Paperclip, ChevronDown, ChevronRight 
+  Building, Calendar, DollarSign, Check, AlertCircle, FileUp, Paperclip, ChevronDown, ChevronRight, Shield 
 } from 'lucide-react';
 import { formatFechaEnLetras, convertPdfOrImageToPageImages } from '../utils/pdfHelper';
+import { isAroldoOrAdminUser } from '../utils/permissions';
 
 export const TIPOS_SOLICITUD = [
   'CERTIFICACIÓN DE VALOR'
@@ -77,7 +78,8 @@ export default function CertificacionValorModal({
         valores: Array.isArray(src.valores) && src.valores.length > 0 ? src.valores : [{ descripcion: 'APARTAMENTO', area: '0.00', unidad: 'm²', valorUnitario: 0, total: 0 }],
         observaciones: src.observaciones || generateDefaultObservaciones(src.avaluoCodigo || 'LR-2026-10037', src.mesCitado || 'octubre de 2026', isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.'),
         consultasPdfs: Array.isArray(src.consultasPdfs) ? src.consultasPdfs : [],
-        incluirAnexosRgp: src.incluirAnexosRgp !== false
+        incluirAnexosRgp: src.incluirAnexosRgp !== false,
+        estado: src.estado || initialAvaluoBase.estado || 'en_revision'
       };
     }
 
@@ -133,7 +135,8 @@ export default function CertificacionValorModal({
         valores: [{ descripcion: baseFincas[0]?.finca ? `Finca ${baseFincas[0].finca}` : 'Inmueble', area: base.areaValuada || '0', unidad: 'm²', valorUnitario: 0, total: 0 }],
         observaciones: generateDefaultObservaciones(base.codigo, mesNombre, emp),
         consultasPdfs: Array.isArray(base.consultasPdfs) ? base.consultasPdfs : [],
-        incluirAnexosRgp: true
+        incluirAnexosRgp: true,
+        estado: 'en_revision'
       };
     }
 
@@ -155,7 +158,8 @@ export default function CertificacionValorModal({
       valores: [{ descripcion: 'APARTAMENTO', area: '0.00', unidad: 'm²', valorUnitario: 0, total: 0 }],
       observaciones: generateDefaultObservaciones('LR-2026-10037', 'octubre de 2026', 'CVERDE, S.A.'),
       consultasPdfs: [],
-      incluirAnexosRgp: true
+      incluirAnexosRgp: true,
+      estado: 'en_revision'
     };
   });
 
@@ -419,13 +423,20 @@ export default function CertificacionValorModal({
     }
   };
 
-  const handleSave = () => {
+  const isAroldo = isAroldoOrAdminUser(currentUser) && currentRole !== 'ingreso';
+
+  const handleSave = (targetEstado) => {
     if (!formData.solicitante) {
       alert('Por favor especifique el solicitante.');
       return;
     }
+    const finalEstado = targetEstado || (isAroldo ? (formData.estado || 'en_revision') : 'en_revision');
     if (onSaveCertificacion) {
-      onSaveCertificacion(formData);
+      onSaveCertificacion({
+        ...formData,
+        estado: finalEstado,
+        autorizadoDirecto: finalEstado === 'autorizado'
+      });
     }
   };
 
@@ -1211,28 +1222,79 @@ export default function CertificacionValorModal({
             Cancelar
           </button>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button
-              type="button"
-              onClick={handleSave}
-              style={{
-                background: '#ffffff',
-                border: '1.5px solid #004e3b',
-                color: '#004e3b',
-                padding: '0.55rem 1.35rem',
-                borderRadius: '8px',
-                fontSize: '0.85rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-              }}
-            >
-              <Save size={16} />
-              <span>Guardar Certificación</span>
-            </button>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            {isAroldo ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleSave('en_revision')}
+                  style={{
+                    background: '#ffffff',
+                    border: '1.5px solid #cbd5e1',
+                    color: '#334155',
+                    padding: '0.55rem 1.15rem',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                  }}
+                  title="Guardar como borrador / en revisión sin estampar firma oficial"
+                >
+                  <Save size={16} />
+                  <span>Guardar en Revisión</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSave('autorizado')}
+                  style={{
+                    background: isCVerde ? '#004e3b' : '#0d2847',
+                    border: 'none',
+                    color: '#ffffff',
+                    padding: '0.55rem 1.35rem',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 12px rgba(0, 78, 59, 0.25)'
+                  }}
+                  title="Guardar y autorizar oficialmente con firma y sello del Lic. Aroldo Ruiz"
+                >
+                  <Shield size={16} color="#86efac" />
+                  <span>Guardar y Autorizar</span>
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleSave('en_revision')}
+                style={{
+                  background: isCVerde ? '#004e3b' : '#0d2847',
+                  border: 'none',
+                  color: '#ffffff',
+                  padding: '0.55rem 1.35rem',
+                  borderRadius: '8px',
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)'
+                }}
+                title="Guardar y enviar a revisión para aprobación del Lic. Aroldo Ruiz"
+              >
+                <Save size={16} />
+                <span>Guardar y Enviar a Revisión</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -1241,7 +1303,7 @@ export default function CertificacionValorModal({
                 background: '#0284c7',
                 border: 'none',
                 color: '#ffffff',
-                padding: '0.55rem 1.4rem',
+                padding: '0.55rem 1.25rem',
                 borderRadius: '8px',
                 fontSize: '0.85rem',
                 fontWeight: 700,
@@ -1253,7 +1315,7 @@ export default function CertificacionValorModal({
               }}
             >
               <Printer size={16} />
-              <span>Ver / Imprimir Certificación Oficial (PDF)</span>
+              <span>Vista Previa (PDF)</span>
             </button>
           </div>
         </div>

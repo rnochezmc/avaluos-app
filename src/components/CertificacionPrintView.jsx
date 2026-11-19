@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Printer, ArrowLeft, FileText, Loader2, Award, Shield } from 'lucide-react';
+import { X, Printer, ArrowLeft, FileText, Loader2, Award, Shield, AlertCircle } from 'lucide-react';
 import { extractAllRgpPages, formatFechaEnLetras, formatArea } from '../utils/pdfHelper';
-import { canUserViewSignatures } from '../utils/permissions';
+import { canUserViewSignatures, isAroldoOrAdminUser } from '../utils/permissions';
 import { getTenantConfig } from '../data/tenantsConfig';
 
 export default function CertificacionPrintView({ 
@@ -9,11 +9,25 @@ export default function CertificacionPrintView({
   avaluoBase, 
   onClose, 
   currentUser, 
-  currentRole = 'autorizador' 
+  currentRole = 'autorizador',
+  onStatusChange 
 }) {
   const [rgpPages, setRgpPages] = useState([]);
   const [isLoadingRgp, setIsLoadingRgp] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const targetId = certificacion?.id || avaluoBase?.id;
+  const initialStatus = certificacion?.estado || avaluoBase?.estado || 'en_revision';
+  const [localStatus, setLocalStatus] = useState(initialStatus);
+
+  const isAutorizado = localStatus === 'autorizado';
+  const isAroldo = isAroldoOrAdminUser(currentUser) && currentRole !== 'ingreso';
+
+  // Permiso para visualización de firmas:
+  // 1. Debe estar formalmente autorizada
+  // 2. Solo Aroldo o administradores autorizados pueden verla; pupilos/asistentes nunca la ven
+  const canShowSignatures = isAutorizado && canUserViewSignatures(currentUser, currentRole);
 
   const tenantId = certificacion?.tenantId || avaluoBase?.tenantId || (certificacion?.empresaNombre?.includes('CVERDE') || certificacion?.empresaNombre?.includes('C VERDE') ? 'cverde' : 'lex-rosam');
   const tenantConfig = getTenantConfig(tenantId);
@@ -23,8 +37,41 @@ export default function CertificacionPrintView({
   const headerTableColor = '#70AD47';
   const sectionTitleColor = '#538135';
 
-  // Permiso para visualización de firmas (Aroldo/Autorizador vs Asistente)
-  const canShowSignatures = canUserViewSignatures(currentUser, currentRole);
+  const handleAuthorize = async () => {
+    if (!window.confirm('¿Desea autorizar oficialmente esta certificación de valor? Al autorizarse, quedará registrada con la firma del Lic. Aroldo Ruiz y bloqueada para edición de los asistentes.')) {
+      return;
+    }
+    setIsUpdatingStatus(true);
+    try {
+      setLocalStatus('autorizado');
+      if (onStatusChange && targetId) {
+        await onStatusChange(targetId, 'autorizado');
+      }
+    } catch (err) {
+      console.error('Error al autorizar certificación:', err);
+      alert('Error al autorizar: ' + err.message);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleUnauthorize = async () => {
+    if (!window.confirm('¿Desea retirar la autorización de esta certificación y regresarla a estado de revisión?')) {
+      return;
+    }
+    setIsUpdatingStatus(true);
+    try {
+      setLocalStatus('en_revision');
+      if (onStatusChange && targetId) {
+        await onStatusChange(targetId, 'en_revision');
+      }
+    } catch (err) {
+      console.error('Error al desautorizar certificación:', err);
+      alert('Error al retirar autorización: ' + err.message);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   // Carga de páginas RGP asociadas si se incluyeron
   useEffect(() => {
@@ -143,7 +190,93 @@ export default function CertificacionPrintView({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {!canShowSignatures && (
+          {/* Indicador de Estado Oficial */}
+          {isAutorizado ? (
+            <span style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              background: '#064e3b', 
+              color: '#a7f3d0', 
+              border: '1px solid #059669', 
+              padding: '5px 12px', 
+              borderRadius: '8px', 
+              fontSize: '0.8rem', 
+              fontWeight: 800 
+            }}>
+              <Shield size={14} color="#34d399" />
+              <span>AUTORIZADA</span>
+            </span>
+          ) : (
+            <span style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              background: '#78350f', 
+              color: '#fef3c7', 
+              border: '1px solid #d97706', 
+              padding: '5px 12px', 
+              borderRadius: '8px', 
+              fontSize: '0.8rem', 
+              fontWeight: 800 
+            }}>
+              <AlertCircle size={14} color="#fde047" />
+              <span>EN REVISIÓN (PENDIENTE)</span>
+            </span>
+          )}
+
+          {/* Botones de Acción de Autorización (Solo para Aroldo Ruiz / Administrador) */}
+          {isAroldo && (
+            !isAutorizado ? (
+              <button
+                type="button"
+                onClick={handleAuthorize}
+                disabled={isUpdatingStatus}
+                style={{
+                  background: '#059669',
+                  border: '1px solid #34d399',
+                  color: '#ffffff',
+                  padding: '7px 14px',
+                  borderRadius: '8px',
+                  cursor: isUpdatingStatus ? 'wait' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  boxShadow: '0 2px 8px rgba(5, 150, 105, 0.4)'
+                }}
+                title="Autorizar oficialmente la certificación e insertar firma de Aroldo Ruiz"
+              >
+                <Shield size={15} />
+                <span>{isUpdatingStatus ? 'Autorizando...' : '🛡️ Autorizar Certificación'}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleUnauthorize}
+                disabled={isUpdatingStatus}
+                style={{
+                  background: '#334155',
+                  border: '1px solid #64748b',
+                  color: '#cbd5e1',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  cursor: isUpdatingStatus ? 'wait' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600
+                }}
+                title="Desautorizar y regresar a estado En Revisión"
+              >
+                <span>{isUpdatingStatus ? 'Actualizando...' : 'Regresar a Revisión'}</span>
+              </button>
+            )
+          )}
+
+          {!canUserViewSignatures(currentUser, currentRole) && (
             <span style={{ fontSize: '0.75rem', background: '#334155', color: '#94a3b8', padding: '4px 10px', borderRadius: '6px', fontStyle: 'italic' }}>
               Modo Asistente: Firmas gráficas reservadas
             </span>
@@ -223,6 +356,32 @@ export default function CertificacionPrintView({
             overflow: 'hidden'
           }}
         >
+          {/* Marca de agua si no está autorizada */}
+          {!isAutorizado && (
+            <div 
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%) rotate(-30deg)',
+                fontSize: '2.5rem',
+                fontWeight: 900,
+                color: 'rgba(220, 38, 38, 0.12)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.2em',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                whiteSpace: 'nowrap',
+                zIndex: 5,
+                border: '4px dashed rgba(220, 38, 38, 0.18)',
+                padding: '12px 36px',
+                borderRadius: '16px'
+              }}
+            >
+              EN REVISIÓN · SIN AUTORIZAR
+            </div>
+          )}
+
           {/* Parte superior y contenido estructurado */}
           <div>
             {/* Header: Logotipo Oficial */}
@@ -362,7 +521,9 @@ export default function CertificacionPrintView({
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <div style={{ width: '180px', height: '1px', background: '#000000', marginBottom: '6px' }}></div>
                       <span style={{ fontSize: '0.64rem', color: '#64748b', fontStyle: 'italic', marginBottom: '4px' }}>
-                        [Firma y sello oficiales reservados al autorizador]
+                        {!isAutorizado 
+                          ? '[Documento en revisión - Pendiente de autorización]' 
+                          : '[Firma y sello oficiales reservados al autorizador]'}
                       </span>
                     </div>
                   )}
