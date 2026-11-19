@@ -310,7 +310,7 @@ export default function CertificacionPrintView({
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.76rem' }}>
                 <thead>
                   <tr style={{ background: headerTableColor, color: '#ffffff' }}>
-                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 8px', textAlign: 'left', fontWeight: 700 }}>DESCRIPCIÓN</th>
+                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 8px', textAlign: 'left', fontWeight: 700 }}>FINCA</th>
                     <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 8px', textAlign: 'center', fontWeight: 700 }}>ÁREA</th>
                     <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 8px', textAlign: 'right', fontWeight: 700 }}>VALOR M2</th>
                     <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 8px', textAlign: 'right', fontWeight: 700 }}>TOTAL</th>

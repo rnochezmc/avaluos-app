@@ -926,7 +926,7 @@ export default function CertificacionValorModal({
               <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'separate', borderSpacing: '0 6px', fontSize: '0.82rem' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc', color: '#334155', fontSize: '0.76rem', fontWeight: 800 }}>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', minWidth: '220px' }}>FINCA / DESCRIPCIÓN</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', minWidth: '220px' }}>FINCA</th>
                     <th style={{ padding: '8px 10px', textAlign: 'center', width: '130px' }}>ÁREA (m²)</th>
                     <th style={{ padding: '8px 10px', textAlign: 'right', width: '160px' }}>VALOR M² (Q)</th>
                     <th style={{ padding: '8px 10px', textAlign: 'right', width: '170px' }}>TOTAL (Q)</th>
