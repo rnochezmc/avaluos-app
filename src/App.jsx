@@ -640,24 +640,14 @@ export default function App() {
           if (activeFilter === 'certificaciones') {
             if (!isCert) return false;
           } else if (activeFilter !== 'todos') {
-            if (isCert) {
-              // Las certificaciones aparecen en la pestaña de Certificaciones, o en Autorizado, o en Todos
-              if (activeFilter !== 'autorizado' && activeFilter !== 'completado') {
-                return false;
-              }
-            } else {
-              if (activeFilter === 'autorizado' && item.estado !== 'autorizado' && item.estado !== 'completado') {
-                return false;
-              }
-              if (activeFilter === 'en_revision' && item.estado !== 'en_revision' && item.estado !== 'proceso') {
-                return false;
-              }
-              if (activeFilter === 'devuelto' && item.estado !== 'devuelto') {
-                return false;
-              }
-              if (activeFilter === 'borrador' && item.estado !== 'borrador' && item.estado) {
-                return false;
-              }
+            if (activeFilter === 'autorizado' || activeFilter === 'completado') {
+              if (item.estado !== 'autorizado' && item.estado !== 'completado') return false;
+            } else if (activeFilter === 'en_revision') {
+              if (item.estado !== 'en_revision' && item.estado !== 'proceso' && item.estado !== 'borrador') return false;
+            } else if (activeFilter === 'devuelto') {
+              if (item.estado !== 'devuelto') return false;
+            } else if (activeFilter === 'borrador') {
+              if (item.estado !== 'borrador' && item.estado) return false;
             }
           }
         }
@@ -807,7 +797,7 @@ export default function App() {
   };
 
   // Guardar Certificación de Valor asociada al avalúo o independiente
-  const handleSaveCertificacion = async (certData) => {
+  const handleSaveCertificacion = async (certData, silent = false) => {
     try {
       const isCV = certData.empresaNombre?.includes('CVERDE') || certData.tenantId === 'cverde';
       const tenantId = isCV ? 'cverde' : 'lex-rosam';
@@ -871,11 +861,13 @@ export default function App() {
 
       // Auto-seleccionar la pestaña de certificaciones para que se visualice de inmediato
       setActiveFilter('certificaciones');
-      setCertificandoAvaluo(null);
-      const msg = certStatus === 'autorizado'
-        ? 'Certificación de Valor guardada y autorizada exitosamente.'
-        : 'Certificación de Valor guardada en Revisión (pendiente de autorización).';
-      alert(msg);
+      if (!silent) {
+        setCertificandoAvaluo(null);
+        const msg = certStatus === 'autorizado'
+          ? 'Certificación de Valor guardada y autorizada exitosamente.'
+          : 'Certificación de Valor guardada en Revisión (pendiente de autorización).';
+        alert(msg);
+      }
     } catch (err) {
       console.warn('Error al guardar certificación:', err);
     }
@@ -1536,7 +1528,9 @@ export default function App() {
           currentUser={currentUser}
           currentRole={currentRole}
           onClose={() => setCertificandoAvaluo(null)}
-          onPreviewPrint={(certData, baseItem) => {
+          onPreviewPrint={async (certData, baseItem) => {
+            // Guardar automáticamente para que el documento nunca se pierda al previsualizar o descargar el PDF
+            await handleSaveCertificacion(certData, true);
             setPrintingCertificacion({ certData, baseItem });
           }}
           onSaveCertificacion={handleSaveCertificacion}
