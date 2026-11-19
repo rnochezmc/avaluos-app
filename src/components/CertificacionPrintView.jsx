@@ -19,8 +19,9 @@ export default function CertificacionPrintView({
   const tenantConfig = getTenantConfig(tenantId);
 
   const isCVerde = tenantId === 'cverde';
-  const primaryColor = isCVerde ? '#004e3b' : '#0d2847';
-  const headerTableColor = isCVerde ? '#4f7942' : '#1b497d';
+  // Exact Microsoft Word Accent 6 green palette from Aroldo's official Word template
+  const headerTableColor = '#70AD47';
+  const sectionTitleColor = '#538135';
 
   // Permiso para visualización de firmas (Aroldo/Autorizador vs Asistente)
   const canShowSignatures = canUserViewSignatures(currentUser, currentRole);
@@ -50,9 +51,13 @@ export default function CertificacionPrintView({
 
   const handlePrint = () => {
     setIsPrinting(true);
+    const originalTitle = document.title;
+    // Ocultar título temporalmente para que Safari/navegadores no impriman el nombre de la pestaña
+    document.title = " ";
     setTimeout(() => {
       window.print();
       setTimeout(() => {
+        document.title = originalTitle;
         setIsPrinting(false);
       }, 1000);
     }, 150);
@@ -69,7 +74,7 @@ export default function CertificacionPrintView({
     .map(l => l.trim())
     .filter(l => l.length > 0);
 
-  // Fecha en formato oficial "Guatemala [dia] de [mes] de [año]"
+  // Fecha en formato oficial "Guatemala, [dia] de [mes] de [año]"
   const formattedDate = (() => {
     if (!certificacion?.fechaEmision) return 'Guatemala, ' + formatFechaEnLetras(new Date().toISOString().split('T')[0]);
     return 'Guatemala ' + formatFechaEnLetras(certificacion.fechaEmision);
@@ -148,7 +153,7 @@ export default function CertificacionPrintView({
             onClick={handlePrint}
             disabled={isPrinting}
             style={{
-              background: isCVerde ? '#007956' : '#2563eb',
+              background: isCVerde ? '#70AD47' : '#2563eb',
               border: 'none',
               color: '#ffffff',
               padding: '8px 18px',
@@ -173,8 +178,8 @@ export default function CertificacionPrintView({
               background: 'rgba(255, 255, 255, 0.1)',
               border: 'none',
               color: '#ffffff',
+              padding: '6px',
               borderRadius: '8px',
-              padding: '8px',
               cursor: 'pointer'
             }}
           >
@@ -183,19 +188,30 @@ export default function CertificacionPrintView({
         </div>
       </div>
 
-      {/* Contenedor del documento impreso */}
-      <div className="pdf-print-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
+      {/* Wrapper de Hojas para Impresión y Vista Previa */}
+      <div 
+        className="pdf-print-wrapper" 
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          gap: '2rem',
+          paddingBottom: '3rem'
+        }}
+      >
         
         {/* ================================================================
-            PÁGINA 1: CERTIFICACIÓN DE VALOR (RÉPLICA EXACTA DEL FORMATO FÍSICO)
+            PÁGINA 1: FORMATO OFICIAL DE DICTAMEN DE CERTIFICACIÓN DE VALOR
+            (Idéntico al documento Word proporcionado por Aroldo Ruiz)
             ================================================================ */}
         <div 
-          className="pdf-page-sheet"
+          className="pdf-page-sheet cert-sheet-page1"
           style={{
             background: '#ffffff',
             width: '216mm',
             minHeight: '279mm',
-            padding: '16mm 18mm',
+            maxHeight: '279mm',
+            padding: '12mm 16mm 10mm 16mm',
             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
             boxSizing: 'border-box',
             fontFamily: '"Calibri", "Segoe UI", Arial, sans-serif',
@@ -203,207 +219,177 @@ export default function CertificacionPrintView({
             position: 'relative',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            overflow: 'hidden'
           }}
         >
-          {/* Parte superior y contenido */}
+          {/* Parte superior y contenido estructurado */}
           <div>
-            {/* Header: Logotipo y Contacto */}
-            <div style={{ textAlign: 'center', marginBottom: '0.8rem' }}>
+            {/* Header: Logotipo Oficial */}
+            <div style={{ textAlign: 'center', marginBottom: '0.55rem' }}>
               {isCVerde ? (
                 <img 
                   src="/cverde-logo.jpg" 
                   alt="C VERDE S.A." 
-                  style={{ height: '70px', objectFit: 'contain', margin: '0 auto 4px auto', display: 'block' }} 
+                  style={{ height: '62px', objectFit: 'contain', margin: '0 auto', display: 'block' }} 
                 />
               ) : (
                 <img 
                   src="/lex-rosam-logo.png" 
                   alt="LEX ROSAM S.A." 
-                  style={{ height: '70px', objectFit: 'contain', margin: '0 auto 4px auto', display: 'block' }} 
+                  style={{ height: '62px', objectFit: 'contain', margin: '0 auto', display: 'block' }} 
                 />
               )}
             </div>
 
-            {/* Solicitante y Contacto superior */}
-            <div style={{ marginBottom: '0.85rem', fontSize: '0.82rem', lineHeight: 1.35 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div>
-                  <span style={{ fontWeight: 700 }}>Solicitante: </span>
-                  <span style={{ textTransform: 'uppercase' }}>{certificacion?.solicitante || 'BANCO G&T CONTINENTAL S.A.'}</span>
-                </div>
-                <div style={{ textAlign: 'right', fontSize: '0.72rem', color: '#334155' }}>
-                  {isCVerde ? (
-                    <>
-                      <span>jmmorales@cverde.com.gt  oruiz@cverde.com.gt  cel. 5839 4800</span><br />
-                      <span style={{ fontWeight: 600 }}>www.cverde.com.gt</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>solicituddeavaluos@lexrosam.com  tel. +502 6203-0795</span><br />
-                      <span style={{ fontWeight: 600 }}>www.lexrosam.com</span>
-                    </>
-                  )}
-                </div>
-              </div>
+            {/* Solicitante (Línea limpia exactamente como el Word de Aroldo) */}
+            <div style={{ marginBottom: '0.45rem', fontSize: '0.82rem', lineHeight: 1.3 }}>
+              <span style={{ fontWeight: 700 }}>SOLICITANTE: </span>
+              <span style={{ textTransform: 'uppercase' }}>{certificacion?.solicitante || 'BANCO G&T CONTINENTAL, S.A.'}</span>
             </div>
 
             {/* Ficha Descriptiva del Inmueble */}
-            <div style={{ fontSize: '0.8rem', lineHeight: 1.4, marginBottom: '0.9rem' }}>
-              <div style={{ marginBottom: '0.35rem' }}>
+            <div style={{ fontSize: '0.79rem', lineHeight: 1.35, marginBottom: '0.55rem' }}>
+              <div style={{ marginBottom: '0.25rem' }}>
                 <span style={{ fontWeight: 700 }}>DIRECCIÓN: </span>
                 <span style={{ textTransform: 'uppercase' }}>{certificacion?.direccion || '-'}</span>
               </div>
-              <div style={{ marginBottom: '0.35rem' }}>
+              <div style={{ marginBottom: '0.25rem' }}>
                 <span style={{ fontWeight: 700 }}>DESCRIPCIÓN DEL INMUEBLE: </span>
                 <span style={{ textTransform: 'uppercase' }}>{certificacion?.descripcionInmueble || certificacion?.direccion || '-'}</span>
               </div>
-              <div style={{ marginBottom: '0.35rem' }}>
+              <div style={{ marginBottom: '0.25rem' }}>
                 <span style={{ fontWeight: 700 }}>TIPO DE SOLICITUD: </span>
                 <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>{certificacion?.tipoSolicitud || 'CERTIFICACIÓN DE VALOR'}</span>
               </div>
               <div>
                 <span style={{ fontWeight: 700 }}>NUMERO DE REFERENCIA: </span>
-                <span style={{ fontWeight: 700, color: primaryColor }}>{certificacion?.numeroReferencia || 'CV-10001'}</span>
+                <span style={{ fontWeight: 700, color: '#000000' }}>{certificacion?.numeroReferencia || 'CV-10001'}</span>
               </div>
             </div>
 
-            {/* TABLA DE FINCAS */}
-            <div style={{ marginBottom: '0.9rem' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+            {/* TABLA DE FINCAS (Encabezado verde #70AD47 y texto blanco en negrita) */}
+            <div style={{ marginBottom: '0.55rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.74rem' }}>
                 <thead>
-                  <tr style={{ background: headerTableColor, color: '#ffffff' }}>
-                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}>FINCA</th>
-                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}>FOLIO</th>
-                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}>LIBRO</th>
-                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}>ÁREA REGISTRADA</th>
-                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}>PROPIETARIO</th>
-                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}>ÁREA VALUADA</th>
+                  <tr className="cert-table-header-tr">
+                    <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 6px', textAlign: 'center', fontWeight: 700, width: '12%' }}>FINCA</th>
+                    <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 6px', textAlign: 'center', fontWeight: 700, width: '10%' }}>FOLIO</th>
+                    <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 6px', textAlign: 'center', fontWeight: 700, width: '26%' }}>LIBRO</th>
+                    <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 6px', textAlign: 'center', fontWeight: 700, width: '16%' }}>ÁREA REGISTRADA</th>
+                    <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 6px', textAlign: 'center', fontWeight: 700, width: '24%' }}>PROPIETARIO</th>
+                    <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 6px', textAlign: 'center', fontWeight: 700, width: '12%' }}>ÁREA VALUADA</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(certificacion?.fincas && certificacion.fincas.length > 0 ? certificacion.fincas : [{ finca: '-', folio: '-', libro: '-', areaRegistrada: '-', propietario: '-', areaValuada: '-' }]).map((f, i) => (
                     <tr key={i}>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'center', fontWeight: 600 }}>{f.finca || '-'}</td>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'center' }}>{f.folio || '-'}</td>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'center' }}>{f.libro || '-'}</td>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'center' }}>{f.areaRegistrada || '-'}</td>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'left', textTransform: 'uppercase' }}>{f.propietario || '-'}</td>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 6px', textAlign: 'center' }}>{f.areaValuada || f.areaRegistrada || '-'}</td>
+                      <td style={{ border: '1px solid #a6a6a6', padding: '3px 6px', textAlign: 'center', fontWeight: 600 }}>{f.finca || '-'}</td>
+                      <td style={{ border: '1px solid #a6a6a6', padding: '3px 6px', textAlign: 'center' }}>{f.folio || '-'}</td>
+                      <td style={{ border: '1px solid #a6a6a6', padding: '3px 6px', textAlign: 'center' }}>{f.libro || '-'}</td>
+                      <td style={{ border: '1px solid #a6a6a6', padding: '3px 6px', textAlign: 'center' }}>{f.areaRegistrada || '-'}</td>
+                      <td style={{ border: '1px solid #a6a6a6', padding: '3px 6px', textAlign: 'left', textTransform: 'uppercase' }}>{f.propietario || '-'}</td>
+                      <td style={{ border: '1px solid #a6a6a6', padding: '3px 6px', textAlign: 'center' }}>{f.areaValuada || f.areaRegistrada || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            {/* SECCIÓN OBSERVACIONES (VIÑETAS LEGALES) */}
-            <div style={{ marginBottom: '0.9rem' }}>
-              <div style={{ fontWeight: 700, fontSize: '0.78rem', color: primaryColor, marginBottom: '0.25rem', letterSpacing: '0.02em' }}>
+            {/* SECCIÓN OBSERVACIONES (Título verde #538135 y Viñetas) */}
+            <div style={{ marginBottom: '0.55rem' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.76rem', color: '#538135', marginBottom: '0.2rem', letterSpacing: '0.02em' }}>
                 OBSERVACIONES:
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.73rem', lineHeight: 1.38, textAlign: 'justify', color: '#1e293b' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.28rem', fontSize: '0.71rem', lineHeight: 1.32, textAlign: 'justify', color: '#1e293b' }}>
                 {observacionesLines.map((line, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                    <span style={{ color: primaryColor, fontWeight: 700, fontSize: '0.75rem', lineHeight: 1.3 }}>➤</span>
+                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
+                    <span style={{ color: '#538135', fontWeight: 700, fontSize: '0.72rem', lineHeight: 1.3 }}>➤</span>
                     <span style={{ flex: 1 }}>{line.replace(/^[•➤\-]\s*/, '')}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* TABLA DE VALORES */}
-            <div style={{ marginBottom: '1.2rem' }}>
-              <div style={{ fontWeight: 700, fontSize: '0.82rem', color: primaryColor, textAlign: 'center', marginBottom: '0.3rem', letterSpacing: '0.04em' }}>
+            {/* TABLA DE VALORES (Título verde #538135, Encabezado verde #70AD47 y letras blancas) */}
+            <div style={{ marginBottom: '0.65rem' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#538135', textAlign: 'center', marginBottom: '0.2rem', letterSpacing: '0.04em' }}>
                 VALORES
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.76rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.74rem' }}>
                 <thead>
-                  <tr style={{ background: headerTableColor, color: '#ffffff' }}>
-                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 8px', textAlign: 'left', fontWeight: 700 }}>FINCA</th>
-                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 8px', textAlign: 'center', fontWeight: 700 }}>ÁREA</th>
-                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 8px', textAlign: 'right', fontWeight: 700 }}>VALOR M2</th>
-                    <th style={{ border: `1px solid ${headerTableColor}`, padding: '4px 8px', textAlign: 'right', fontWeight: 700 }}>TOTAL</th>
+                  <tr className="cert-table-header-tr">
+                    <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 8px', textAlign: 'left', fontWeight: 700, width: '40%' }}>FINCA</th>
+                    <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 8px', textAlign: 'center', fontWeight: 700, width: '20%' }}>ÁREA</th>
+                    <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 8px', textAlign: 'right', fontWeight: 700, width: '20%' }}>VALOR M2</th>
+                    <th className="cert-th-green" style={{ background: '#70AD47', backgroundColor: '#70AD47', color: '#ffffff', border: '1px solid #70AD47', padding: '4px 8px', textAlign: 'right', fontWeight: 700, width: '20%' }}>TOTAL</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(certificacion?.valores && certificacion.valores.length > 0 ? certificacion.valores : [{ descripcion: 'Inmueble', area: '0.00', valorUnitario: 0, total: 0 }]).map((v, i) => (
                     <tr key={i}>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'left', fontWeight: 600, textTransform: 'uppercase' }}>{v.descripcion}</td>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'center' }}>
-                        {formatArea(v.area)} {v.unidad || 'm2'}
+                      <td style={{ border: '1px solid #a6a6a6', padding: '3px 8px', textAlign: 'left', fontWeight: 600, textTransform: 'uppercase' }}>{v.descripcion}</td>
+                      <td style={{ border: '1px solid #a6a6a6', padding: '3px 8px', textAlign: 'center' }}>
+                        {formatArea(v.area)} {v.unidad || 'm²'}
                       </td>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'right' }}>{formatQ(v.valorUnitario)}</td>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'right', fontWeight: 600 }}>{formatQ(v.total)}</td>
+                      <td style={{ border: '1px solid #a6a6a6', padding: '3px 8px', textAlign: 'right' }}>{formatQ(v.valorUnitario)}</td>
+                      <td style={{ border: '1px solid #a6a6a6', padding: '3px 8px', textAlign: 'right', fontWeight: 600 }}>{formatQ(v.total)}</td>
                     </tr>
                   ))}
                   <tr style={{ background: '#f8fafc', fontWeight: 700 }}>
-                    <td colSpan={3} style={{ border: '1px solid #cbd5e1', padding: '5px 8px', textAlign: 'left' }}>TOTAL</td>
-                    <td style={{ border: '1px solid #cbd5e1', padding: '5px 8px', textAlign: 'right', color: primaryColor, fontSize: '0.84rem' }}>{formatQ(totalValores)}</td>
+                    <td colSpan={3} style={{ border: '1px solid #a6a6a6', padding: '4px 8px', textAlign: 'left' }}>TOTAL</td>
+                    <td style={{ border: '1px solid #a6a6a6', padding: '4px 8px', textAlign: 'right', color: '#538135', fontSize: '0.82rem', fontWeight: 800 }}>{formatQ(totalValores)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Pie de página y Firma Oficial */}
-          <div style={{ marginTop: 'auto', paddingTop: '0.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.25rem' }}>
+          {/* Pie de página y Firma Oficial (Siempre al pie de la Página 1) */}
+          <div style={{ marginTop: 'auto', paddingTop: '0.2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.4rem' }}>
               
               {/* Firma y Sello Oficial */}
               <div style={{ textAlign: 'center', minWidth: '220px' }}>
-                <div style={{ minHeight: '85px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
+                <div style={{ minHeight: '80px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '3px' }}>
                   {canShowSignatures ? (
                     <img 
                       src="/signatures/firma_aroldo_ruiz.png" 
                       alt="Firma y Sello Oficial" 
-                      style={{ maxHeight: '85px', maxWidth: '190px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
+                      style={{ maxHeight: '80px', maxWidth: '185px', objectFit: 'contain', mixBlendMode: 'multiply' }} 
                     />
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <div style={{ width: '190px', height: '1px', background: '#000000', marginBottom: '6px' }}></div>
+                      <div style={{ width: '185px', height: '1px', background: '#000000', marginBottom: '6px' }}></div>
                       <span style={{ fontSize: '0.64rem', color: '#64748b', fontStyle: 'italic', marginBottom: '4px' }}>
                         [Firma y sello oficiales reservados al autorizador]
                       </span>
                     </div>
                   )}
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#000000', lineHeight: 1.2 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#000000', lineHeight: 1.2 }}>
                   Licenciado<br />
                   Aroldo Oliverio Ruiz Orozco
                 </div>
-                <div style={{ fontSize: '0.74rem', color: '#334155' }}>
+                <div style={{ fontSize: '0.72rem', color: '#334155' }}>
                   Valuador
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '0.74rem', color: '#000000' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.72rem', color: '#000000' }}>
                   Reg. 2572-R-2026
                 </div>
               </div>
 
               {/* Fecha de Emisión */}
-              <div style={{ textAlign: 'right', fontSize: '0.82rem', fontWeight: 600, color: '#1e293b', paddingBottom: '0.5rem' }}>
+              <div style={{ textAlign: 'right', fontSize: '0.78rem', fontWeight: 600, color: '#1e293b', paddingBottom: '0.4rem' }}>
                 {formattedDate}
               </div>
-            </div>
-
-            {/* Footer de contacto inferior */}
-            <div style={{ borderTop: `1px solid ${headerTableColor}`, paddingTop: '0.4rem', textAlign: 'center', fontSize: '0.72rem', color: '#334155', lineHeight: 1.35 }}>
-              {isCVerde ? (
-                <>
-                  <div>jmmorales@cverde.com.gt  oruiz@cverde.com.gt  cel. 5839 4800</div>
-                  <div style={{ fontWeight: 700, color: primaryColor }}>www.cverde.com.gt</div>
-                </>
-              ) : (
-                <>
-                  <div>solicituddeavaluos@lexrosam.com  tel. +502 6203-0795</div>
-                  <div style={{ fontWeight: 700, color: primaryColor }}>www.lexrosam.com</div>
-                </>
-              )}
             </div>
           </div>
         </div>
 
         {/* ================================================================
             PÁGINAS SIGUIENTES: CERTIFICACIONES RGP (1 PÁGINA POR HOJA)
+            Solo se imprimen si el usuario adjuntó archivos PDF del RGP
             ================================================================ */}
         {rgpPages && rgpPages.length > 0 && rgpPages.map((page, pIdx) => (
           <div 
@@ -413,6 +399,7 @@ export default function CertificacionPrintView({
               background: '#ffffff',
               width: '216mm',
               minHeight: '279mm',
+              maxHeight: '279mm',
               padding: '12mm 15mm',
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
               boxSizing: 'border-box',
@@ -420,13 +407,14 @@ export default function CertificacionPrintView({
               color: '#000000',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              overflow: 'hidden'
             }}
           >
             <div>
               {/* Encabezado superior de Anexo RGP */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid ${primaryColor}`, paddingBottom: '0.35rem', marginBottom: '0.65rem' }}>
-                <span style={{ fontWeight: 800, fontSize: '0.8rem', color: primaryColor, textTransform: 'uppercase' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid #538135`, paddingBottom: '0.35rem', marginBottom: '0.65rem' }}>
+                <span style={{ fontWeight: 800, fontSize: '0.8rem', color: '#538135', textTransform: 'uppercase' }}>
                   Anexo: Consulta Registral RGP · Certificación {certificacion?.numeroReferencia || ''}
                 </span>
                 <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
@@ -459,9 +447,18 @@ export default function CertificacionPrintView({
 
       </div>
 
-      {/* Reglas de impresión CSS para navegador */}
+      {/* Reglas de impresión CSS para navegador (Garantizan fondo verde #70AD47, texto blanco y 1 sola página) */}
       <style>{`
         @media print {
+          *, *::before, *::after {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          @page {
+            size: letter portrait;
+            margin: 0 !important;
+          }
           body {
             background: #ffffff !important;
             padding: 0 !important;
@@ -479,19 +476,34 @@ export default function CertificacionPrintView({
           }
           .pdf-print-wrapper {
             gap: 0 !important;
+            padding: 0 !important;
           }
           .pdf-page-sheet {
             box-shadow: none !important;
             border: none !important;
-            width: 100% !important;
-            height: 100vh !important;
+            width: 216mm !important;
+            height: 279mm !important;
+            max-height: 279mm !important;
             margin: 0 !important;
+            padding: 12mm 16mm 10mm 16mm !important;
             page-break-after: always !important;
             break-after: page !important;
+            page-break-inside: avoid !important;
+            overflow: hidden !important;
           }
-          @page {
-            size: letter portrait;
-            margin: 10mm 12mm;
+          .cert-th-green {
+            background-color: #70AD47 !important;
+            background: #70AD47 !important;
+            color: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .cert-table-header-tr th {
+            background-color: #70AD47 !important;
+            background: #70AD47 !important;
+            color: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         }
       `}</style>
