@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Building, Eye, Edit3, Trash2, Calendar, Printer, Lock, Award } from 'lucide-react';
+import { MapPin, Building, Eye, Edit3, Trash2, Calendar, Printer, Lock, Award, Camera, Compass } from 'lucide-react';
 import { canUserEditAvaluo } from '../utils/permissions';
 
 export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint, onCertificar, currentUser, currentRole }) {
@@ -43,6 +43,22 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint, 
 
   const firstFinca = avaluo.fincas?.[0] || { finca: 'S/N', folio: '-', libro: '-' };
 
+  const totalPhotosCount = (() => {
+    if (avaluo.fotosSummary && typeof avaluo.fotosSummary === 'object') {
+      const sum = Object.values(avaluo.fotosSummary).reduce((acc, n) => acc + (Number(n) || 0), 0);
+      if (sum > 0) return sum;
+    }
+    if (avaluo.fotos && typeof avaluo.fotos === 'object') {
+      let count = 0;
+      Object.values(avaluo.fotos).forEach(list => {
+        if (Array.isArray(list)) count += list.length;
+        else if (typeof list === 'string' && list.trim()) count += 1;
+      });
+      if (count > 0) return count;
+    }
+    return avaluo.fotoPortada ? 1 : 0;
+  })();
+
   return (
     <div className="aval-card" onClick={() => onView(avaluo)}>
       <div className="aval-card-header">
@@ -53,6 +69,26 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint, 
           loading="lazy" 
         />
         {getStatusBadge(avaluo.estado)}
+
+        {totalPhotosCount > 1 && (
+          <span style={{
+            position: 'absolute',
+            bottom: '8px',
+            right: '8px',
+            background: 'rgba(15, 23, 42, 0.75)',
+            color: '#ffffff',
+            fontSize: '0.68rem',
+            fontWeight: 700,
+            padding: '2px 8px',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            backdropFilter: 'blur(4px)'
+          }}>
+            <Camera size={11} /> {totalPhotosCount} fotos
+          </span>
+        )}
         <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '4px' }}>
           {(avaluo.tenantId === 'cverde' || avaluo.codigo?.startsWith('CV-')) ? (
             <span style={{ background: 'rgba(0, 44, 34, 0.85)', color: '#00bb7f', border: '1px solid rgba(0, 187, 127, 0.4)', fontSize: '0.68rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', gap: '3px' }}>
@@ -86,6 +122,13 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint, 
             {avaluo.direccion}
           </span>
         </div>
+
+        {avaluo.coordenadas && (
+          <div className="aval-meta-row" style={{ fontSize: '0.74rem', color: '#0369a1' }}>
+            <Compass size={13} color="#0284c7" />
+            <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>GPS: {avaluo.coordenadas}</span>
+          </div>
+        )}
 
         <div className="aval-meta-row" style={{ fontSize: '0.75rem', color: 'var(--slate-500)' }}>
           <Calendar size={13} />

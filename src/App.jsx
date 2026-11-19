@@ -13,7 +13,7 @@ import UserManagementModal from './components/UserManagementModal';
 import ReporteriaModal from './components/ReporteriaModal';
 import CertificacionValorModal from './components/CertificacionValorModal';
 import CertificacionPrintView from './components/CertificacionPrintView';
-import { canUserEditAvaluo } from './utils/permissions';
+import { canUserEditAvaluo, isAroldoOrAdminUser } from './utils/permissions';
 import { initialAvaluos, DEFAULT_DICTAMEN_GARANTIA } from './data/mockAvaluos';
 import { getTenantConfig, DEFAULT_TENANT_ID } from './data/tenantsConfig';
 import { 
@@ -425,83 +425,95 @@ export default function App() {
       console.warn('Redirect auth result:', err);
     });
 
+    // Temporizador de seguridad para evitar pantallas congeladas si Firebase demora
+    const authTimeout = setTimeout(() => {
+      setIsAuthLoading(false);
+    }, 4000);
+
     const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        const email = (firebaseUser.email || '').toLowerCase().trim();
-        const match = usuarios.find(u => u.email?.toLowerCase().trim() === email);
+      clearTimeout(authTimeout);
+      try {
+        if (firebaseUser) {
+          const email = (firebaseUser.email || '').toLowerCase().trim();
+          const match = usuarios.find(u => u.email?.toLowerCase().trim() === email);
 
-        // Si no es cuenta principal y usuarios aún no cargan de Firestore, esperar
-        if (
-          email !== 'rnochezmc@gmail.com' && 
-          email !== 'cverdeavaluos@gmail.com' && 
-          email !== 'oruiz@cverde.com.gt' && 
-          email !== 'jmmorales@cverde.com.gt' && 
-          email !== 'aroldoruiz100@gmail.com' && 
-          !usuariosLoaded
-        ) {
-          return;
+          // Si no es cuenta principal y usuarios aún no cargan de Firestore, esperar
+          if (
+            email !== 'rnochezmc@gmail.com' && 
+            email !== 'cverdeavaluos@gmail.com' && 
+            email !== 'oruiz@cverde.com.gt' && 
+            email !== 'jmmorales@cverde.com.gt' && 
+            email !== 'aroldoruiz100@gmail.com' && 
+            !usuariosLoaded
+          ) {
+            return;
+          }
+
+          let assignedRole = 'no_autorizado';
+          let assignedNombre = firebaseUser.displayName || 'Colaborador';
+          let assignedTitulo = 'Personal Técnico';
+          let assignedTenantId = 'lex-rosam';
+          let isActivo = false;
+
+          // Cuentas administradoras maestras del sistema
+          if (email === 'rnochezmc@gmail.com') {
+            assignedRole = 'soporte';
+            assignedNombre = (firebaseUser.displayName || 'Ramiro Nóchez').replace(/^Ing\.\s*/i, '');
+            assignedTitulo = 'Soporte Técnico y Sistemas';
+            assignedTenantId = 'all';
+            isActivo = true;
+          } else if (email === 'cverdeavaluos@gmail.com' || email === 'oruiz@cverde.com.gt' || email === 'jmmorales@cverde.com.gt') {
+            assignedRole = 'admin';
+            assignedNombre = firebaseUser.displayName || (email === 'oruiz@cverde.com.gt' ? 'Lic. Aroldo Ruiz' : email === 'jmmorales@cverde.com.gt' ? 'Ing. Juan Manuel Morales' : 'Ing. Carlos Villagrán');
+            assignedTitulo = 'Director C VERDE / Valuador Autorizado';
+            assignedTenantId = 'cverde';
+            isActivo = true;
+          } else if (email === 'aroldoruiz100@gmail.com') {
+            assignedRole = 'admin';
+            assignedNombre = firebaseUser.displayName || 'Lic. Aroldo Ruiz';
+            assignedTitulo = 'Dueño y Administrador / Valuador Autorizado 2572-R-2026';
+            assignedTenantId = 'all';
+            isActivo = true;
+          } else if (match) {
+            // Usuario registrado en la colección de usuarios
+            assignedRole = match.rol || 'valuador';
+            assignedNombre = match.nombre || firebaseUser.displayName || 'Colaborador';
+            assignedTitulo = match.titulo || 'Personal Técnico';
+            assignedTenantId = match.tenantId || 'lex-rosam';
+            isActivo = match.activo !== false;
+          }
+
+          const userObj = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            nombre: assignedNombre,
+            rol: assignedRole,
+            titulo: assignedTitulo,
+            tenantId: assignedTenantId,
+            photoURL: firebaseUser.photoURL,
+            activo: isActivo
+          };
+
+          setCurrentUser(userObj);
+          const isMaster = isAroldoOrAdminUser(userObj);
+          setCurrentRole(isMaster ? 'autorizador' : 'ingreso');
+          if (assignedTenantId && assignedTenantId !== 'all') {
+            setSelectedTenantId(assignedTenantId);
+          }
+        } else {
+          // Ninguna cuenta de Google autenticada
+          setCurrentUser(null);
+          localStorage.removeItem(AUTH_USER_KEY);
         }
-
-        let assignedRole = 'no_autorizado';
-        let assignedNombre = firebaseUser.displayName || 'Colaborador';
-        let assignedTitulo = 'Personal Técnico';
-        let assignedTenantId = 'lex-rosam';
-        let isActivo = false;
-
-        // Cuentas administradoras maestras del sistema
-        if (email === 'rnochezmc@gmail.com') {
-          assignedRole = 'soporte';
-          assignedNombre = (firebaseUser.displayName || 'Ramiro Nóchez').replace(/^Ing\.\s*/i, '');
-          assignedTitulo = 'Soporte Técnico y Sistemas';
-          assignedTenantId = 'all';
-          isActivo = true;
-        } else if (email === 'cverdeavaluos@gmail.com' || email === 'oruiz@cverde.com.gt' || email === 'jmmorales@cverde.com.gt') {
-          assignedRole = 'admin';
-          assignedNombre = firebaseUser.displayName || (email === 'oruiz@cverde.com.gt' ? 'Lic. Aroldo Ruiz' : email === 'jmmorales@cverde.com.gt' ? 'Ing. Juan Manuel Morales' : 'Ing. Carlos Villagrán');
-          assignedTitulo = 'Director C VERDE / Valuador Autorizado';
-          assignedTenantId = 'cverde';
-          isActivo = true;
-        } else if (email === 'aroldoruiz100@gmail.com') {
-          assignedRole = 'admin';
-          assignedNombre = firebaseUser.displayName || 'Lic. Aroldo Ruiz';
-          assignedTitulo = 'Dueño y Administrador / Valuador Autorizado 2572-R-2026';
-          assignedTenantId = 'all';
-          isActivo = true;
-        } else if (match) {
-          // Usuario registrado en la colección de usuarios
-          assignedRole = match.rol || 'valuador';
-          assignedNombre = match.nombre || firebaseUser.displayName || 'Colaborador';
-          assignedTitulo = match.titulo || 'Personal Técnico';
-          assignedTenantId = match.tenantId || 'lex-rosam';
-          isActivo = match.activo !== false;
-        }
-
-        const userObj = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          nombre: assignedNombre,
-          rol: assignedRole,
-          titulo: assignedTitulo,
-          tenantId: assignedTenantId,
-          photoURL: firebaseUser.photoURL,
-          activo: isActivo
-        };
-
-        setCurrentUser(userObj);
-        setCurrentRole(assignedRole === 'valuador' ? 'ingreso' : 'autorizador');
-        if (assignedTenantId && assignedTenantId !== 'all') {
-          setSelectedTenantId(assignedTenantId);
-        }
-        setIsAuthLoading(false);
-      } else {
-        // Ninguna cuenta de Google autenticada
-        setCurrentUser(null);
-        localStorage.removeItem(AUTH_USER_KEY);
+      } catch (err) {
+        console.error('Error procesando autenticación:', err);
+      } finally {
         setIsAuthLoading(false);
       }
     });
 
     return () => {
+      clearTimeout(authTimeout);
       if (unsubAuth) unsubAuth();
     };
   }, [usuarios, usuariosLoaded]);
@@ -754,7 +766,7 @@ export default function App() {
     setEditingAvaluo(item);
   };
 
-  // Guardar Certificación de Valor asociada al avalúo
+  // Guardar Certificación de Valor asociada al avalúo o independiente
   const handleSaveCertificacion = async (certData) => {
     try {
       const baseId = certData.avaluoId;
@@ -768,6 +780,38 @@ export default function App() {
         setAvaluos(prev => prev.map(a => a.id === baseId ? updated : a));
         await saveAvaluoToLocalDb(updated);
         await saveAvaluoToCloud(updated);
+      } else {
+        // Certificación manual independiente (sin avalúo previo en base de datos)
+        const isCV = certData.empresaNombre?.includes('CVERDE') || certData.tenantId === 'cverde';
+        const manualId = certData.id || `cert-${Date.now()}`;
+        const newRecord = {
+          id: manualId,
+          codigo: certData.numeroReferencia || `CV-${Date.now().toString().slice(-4)}`,
+          tenantId: isCV ? 'cverde' : 'lexrosam',
+          solicitante: certData.solicitante || '',
+          direccion: certData.direccion || '',
+          descripcionGeneral: certData.descripcionInmueble || '',
+          fincas: certData.fincas || [],
+          finca: certData.fincas?.[0]?.finca || '',
+          folio: certData.fincas?.[0]?.folio || '',
+          libro: certData.fincas?.[0]?.libro || '',
+          areaValuada: certData.valores?.[0]?.area || '0',
+          valorComercialGTQ: certData.valores?.reduce((acc, v) => acc + (Number(v.total) || 0), 0) || 0,
+          valorBancarioGTQ: certData.valores?.reduce((acc, v) => acc + (Number(v.total) || 0), 0) || 0,
+          estado: 'autorizado',
+          tipoAvaluo: 'Certificación de Valor',
+          tipoInmueble: certData.valores?.[0]?.descripcion || 'Apartamento',
+          certificacion: certData,
+          consultasPdfs: certData.consultasPdfs || [],
+          creadoPor: currentUser?.email || 'admin',
+          creadoPorNombre: currentUser?.displayName || 'Lic. Aroldo Ruiz',
+          fechaEmision: certData.fechaEmision || new Date().toISOString().split('T')[0],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        setAvaluos(prev => [newRecord, ...prev]);
+        await saveAvaluoToLocalDb(newRecord);
+        await saveAvaluoToCloud(newRecord);
       }
     } catch (err) {
       console.warn('Error al guardar certificación:', err);

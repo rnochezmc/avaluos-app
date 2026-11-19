@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Award, Printer, Save, Plus, Trash2, RefreshCw, FileText, 
-  Building, Calendar, DollarSign, Check, AlertCircle 
+  Building, Calendar, DollarSign, Check, AlertCircle, FileUp, Paperclip 
 } from 'lucide-react';
-import { formatFechaEnLetras } from '../utils/pdfHelper';
+import { formatFechaEnLetras, convertPdfOrImageToPageImages } from '../utils/pdfHelper';
 
 export const TIPOS_SOLICITUD = [
   'CERTIFICACIÓN DE VALOR'
@@ -32,9 +32,13 @@ export default function CertificacionValorModal({
   currentUser,
   currentRole = 'autorizador'
 }) {
-  const [selectedAvaluoId, setSelectedAvaluoId] = useState(initialAvaluoBase?.id || '');
-  const [currentBase, setCurrentBase] = useState(initialAvaluoBase || null);
+  const [selectedAvaluoId, setSelectedAvaluoId] = useState(initialAvaluoBase?.id || (initialAvaluoBase ? initialAvaluoBase.id : '__manual__'));
+  const [currentBase, setCurrentBase] = useState(initialAvaluoBase && initialAvaluoBase.id !== '__manual__' ? initialAvaluoBase : null);
   const [isCustomSolicitante, setIsCustomSolicitante] = useState(false);
+  const [manualCodigoRef, setManualCodigoRef] = useState('LR-2026-10037');
+  const [manualMesRef, setManualMesRef] = useState('octubre de 2026');
+  const [isUploadingRgp, setIsUploadingRgp] = useState(false);
+  const rgpInputRef = useRef(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -69,8 +73,26 @@ export default function CertificacionValorModal({
 
   // Inicializar o cargar datos cuando cambia el avalúo base
   useEffect(() => {
+    if (selectedAvaluoId === '__manual__') {
+      setCurrentBase(null);
+      setFormData(prev => ({
+        ...prev,
+        avaluoId: 'manual',
+        avaluoCodigo: manualCodigoRef || 'LR-2026-10037',
+        solicitante: prev.solicitante || 'BANCO G&T CONTINENTAL, S.A.',
+        tipoSolicitud: 'CERTIFICACIÓN DE VALOR',
+        numeroReferencia: prev.numeroReferencia || 'CV-10001',
+        direccion: prev.direccion || '',
+        descripcionInmueble: prev.descripcionInmueble || '',
+        fincas: (prev.fincas && prev.fincas.length > 0) ? prev.fincas : [{ finca: '', folio: '', libro: '', areaRegistrada: '', propietario: '' }],
+        valores: (prev.valores && prev.valores.length > 0) ? prev.valores : [{ descripcion: 'APARTAMENTO', area: '0.00', unidad: 'm2', valorUnitario: 0, total: 0 }],
+        observaciones: generateDefaultObservaciones(manualCodigoRef, manualMesRef, prev.empresaNombre)
+      }));
+      return;
+    }
+
     const base = allAvaluos.find(a => a.id === selectedAvaluoId) || initialAvaluoBase;
-    if (base) {
+    if (base && base.id !== '__manual__') {
       setCurrentBase(base);
       const isCV = base.tenantId === 'cverde' || (base.codigo && base.codigo.startsWith('CV-'));
       const emp = isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.';
@@ -143,7 +165,7 @@ export default function CertificacionValorModal({
         consultasPdfs: base.consultasPdfs || []
       }));
     }
-  }, [selectedAvaluoId, initialAvaluoBase]);
+  }, [selectedAvaluoId, initialAvaluoBase, manualCodigoRef, manualMesRef]);
 
   // Manejo de Fincas
   const handleAddFinca = () => {
@@ -228,6 +250,27 @@ export default function CertificacionValorModal({
         observaciones: obs
       };
     });
+  };
+
+  const handleUploadRgpForCert = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingRgp(true);
+    try {
+      const pages = await convertPdfOrImageToPageImages(file);
+      if (pages && pages.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          consultasPdfs: [{ id: `rgp-${Date.now()}`, name: file.name, pages }],
+          incluirAnexosRgp: true
+        }));
+        alert(`Se adjuntaron con éxito ${pages.length} página(s) de la Certificación RGP.`);
+      }
+    } catch (err) {
+      alert('Error al procesar el archivo PDF: ' + err.message);
+    } finally {
+      setIsUploadingRgp(false);
+    }
   };
 
   const totalCalculado = formData.valores.reduce((acc, v) => acc + (Number(v.total) || 0), 0);
@@ -346,10 +389,10 @@ export default function CertificacionValorModal({
         </div>
 
         {/* Body Formulario */}
-        <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', minHeight: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
           {/* Fila 1: Selección de Avalúo Base + Empresa Emisora */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+          <div style={{ flexShrink: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem', textTransform: 'uppercase' }}>
                 1. Avalúo de Referencia (Base de Datos):
@@ -360,12 +403,64 @@ export default function CertificacionValorModal({
                 onChange={(e) => setSelectedAvaluoId(e.target.value)}
                 style={{ width: '100%', fontSize: '0.85rem', padding: '0.45rem', borderRadius: '8px', fontWeight: 600, color: '#0f172a' }}
               >
-                {allAvaluos.map(a => (
-                  <option key={a.id} value={a.id}>
-                    {a.codigo} — {a.solicitante || 'Sin solicitante'} ({a.direccion ? a.direccion.slice(0, 35) + '...' : 'Sin dir'})
-                  </option>
-                ))}
+                <optgroup label="Variante 2: Inmueble Nuevo / Independiente">
+                  <option value="__manual__">📝 Certificación Manual / Inmueble nuevo (sin avalúo previo en base de datos)</option>
+                </optgroup>
+                <optgroup label="Variante 1: Con base en Avalúo del Sistema">
+                  {allAvaluos.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.codigo} — {a.solicitante || 'Sin solicitante'} ({a.direccion ? a.direccion.slice(0, 35) + '...' : 'Sin dir'})
+                    </option>
+                  ))}
+                </optgroup>
               </select>
+
+              {selectedAvaluoId === '__manual__' && (
+                <div style={{ marginTop: '0.5rem', background: '#eff6ff', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid #bfdbfe', fontSize: '0.78rem', color: '#1e40af' }}>
+                  <div style={{ fontWeight: 700, marginBottom: '4px' }}>
+                    📝 Certificación Independiente (Inmueble no registrado):
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#334155', marginBottom: '6px' }}>
+                    Complete los datos del inmueble (solicitante, dirección, descripción, fincas y valores) y especifique qué avalúo citará como antecedente en las observaciones legales:
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '140px' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#475569', display: 'block' }}>No. Avalúo citado:</span>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={manualCodigoRef}
+                        onChange={(e) => {
+                          setManualCodigoRef(e.target.value);
+                          setFormData(prev => ({
+                            ...prev,
+                            observaciones: generateDefaultObservaciones(e.target.value, manualMesRef, prev.empresaNombre)
+                          }));
+                        }}
+                        placeholder="Ej: LR-2026-10037"
+                        style={{ fontSize: '0.78rem', padding: '3px 6px', borderRadius: '4px' }}
+                      />
+                    </div>
+                    <div style={{ flex: 1, minWidth: '140px' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#475569', display: 'block' }}>Mes citado:</span>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={manualMesRef}
+                        onChange={(e) => {
+                          setManualMesRef(e.target.value);
+                          setFormData(prev => ({
+                            ...prev,
+                            observaciones: generateDefaultObservaciones(manualCodigoRef, e.target.value, prev.empresaNombre)
+                          }));
+                        }}
+                        placeholder="Ej: octubre de 2026"
+                        style={{ fontSize: '0.78rem', padding: '3px 6px', borderRadius: '4px' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -412,7 +507,7 @@ export default function CertificacionValorModal({
           </div>
 
           {/* Fila 2: Solicitante, Tipo de Solicitud y Número de Referencia */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+          <div style={{ flexShrink: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem', textTransform: 'uppercase' }}>
                 Solicitante:
@@ -444,7 +539,7 @@ export default function CertificacionValorModal({
               {isCustomSolicitante && (
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-input"
                   placeholder="Escriba el nombre del solicitante..."
                   value={formData.solicitante}
                   onChange={(e) => setFormData(prev => ({ ...prev, solicitante: e.target.value }))}
@@ -476,7 +571,7 @@ export default function CertificacionValorModal({
               </label>
               <input
                 type="text"
-                className="form-control"
+                className="form-input"
                 value={formData.numeroReferencia}
                 onChange={(e) => setFormData(prev => ({ ...prev, numeroReferencia: e.target.value }))}
                 placeholder="Ej. CV-10001"
@@ -490,7 +585,7 @@ export default function CertificacionValorModal({
               </label>
               <input
                 type="date"
-                className="form-control"
+                className="form-input"
                 value={formData.fechaEmision}
                 onChange={(e) => setFormData(prev => ({ ...prev, fechaEmision: e.target.value }))}
                 style={{ width: '100%', fontSize: '0.85rem', padding: '0.45rem', borderRadius: '8px' }}
@@ -499,17 +594,17 @@ export default function CertificacionValorModal({
           </div>
 
           {/* Fila 3: Dirección y Descripción del Inmueble */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
+          <div style={{ flexShrink: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem', textTransform: 'uppercase' }}>
                 Dirección del Inmueble:
               </label>
               <textarea
                 rows={2}
-                className="form-control"
+                className="form-input"
                 value={formData.direccion}
                 onChange={(e) => setFormData(prev => ({ ...prev, direccion: e.target.value }))}
-                style={{ width: '100%', fontSize: '0.82rem', padding: '0.45rem', borderRadius: '8px' }}
+                style={{ width: '100%', fontSize: '0.85rem', padding: '0.5rem', borderRadius: '8px', border: '1.5px solid #cbd5e1' }}
               />
             </div>
 
@@ -519,114 +614,115 @@ export default function CertificacionValorModal({
               </label>
               <textarea
                 rows={2}
-                className="form-control"
+                className="form-input"
                 value={formData.descripcionInmueble}
                 onChange={(e) => setFormData(prev => ({ ...prev, descripcionInmueble: e.target.value }))}
-                style={{ width: '100%', fontSize: '0.82rem', padding: '0.45rem', borderRadius: '8px' }}
+                style={{ width: '100%', fontSize: '0.85rem', padding: '0.5rem', borderRadius: '8px', border: '1.5px solid #cbd5e1' }}
               />
             </div>
           </div>
 
           {/* Fila 4: Cuadro de Fincas (Dinámico con Agregar/Eliminar) */}
-          <div style={{ border: '1px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden' }}>
-            <div style={{ background: '#f1f5f9', padding: '0.6rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1e293b', textTransform: 'uppercase' }}>
+          <div style={{ flexShrink: 0, border: '1.5px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div style={{ background: '#f8fafc', padding: '0.65rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
+              <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                 📋 Tabla de Fincas Registrales ({formData.fincas.length})
               </span>
               <button
                 type="button"
                 onClick={handleAddFinca}
                 style={{
-                  background: '#ffffff',
-                  border: '1px solid #cbd5e1',
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
                   borderRadius: '6px',
-                  padding: '3px 10px',
-                  fontSize: '0.76rem',
+                  padding: '4px 12px',
+                  fontSize: '0.78rem',
                   fontWeight: 700,
-                  color: '#0284c7',
+                  color: '#1d4ed8',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '5px'
                 }}
               >
-                <Plus size={14} />
+                <Plus size={15} />
                 <span>Agregar Finca</span>
               </button>
             </div>
 
-            <div style={{ overflowX: 'auto', padding: '0.5rem' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+            <div style={{ overflowX: 'auto', padding: '0.75rem', background: '#ffffff' }}>
+              <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'separate', borderSpacing: '0 6px', fontSize: '0.82rem' }}>
                 <thead>
-                  <tr style={{ background: '#f8fafc', color: '#475569', fontSize: '0.74rem' }}>
-                    <th style={{ padding: '6px', textAlign: 'center', width: '90px' }}>FINCA</th>
-                    <th style={{ padding: '6px', textAlign: 'center', width: '90px' }}>FOLIO</th>
-                    <th style={{ padding: '6px', textAlign: 'left' }}>LIBRO</th>
-                    <th style={{ padding: '6px', textAlign: 'center', width: '120px' }}>ÁREA REGISTRADA</th>
-                    <th style={{ padding: '6px', textAlign: 'left' }}>PROPIETARIO</th>
-                    <th style={{ padding: '6px', textAlign: 'center', width: '50px' }}></th>
+                  <tr style={{ background: '#f8fafc', color: '#334155', fontSize: '0.76rem', fontWeight: 800 }}>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', width: '105px' }}>FINCA</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', width: '105px' }}>FOLIO</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', minWidth: '180px' }}>LIBRO</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', width: '140px' }}>ÁREA REGISTRADA</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', minWidth: '220px' }}>PROPIETARIO</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', width: '45px' }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {formData.fincas.map((f, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <tr key={i} style={{ background: '#ffffff' }}>
                       <td style={{ padding: '4px' }}>
                         <input
                           type="text"
-                          className="form-control"
+                          className="form-input"
                           value={f.finca}
                           onChange={(e) => handleUpdateFinca(i, 'finca', e.target.value)}
                           placeholder="Finca"
-                          style={{ width: '100%', fontSize: '0.8rem', padding: '4px 6px', textAlign: 'center' }}
+                          style={{ width: '100%', height: '38px', fontSize: '0.85rem', fontWeight: 700, padding: '0.45rem', textAlign: 'center', borderRadius: '6px', border: '1.5px solid #cbd5e1', background: '#ffffff' }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
                         <input
                           type="text"
-                          className="form-control"
+                          className="form-input"
                           value={f.folio}
                           onChange={(e) => handleUpdateFinca(i, 'folio', e.target.value)}
                           placeholder="Folio"
-                          style={{ width: '100%', fontSize: '0.8rem', padding: '4px 6px', textAlign: 'center' }}
+                          style={{ width: '100%', height: '38px', fontSize: '0.85rem', fontWeight: 700, padding: '0.45rem', textAlign: 'center', borderRadius: '6px', border: '1.5px solid #cbd5e1', background: '#ffffff' }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
                         <input
                           type="text"
-                          className="form-control"
+                          className="form-input"
                           value={f.libro}
                           onChange={(e) => handleUpdateFinca(i, 'libro', e.target.value)}
-                          placeholder="Libro"
-                          style={{ width: '100%', fontSize: '0.8rem', padding: '4px 6px' }}
+                          placeholder="Ej. 1007 de Guatemala"
+                          style={{ width: '100%', height: '38px', fontSize: '0.85rem', fontWeight: 600, padding: '0.45rem 0.65rem', borderRadius: '6px', border: '1.5px solid #cbd5e1', background: '#ffffff' }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
                         <input
                           type="text"
-                          className="form-control"
+                          className="form-input"
                           value={f.areaRegistrada}
                           onChange={(e) => handleUpdateFinca(i, 'areaRegistrada', e.target.value)}
-                          placeholder="Ej. 55.66 m2"
-                          style={{ width: '100%', fontSize: '0.8rem', padding: '4px 6px', textAlign: 'center' }}
+                          placeholder="Ej. 55.66 m²"
+                          style={{ width: '100%', height: '38px', fontSize: '0.85rem', fontWeight: 600, padding: '0.45rem', textAlign: 'center', borderRadius: '6px', border: '1.5px solid #cbd5e1', background: '#ffffff' }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
                         <input
                           type="text"
-                          className="form-control"
+                          className="form-input"
                           value={f.propietario}
                           onChange={(e) => handleUpdateFinca(i, 'propietario', e.target.value)}
                           placeholder="Nombre del Propietario Registral"
-                          style={{ width: '100%', fontSize: '0.8rem', padding: '4px 6px' }}
+                          style={{ width: '100%', height: '38px', fontSize: '0.85rem', fontWeight: 600, padding: '0.45rem 0.65rem', borderRadius: '6px', border: '1.5px solid #cbd5e1', background: '#ffffff' }}
                         />
                       </td>
                       <td style={{ padding: '4px', textAlign: 'center' }}>
                         <button
                           type="button"
                           onClick={() => handleRemoveFinca(i)}
-                          style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '4px' }}
+                          title="Eliminar finca"
+                          style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#dc2626', cursor: 'pointer', padding: '6px 8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={16} />
                         </button>
                       </td>
                     </tr>
@@ -637,97 +733,98 @@ export default function CertificacionValorModal({
           </div>
 
           {/* Fila 5: Cuadro de Valores (Dinámico con Recálculo Automático) */}
-          <div style={{ border: '1px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden' }}>
-            <div style={{ background: '#f1f5f9', padding: '0.6rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1e293b', textTransform: 'uppercase' }}>
+          <div style={{ flexShrink: 0, border: '1.5px solid #cbd5e1', borderRadius: '10px', overflow: 'hidden', background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div style={{ background: '#f8fafc', padding: '0.65rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
+              <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                 💰 Cuadro de Valores Inmobiliarios ({formData.valores.length} renglones)
               </span>
               <button
                 type="button"
                 onClick={handleAddValor}
                 style={{
-                  background: '#ffffff',
-                  border: '1px solid #cbd5e1',
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
                   borderRadius: '6px',
-                  padding: '3px 10px',
-                  fontSize: '0.76rem',
+                  padding: '4px 12px',
+                  fontSize: '0.78rem',
                   fontWeight: 700,
-                  color: '#0284c7',
+                  color: '#1d4ed8',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '5px'
                 }}
               >
-                <Plus size={14} />
+                <Plus size={15} />
                 <span>Agregar Renglón</span>
               </button>
             </div>
 
-            <div style={{ overflowX: 'auto', padding: '0.5rem' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+            <div style={{ overflowX: 'auto', padding: '0.75rem', background: '#ffffff' }}>
+              <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'separate', borderSpacing: '0 6px', fontSize: '0.82rem' }}>
                 <thead>
-                  <tr style={{ background: '#f8fafc', color: '#475569', fontSize: '0.74rem' }}>
-                    <th style={{ padding: '6px', textAlign: 'left' }}>DESCRIPCIÓN</th>
-                    <th style={{ padding: '6px', textAlign: 'center', width: '120px' }}>ÁREA (m²)</th>
-                    <th style={{ padding: '6px', textAlign: 'right', width: '150px' }}>VALOR M² (Q)</th>
-                    <th style={{ padding: '6px', textAlign: 'right', width: '160px' }}>SUBTOTAL (Q)</th>
-                    <th style={{ padding: '6px', textAlign: 'center', width: '50px' }}></th>
+                  <tr style={{ background: '#f8fafc', color: '#334155', fontSize: '0.76rem', fontWeight: 800 }}>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', minWidth: '240px' }}>DESCRIPCIÓN</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', width: '130px' }}>ÁREA (m²)</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'right', width: '160px' }}>VALOR M² (Q)</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'right', width: '170px' }}>SUBTOTAL (Q)</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', width: '45px' }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {formData.valores.map((v, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <tr key={i} style={{ background: '#ffffff' }}>
                       <td style={{ padding: '4px' }}>
                         <input
                           type="text"
-                          className="form-control"
+                          className="form-input"
                           value={v.descripcion}
                           onChange={(e) => handleUpdateValor(i, 'descripcion', e.target.value)}
                           placeholder="Ej. APARTAMENTO 403 / PARQUEO"
-                          style={{ width: '100%', fontSize: '0.8rem', padding: '4px 6px', fontWeight: 600 }}
+                          style={{ width: '100%', height: '38px', fontSize: '0.85rem', fontWeight: 700, padding: '0.45rem 0.65rem', borderRadius: '6px', border: '1.5px solid #cbd5e1', background: '#ffffff' }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
                         <input
                           type="text"
-                          className="form-control"
+                          className="form-input"
                           value={v.area}
                           onChange={(e) => handleUpdateValor(i, 'area', e.target.value)}
                           placeholder="55.66"
-                          style={{ width: '100%', fontSize: '0.8rem', padding: '4px 6px', textAlign: 'center' }}
+                          style={{ width: '100%', height: '38px', fontSize: '0.85rem', fontWeight: 600, padding: '0.45rem', textAlign: 'center', borderRadius: '6px', border: '1.5px solid #cbd5e1', background: '#ffffff' }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
                         <input
                           type="number"
                           step="0.01"
-                          className="form-control"
+                          className="form-input"
                           value={v.valorUnitario}
                           onChange={(e) => handleUpdateValor(i, 'valorUnitario', e.target.value)}
                           placeholder="17715.00"
-                          style={{ width: '100%', fontSize: '0.8rem', padding: '4px 6px', textAlign: 'right' }}
+                          style={{ width: '100%', height: '38px', fontSize: '0.85rem', fontWeight: 700, padding: '0.45rem 0.65rem', textAlign: 'right', borderRadius: '6px', border: '1.5px solid #cbd5e1', background: '#ffffff' }}
                         />
                       </td>
-                      <td style={{ padding: '4px', textAlign: 'right', fontWeight: 700, color: '#1e40af' }}>
+                      <td style={{ padding: '4px 10px', textAlign: 'right', fontWeight: 800, color: '#1e40af', fontSize: '0.95rem' }}>
                         Q. {Number(v.total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td style={{ padding: '4px', textAlign: 'center' }}>
                         <button
                           type="button"
                           onClick={() => handleRemoveValor(i)}
-                          style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '4px' }}
+                          title="Eliminar renglón"
+                          style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#dc2626', cursor: 'pointer', padding: '6px 8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={16} />
                         </button>
                       </td>
                     </tr>
                   ))}
-                  <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
-                    <td colSpan={3} style={{ padding: '8px', textAlign: 'right', textTransform: 'uppercase', color: '#334155' }}>
+                  <tr style={{ background: '#f0f9ff', fontWeight: 800, borderTop: '2px solid #bae6fd' }}>
+                    <td colSpan={3} style={{ padding: '10px 12px', textAlign: 'right', textTransform: 'uppercase', color: '#0369a1', fontSize: '0.85rem' }}>
                       TOTAL VALORACIÓN CERTIFICADA:
                     </td>
-                    <td style={{ padding: '8px', textAlign: 'right', color: themeColor, fontSize: '0.95rem' }}>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: themeColor, fontSize: '1.05rem', fontWeight: 800 }}>
                       Q. {totalCalculado.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td></td>
@@ -738,7 +835,7 @@ export default function CertificacionValorModal({
           </div>
 
           {/* Fila 6: Observaciones Oficiales (Viñetas Legales Editables) */}
-          <div>
+          <div style={{ flexShrink: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
               <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase' }}>
                 Observaciones y Consideraciones Técnicas (Viñetas Oficiales):
@@ -767,32 +864,69 @@ export default function CertificacionValorModal({
             </div>
             <textarea
               rows={6}
-              className="form-control"
+              className="form-input"
               value={formData.observaciones}
               onChange={(e) => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
-              style={{ width: '100%', fontSize: '0.78rem', lineHeight: 1.45, padding: '0.55rem', borderRadius: '8px' }}
+              style={{ width: '100%', fontSize: '0.82rem', lineHeight: 1.45, padding: '0.65rem', borderRadius: '8px', border: '1.5px solid #cbd5e1', background: '#ffffff', minHeight: '110px' }}
             />
           </div>
 
-          {/* Fila 7: Toggle Anexos RGP */}
-          <div style={{ background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FileText size={18} color="#0284c7" />
+          {/* Fila 7: Anexos RGP + Botón para Cargar PDF */}
+          <div style={{ flexShrink: 0, background: '#f8fafc', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '260px' }}>
+              <FileText size={20} color="#0284c7" />
               <div>
                 <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b' }}>
                   Anexar Consultas Electrónicas del RGP al final del documento
                 </span>
                 <p style={{ margin: 0, fontSize: '0.72rem', color: '#64748b' }}>
-                  Si el avalúo base contiene certificaciones del RGP, se imprimirán automáticamente a página completa (1 página por hoja).
+                  {formData.consultasPdfs?.length > 0
+                    ? `Se adjuntarán las páginas RGP disponibles (${formData.consultasPdfs.reduce((acc, d) => acc + (d.pages?.length || 0), 0)} pág(s) a 1 por hoja).`
+                    : 'Las hojas de la certificación registral se imprimirán a página completa al final del dictamen.'}
                 </p>
               </div>
             </div>
-            <input
-              type="checkbox"
-              checked={formData.incluirAnexosRgp}
-              onChange={(e) => setFormData(prev => ({ ...prev, incluirAnexosRgp: e.target.checked }))}
-              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-            />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <input
+                type="file"
+                ref={rgpInputRef}
+                accept=".pdf,application/pdf"
+                onChange={handleUploadRgpForCert}
+                style={{ display: 'none' }}
+              />
+              <button
+                type="button"
+                onClick={() => rgpInputRef.current?.click()}
+                disabled={isUploadingRgp}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  color: '#0284c7',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  padding: '0.35rem 0.65rem',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  cursor: isUploadingRgp ? 'wait' : 'pointer'
+                }}
+              >
+                <Paperclip size={13} />
+                <span>{isUploadingRgp ? 'Procesando PDF...' : (formData.consultasPdfs?.length > 0 ? '📎 Cambiar PDF RGP' : '📎 Cargar PDF RGP')}</span>
+              </button>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 600, color: '#334155', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={formData.incluirAnexosRgp}
+                  onChange={(e) => setFormData(prev => ({ ...prev, incluirAnexosRgp: e.target.checked }))}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <span>Incluir en PDF</span>
+              </label>
+            </div>
           </div>
 
         </div>

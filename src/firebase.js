@@ -213,7 +213,7 @@ export async function saveAvaluoToCloud(avaluo) {
     ...cleanData,
     fotoPortada: coverPhoto || cleanData.fotoPortada || null,
     hasPhotosInCloud: hasPhotosSavedInSub || Boolean(cleanData.hasPhotosInCloud),
-    fotosSummary: Object.keys(fotosSummary).length > 0 ? fotosSummary : cleanData.fotosSummary
+    fotosSummary: Object.keys(fotosSummary).length > 0 ? fotosSummary : (cleanData.fotosSummary || null)
   };
 
   if (leanConsultasPdfs) {
@@ -232,8 +232,9 @@ export async function saveAvaluoToCloud(avaluo) {
     };
   }
 
+  const cleanFinalData = removeUndefined(finalData);
   const docRef = doc(db, AVALUOS_COLLECTION, String(avaluo.id));
-  await setDoc(docRef, finalData, { merge: true });
+  await setDoc(docRef, cleanFinalData, { merge: true });
 }
 
 /**
