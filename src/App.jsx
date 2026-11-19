@@ -14,6 +14,7 @@ import ReporteriaModal from './components/ReporteriaModal';
 import CertificacionValorModal from './components/CertificacionValorModal';
 import CertificacionPrintView from './components/CertificacionPrintView';
 import { canUserEditAvaluo, isAroldoOrAdminUser } from './utils/permissions';
+import { resolveUniqueCodigo } from './utils/correlativos';
 import { initialAvaluos, DEFAULT_DICTAMEN_GARANTIA } from './data/mockAvaluos';
 import { getTenantConfig, DEFAULT_TENANT_ID } from './data/tenantsConfig';
 import { 
@@ -734,9 +735,22 @@ export default function App() {
 
   // Handlers
   const handleSaveAvaluo = async (savedItem) => {
+    // 0. Control de Concurrencia y Resolución Atómica de Correlativo (Evita choques si 2 usuarios guardan al mismo tiempo)
+    let finalCodigo = savedItem.codigo;
+    const isNew = !savedItem.id || isCreatingNew || !avaluos.some(a => a.id === savedItem.id);
+    if (isNew) {
+      const activeTenant = savedItem.tenantId || (savedItem.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
+      const conflictCheck = resolveUniqueCodigo(savedItem.codigo, activeTenant, avaluos, savedItem.id);
+      if (conflictCheck.wasConflict) {
+        finalCodigo = conflictCheck.codigo;
+        alert(`Aviso de Asignación de Correlativo:\nEl código ${conflictCheck.previousCodigo} ya fue registrado por otro usuario en este momento. Su expediente se guardó exitosamente con el siguiente correlativo oficial disponible: ${finalCodigo}.`);
+      }
+    }
+
     // Asegurar metadata de autoría y asignación del expediente
     const itemWithCreator = {
       ...savedItem,
+      codigo: finalCodigo,
       creadoPorEmail: savedItem.creadoPorEmail || currentUser?.email || '',
       creadoPorUid: savedItem.creadoPorUid || currentUser?.uid || '',
       creadoPorNombre: savedItem.creadoPorNombre || currentUser?.nombre || '',
@@ -1330,6 +1344,7 @@ export default function App() {
           avaluo={editingAvaluo}
           currentUser={currentUser}
           usuarios={usuarios}
+          allAvaluos={avaluos}
           currentTenant={currentTenantConfig}
           currentRole={currentRole}
           onClose={() => {

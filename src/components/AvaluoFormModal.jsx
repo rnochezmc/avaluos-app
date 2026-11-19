@@ -11,8 +11,16 @@ import { getAvaluoFromLocalDb } from '../utils/localDb';
 import { DEFAULT_DICTAMEN_GARANTIA, DICTAMEN_PRESETS } from '../data/mockAvaluos';
 import { getTenantConfig } from '../data/tenantsConfig';
 import { canUserEditAvaluo } from '../utils/permissions';
+import { 
+  getTenantPrefix, 
+  getCurrentYear, 
+  buildCodigo, 
+  extractCorrelativoNumber, 
+  getNextCodigo, 
+  formatCorrelativoNumber 
+} from '../utils/correlativos';
 
-export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], onClose, onSave, currentTenant, currentRole = 'autorizador' }) {
+export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], allAvaluos = [], onClose, onSave, currentTenant, currentRole = 'autorizador' }) {
   const isEditing = Boolean(avaluo?.id);
   const activeTenantId = avaluo?.tenantId || (avaluo?.codigo?.startsWith('CV-') ? 'cverde' : (currentTenant?.id || 'lex-rosam'));
   const tenantConfig = getTenantConfig(activeTenantId);
@@ -39,7 +47,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
     asignadoAEmail: avaluo?.asignadoAEmail || avaluo?.asignadoA || '',
     asignadoANombre: avaluo?.asignadoANombre || '',
     asignadoAUid: avaluo?.asignadoAUid || '',
-    codigo: avaluo?.codigo || `${tenantConfig.codigoPrefix || 'LR-2026-'}0${Math.floor(Math.random() * 90) + 10}`,
+    codigo: avaluo?.codigo || getNextCodigo(activeTenantId, allAvaluos),
     tipoAvaluo: avaluo?.tipoAvaluo || 'Comercial',
     solicitante: avaluo?.solicitante || (tenantConfig.id === 'cverde' ? 'BANCO INDUSTRIAL, S.A.' : 'BANCO G&T CONTINENTAL'),
     dirigidoA: avaluo?.dirigidoA || '',
@@ -1099,13 +1107,7 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
     setFormData(prev => {
       let newCodigo = prev.codigo || '';
       if (!isEditing) {
-        if (newTenantId === 'cverde') {
-          newCodigo = newCodigo.replace(/^LR-/, 'CV-');
-          if (!newCodigo.startsWith('CV-')) newCodigo = `${newCfg.codigoPrefix || 'CV-2026-'}0${Math.floor(Math.random() * 90) + 10}`;
-        } else {
-          newCodigo = newCodigo.replace(/^CV-/, 'LR-');
-          if (!newCodigo.startsWith('LR-')) newCodigo = `${newCfg.codigoPrefix || 'LR-2026-'}0${Math.floor(Math.random() * 90) + 10}`;
-        }
+        newCodigo = getNextCodigo(newTenantId, allAvaluos);
       }
       return {
         ...prev,
@@ -1380,15 +1382,140 @@ export default function AvaluoFormModal({ avaluo, currentUser, usuarios = [], on
 
                 <div className="form-grid-3">
                   <div className="form-field">
-                    <label className="form-label">Código de Expediente *</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.codigo}
-                      onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
-                      placeholder="Ej: LR-2026-08"
-                      required
-                    />
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Código de Expediente *</span>
+                      {!isEditing && (
+                        <span style={{ fontSize: '0.72rem', color: '#0284c7', fontWeight: 700 }}>
+                          Correlativo Oficial (5 dígitos)
+                        </span>
+                      )}
+                    </label>
+
+                    {isEditing ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={formData.codigo}
+                            onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                            placeholder="Ej: LR-2026-10041"
+                            disabled={!canUserEditAvaluo(avaluo, currentUser, currentRole) && currentRole !== 'admin'}
+                            required
+                            style={{ fontWeight: 700, color: '#0f172a' }}
+                          />
+                          {(formData.codigo?.toUpperCase().includes('AVALUO') || formData.codigo?.toUpperCase().includes('AVALÚO')) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const cleanNum = extractCorrelativoNumber(formData.codigo);
+                                if (cleanNum) {
+                                  setFormData(prev => ({ ...prev, codigo: buildCodigo(prev.tenantId, cleanNum) }));
+                                }
+                              }}
+                              title="Limpiar prefijo 'AVALUO' y normalizar al estándar oficial XX-2026-00000"
+                              style={{
+                                background: '#fef3c7',
+                                border: '1px solid #f59e0b',
+                                color: '#b45309',
+                                padding: '6px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              🧹 Normalizar
+                            </button>
+                          )}
+                        </div>
+                        <span style={{ fontSize: '0.70rem', color: '#64748b' }}>
+                          Expediente existente. Se preserva el código histórico para no alterar documentos emitidos.
+                        </span>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'stretch', 
+                          borderRadius: '8px', 
+                          overflow: 'hidden', 
+                          border: '1.5px solid #cbd5e1',
+                          background: '#ffffff',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                        }}>
+                          <div style={{ 
+                            background: '#f1f5f9', 
+                            color: '#1e293b', 
+                            fontWeight: 800, 
+                            padding: '0.5rem 0.85rem', 
+                            fontSize: '0.9rem', 
+                            borderRight: '1.5px solid #cbd5e1', 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            letterSpacing: '0.04em'
+                          }}>
+                            {getTenantPrefix(formData.tenantId)}-{getCurrentYear()}-
+                          </div>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={5}
+                            className="form-input"
+                            style={{ 
+                              border: 'none', 
+                              borderRadius: 0, 
+                              fontWeight: 800, 
+                              color: '#0284c7', 
+                              fontSize: '1rem', 
+                              padding: '0.5rem 0.75rem', 
+                              flex: 1 
+                            }}
+                            value={extractCorrelativoNumber(formData.codigo) ? formatCorrelativoNumber(extractCorrelativoNumber(formData.codigo)) : ''}
+                            onChange={(e) => {
+                              const cleanDigits = e.target.value.replace(/\D/g, '').slice(0, 5);
+                              const num = parseInt(cleanDigits, 10) || 0;
+                              setFormData(prev => ({
+                                ...prev,
+                                codigo: cleanDigits ? buildCodigo(prev.tenantId, num) : `${getTenantPrefix(prev.tenantId)}-${getCurrentYear()}-`
+                              }));
+                            }}
+                            placeholder="10041"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const autoCode = getNextCodigo(formData.tenantId, allAvaluos);
+                              setFormData(prev => ({ ...prev, codigo: autoCode }));
+                            }}
+                            title="Recalcular automáticamente el siguiente correlativo oficial libre"
+                            style={{ 
+                              background: '#f8fafc', 
+                              border: 'none', 
+                              borderLeft: '1px solid #cbd5e1', 
+                              padding: '0 0.85rem', 
+                              cursor: 'pointer', 
+                              color: '#0284c7', 
+                              fontSize: '0.78rem', 
+                              fontWeight: 700, 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '4px' 
+                            }}
+                          >
+                            <RefreshCw size={14} />
+                            <span>Auto</span>
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '0.70rem', color: '#64748b' }}>
+                          <span>Código asignado: <strong style={{ color: '#0f172a' }}>{formData.codigo}</strong></span>
+                          <span>Estructura fija oficial de 5 dígitos</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="form-field">
                     <label className="form-label">Tipo de Avalúo</label>
