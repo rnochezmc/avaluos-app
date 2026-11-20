@@ -156,42 +156,59 @@ export function resolveUniqueCodigo(desiredCodigo, tenantId, avaluosList = [], c
 
 /**
  * Genera el siguiente correlativo automático para Certificaciones de Valor.
- * Nomenclatura obligatoria oficial: XX-YYYY-00000 (Ej: CV-2026-00001, LR-2026-00001)
+ * Nomenclatura obligatoria oficial: XX-YYYY-00000 (Ej: CV-2026-00015, CV-2026-00016, LR-2026-00001)
+ * Para C Verde: los números 1 al 14 quedan reservados/disponibles para correcciones de expedientes anteriores.
+ * El correlativo automático continúa en 15 (o en el siguiente al máximo existente).
  */
 export function getNextCertificacionCodigo(tenantId, avaluosList = []) {
   const prefix = getTenantPrefix(tenantId);
   const year = getCurrentYear();
-  const baseStart = 1; // Arranca limpio en 1: 00001
-
-  if (!Array.isArray(avaluosList) || avaluosList.length === 0) {
-    return `${prefix}-${year}-${formatCorrelativoNumber(baseStart)}`;
-  }
-
   const isTargetCV = prefix === 'CV';
-  const usedNumbers = new Set();
 
-  avaluosList.forEach(item => {
-    if (!item) return;
-    const isCert = item.tipoAvaluo === 'Certificación de Valor' || 
-                   item.tipoAvaluo === 'Certificación' || 
-                   item.certificacion ||
-                   (item.codigo && (item.codigo.startsWith('CV-') || item.codigo.startsWith('LR-')));
-    
-    if (isCert) {
-      const isItemCV = item.tenantId === 'cverde' || item.tenantId === 'cv' || (item.codigo && item.codigo.startsWith('CV-'));
-      if (isTargetCV === isItemCV) {
-        const code = item.codigo || item.numeroReferencia || item.certificacion?.numeroReferencia || '';
-        const num = extractCorrelativoNumber(code);
-        if (num > 0) {
-          usedNumbers.add(num);
+  const usedNumbers = new Set();
+  let maxNumber = 0;
+
+  if (Array.isArray(avaluosList)) {
+    avaluosList.forEach(item => {
+      if (!item) return;
+      const isCert = item.tipoAvaluo === 'Certificación de Valor' || 
+                     item.tipoAvaluo === 'Certificación' || 
+                     item.certificacion ||
+                     (item.codigo && (item.codigo.startsWith('CV-') || item.codigo.startsWith('LR-')));
+      
+      if (isCert) {
+        const isItemCV = item.tenantId === 'cverde' || item.tenantId === 'cv' || (item.codigo && item.codigo.startsWith('CV-'));
+        if (isTargetCV === isItemCV) {
+          const code = item.codigo || item.numeroReferencia || item.certificacion?.numeroReferencia || '';
+          const num = extractCorrelativoNumber(code);
+          if (num > 0) {
+            usedNumbers.add(num);
+            if (num > maxNumber) {
+              maxNumber = num;
+            }
+          }
         }
       }
-    }
-  });
+    });
+  }
 
-  let candidate = baseStart;
-  while (usedNumbers.has(candidate)) {
-    candidate++;
+  let candidate;
+  if (isTargetCV) {
+    // Si no existe la 15 aún, arranca en 15. Si ya existe la 15 (o superior), continúa en maxNumber + 1.
+    const baseMin = 15;
+    if (maxNumber < baseMin) {
+      candidate = baseMin;
+    } else {
+      candidate = maxNumber + 1;
+    }
+    while (usedNumbers.has(candidate)) {
+      candidate++;
+    }
+  } else {
+    candidate = 1;
+    while (usedNumbers.has(candidate)) {
+      candidate++;
+    }
   }
 
   return `${prefix}-${year}-${formatCorrelativoNumber(candidate)}`;

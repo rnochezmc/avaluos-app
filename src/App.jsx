@@ -178,18 +178,13 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Filtrar LR-2026-10031 para que no persista en cache local
+          // Filtrar LR-2026-10031 y mocks cv-2026-001/002 para que no persistan en cache local
           const merged = parsed
-            .filter(p => p.codigo !== 'LR-2026-10031' && p.id !== 'lr-2026-10031')
+            .filter(p => 
+              !['lr-2026-10031', 'cv-2026-001', 'cv-2026-002'].includes(p.id) &&
+              !['LR-2026-10031', 'CV-2026-001', 'CV-2026-002'].includes(p.codigo)
+            )
             .map(p => enrichWithDefaultPhotos(p));
-          
-          // Asegurar que si faltan los registros de C Verde del mock inicial, se incluyan
-          const cvItems = initialAvaluos.filter(i => i.codigo?.startsWith('CV-'));
-          for (const cv of cvItems) {
-            if (!merged.some(m => m.codigo === cv.codigo || m.id === cv.id)) {
-              merged.push(cv);
-            }
-          }
 
           // Asegurar que el avalúo de prueba 10034 de 4 fincas esté actualizado
           const test10034 = initialAvaluos.find(i => i.id === 'lr-2026-10034' || i.codigo === 'AVALUO LR-2026-10034');
@@ -208,7 +203,10 @@ export default function App() {
     } catch (e) {
       console.error('Error loading data from localStorage', e);
     }
-    return initialAvaluos.filter(p => p.codigo !== 'LR-2026-10031' && p.id !== 'lr-2026-10031');
+    return initialAvaluos.filter(p => 
+      !['lr-2026-10031', 'cv-2026-001', 'cv-2026-002'].includes(p.id) &&
+      !['LR-2026-10031', 'CV-2026-001', 'CV-2026-002'].includes(p.codigo)
+    );
   });
 
   // Save to localStorage as immediate offline cache and backup to IndexedDB
@@ -270,13 +268,15 @@ export default function App() {
         (cloudList) => {
           setCloudStatus('conectado');
           if (Array.isArray(cloudList)) {
-            // Purgar permanentemente LR-2026-10031 de Firebase Firestore si aún persiste
-            const legacy10031 = cloudList.find(m => m.codigo === 'LR-2026-10031' || m.id === 'lr-2026-10031');
-            if (legacy10031) {
-              deleteAvaluoFromCloud(legacy10031.id || 'lr-2026-10031').catch(err => console.warn('Purge 10031 from cloud error:', err));
-            }
+            // Purgar permanentemente LR-2026-10031 y mocks cv-2026-001/002 si aún persisten
+            const idsToPurge = ['lr-2026-10031', 'cv-2026-001', 'cv-2026-002'];
+            const codigosToPurge = ['LR-2026-10031', 'CV-2026-001', 'CV-2026-002'];
+            const toPurge = cloudList.filter(m => idsToPurge.includes(m.id) || codigosToPurge.includes(m.codigo));
+            toPurge.forEach(p => {
+              deleteAvaluoFromCloud(p.id).catch(err => console.warn('Purge error:', err));
+            });
 
-            const cleanCloud = cloudList.filter(m => m.codigo !== 'LR-2026-10031' && m.id !== 'lr-2026-10031');
+            const cleanCloud = cloudList.filter(m => !idsToPurge.includes(m.id) && !codigosToPurge.includes(m.codigo));
 
             // Sincronizar inteligentemente fotos y reparar datos si vienen de Firestore
             const enrichedCloud = cleanCloud.map(item => {

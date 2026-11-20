@@ -378,16 +378,12 @@ export async function seedInitialAvaluosIfEmpty(initialList) {
     const snap = await getDocs(colRef);
     if (snap.empty && Array.isArray(initialList)) {
       console.log('Inicializando Firestore con datos iniciales...');
-      for (const item of initialList) {
+      const filtered = initialList.filter(i => 
+        !['lr-2026-10031', 'cv-2026-001', 'cv-2026-002'].includes(i.id) &&
+        !['LR-2026-10031', 'CV-2026-001', 'CV-2026-002'].includes(i.codigo)
+      );
+      for (const item of filtered) {
         await saveAvaluoToCloud(item);
-      }
-    } else if (Array.isArray(initialList)) {
-      const existingIds = snap.docs.map(d => d.id);
-      const cvItems = initialList.filter(i => i.codigo?.startsWith('CV-') || i.tenantId === 'cverde');
-      for (const cv of cvItems) {
-        if (!existingIds.includes(cv.id)) {
-          await saveAvaluoToCloud(cv);
-        }
       }
     }
   } catch (err) {
