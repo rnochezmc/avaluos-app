@@ -105,12 +105,12 @@ export async function saveAvaluoToCloud(avaluo) {
 
   // 2. Guardar fotos individuales en la subcolección 'fotosGallery'
   let hasPhotosSavedInSub = false;
-  const fotosSummary = {};
+  const finalFotosSummary = { ...(cleanData.fotosSummary || {}) };
 
   if (cleanData.fotos && typeof cleanData.fotos === 'object') {
     const subColRef = collection(db, AVALUOS_COLLECTION, String(avaluo.id), 'fotosGallery');
     const photoPromises = [];
-    const savedDocIds = new Set();
+    const categoriesToCleanup = [];
 
     for (const cat of categories) {
       const raw = cleanData.fotos[cat];
@@ -118,47 +118,49 @@ export async function saveAvaluoToCloud(avaluo) {
         ? raw.filter(u => u && typeof u === 'string' && u.trim().length > 0)
         : (typeof raw === 'string' && raw.trim().length > 0 ? [raw] : []);
 
-      fotosSummary[cat] = list.length;
+      // Solo procesar categorías que efectivamente contienen fotografías para actualizar
+      if (list.length > 0) {
+        finalFotosSummary[cat] = list.length;
+        categoriesToCleanup.push({ cat, count: list.length });
 
-      list.forEach((url, idx) => {
-        const docId = `${cat}_${idx}`;
-        savedDocIds.add(docId);
-        const pRef = doc(subColRef, docId);
-        photoPromises.push(
-          setDoc(pRef, {
-            category: cat,
-            index: idx,
-            dataUrl: url,
-            updatedAt: new Date().toISOString()
-          }, { merge: true })
-        );
-      });
+        list.forEach((url, idx) => {
+          const docId = `${cat}_${idx}`;
+          const pRef = doc(subColRef, docId);
+          photoPromises.push(
+            setDoc(pRef, {
+              category: cat,
+              index: idx,
+              dataUrl: url,
+              updatedAt: new Date().toISOString()
+            }, { merge: true })
+          );
+        });
+      }
     }
 
     if (photoPromises.length > 0) {
       hasPhotosSavedInSub = true;
       try {
         await Promise.all(photoPromises);
-        // Limpieza de documentos huérfanos si se borraron fotos
+        // Limpieza quirúrgica: SOLO eliminar fotos sobrantes de las categorías que fueron actualizadas
         try {
           const currentSnap = await getDocs(subColRef);
           currentSnap.forEach(snapDoc => {
-            if (!savedDocIds.has(snapDoc.id)) {
-              deleteDoc(snapDoc.ref).catch(() => {});
+            const docId = snapDoc.id;
+            for (const item of categoriesToCleanup) {
+              if (docId.startsWith(`${item.cat}_`)) {
+                const idxStr = docId.split('_')[1];
+                const idxNum = parseInt(idxStr, 10);
+                if (!isNaN(idxNum) && idxNum >= item.count) {
+                  deleteDoc(snapDoc.ref).catch(() => {});
+                }
+              }
             }
           });
         } catch (_cleanupErr) {}
       } catch (fErr) {
         console.warn('Error guardando fotos en subcolección fotosGallery:', fErr);
       }
-    } else {
-      // Si se removieron todas las fotos, limpiar documentos de la subcolección
-      try {
-        const currentSnap = await getDocs(subColRef);
-        currentSnap.forEach(snapDoc => {
-          deleteDoc(snapDoc.ref).catch(() => {});
-        });
-      } catch (_cleanupErr) {}
     }
   }
 
@@ -212,8 +214,8 @@ export async function saveAvaluoToCloud(avaluo) {
   const finalData = {
     ...cleanData,
     fotoPortada: coverPhoto || cleanData.fotoPortada || null,
-    hasPhotosInCloud: hasPhotosSavedInSub || Boolean(cleanData.hasPhotosInCloud),
-    fotosSummary: Object.keys(fotosSummary).length > 0 ? fotosSummary : (cleanData.fotosSummary || null)
+    hasPhotosInCloud: hasPhotosSavedInSub || Boolean(cleanData.hasPhotosInCloud) || Object.values(finalFotosSummary).some(v => v > 0),
+    fotosSummary: Object.keys(finalFotosSummary).length > 0 ? finalFotosSummary : (cleanData.fotosSummary || null)
   };
 
   if (leanConsultasPdfs) {
@@ -227,7 +229,7 @@ export async function saveAvaluoToCloud(avaluo) {
   }
 
   // En el documento principal se mantiene fotoPortada y arrays limpios para no exceder 1MB
-  if (hasPhotosSavedInSub) {
+  if (finalData.hasPhotosInCloud) {
     finalData.fotos = {
       entorno: [],
       ingreso: coverPhoto ? [coverPhoto] : [],
