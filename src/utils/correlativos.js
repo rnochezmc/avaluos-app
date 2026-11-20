@@ -7,11 +7,12 @@ export const BASE_START_LEX_ROSAM = 10041;
 export const BASE_START_CVERDE = 10051;
 
 /**
- * Obtiene el prefijo oficial de 2 letras de la empresa (LR o CV)
+ * Obtiene el prefijo oficial para avalúos ordinarios.
+ * Según directriz oficial de Aroldo: TODOS los avalúos ordinarios (Lex Rosam y C Verde) llevan prefijo LR-.
+ * El prefijo CV- está reservado única y exclusivamente para Certificaciones de Valor.
  */
 export function getTenantPrefix(tenantId) {
-  const t = (tenantId || '').toLowerCase();
-  return (t === 'cverde' || t === 'cv') ? 'CV' : 'LR';
+  return 'LR';
 }
 
 /**
@@ -56,7 +57,7 @@ export function extractCorrelativoNumber(codigo) {
  * Calcula el siguiente correlativo sugerido para una empresa basándose en la lista de avaluos existentes
  */
 export function getNextCorrelativoNumber(tenantId, avaluosList = []) {
-  const isTargetCV = getTenantPrefix(tenantId) === 'CV';
+  const isTargetCV = (tenantId || '').toLowerCase().includes('cverde') || tenantId === 'cv';
   const baseStart = isTargetCV ? BASE_START_CVERDE : BASE_START_LEX_ROSAM;
 
   if (!Array.isArray(avaluosList) || avaluosList.length === 0) {
@@ -68,6 +69,10 @@ export function getNextCorrelativoNumber(tenantId, avaluosList = []) {
 
   avaluosList.forEach(item => {
     if (!item) return;
+    // Excluir certificaciones de valor del correlativo de avalúos
+    if (item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || item.certificacion) {
+      return;
+    }
     const isItemCV = item.tenantId === 'cverde' || item.tenantId === 'cv' || (item.codigo && item.codigo.startsWith('CV-'));
 
     // Separación estricta entre Lex Rosam y C Verde
@@ -128,10 +133,10 @@ export function resolveUniqueCodigo(desiredCodigo, tenantId, avaluosList = [], c
   }
 
   // Si hubo conflicto (otra persona guardó ese número mientras el usuario llenaba el formulario):
-  const prefix = getTenantPrefix(tenantId);
+  const prefix = 'LR';
   const year = getCurrentYear();
   let candidateNum = extractCorrelativoNumber(cleanDesired) + 1;
-  const isCV = prefix === 'CV';
+  const isCV = (tenantId || '').toLowerCase().includes('cverde') || tenantId === 'cv';
   const minBase = isCV ? BASE_START_CVERDE : BASE_START_LEX_ROSAM;
   if (candidateNum < minBase) candidateNum = minBase;
 
@@ -161,9 +166,9 @@ export function resolveUniqueCodigo(desiredCodigo, tenantId, avaluosList = [], c
  * El correlativo automático continúa en 15 (o en el siguiente al máximo existente).
  */
 export function getNextCertificacionCodigo(tenantId, avaluosList = []) {
-  const prefix = getTenantPrefix(tenantId);
+  const isTargetCV = (tenantId || '').toLowerCase().includes('cverde') || tenantId === 'cv';
+  const prefix = isTargetCV ? 'CV' : 'LR';
   const year = getCurrentYear();
-  const isTargetCV = prefix === 'CV';
 
   const usedNumbers = new Set();
   let maxNumber = 0;
