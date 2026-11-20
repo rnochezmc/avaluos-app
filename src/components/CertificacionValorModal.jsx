@@ -619,7 +619,7 @@ export default function CertificacionValorModal({
                 className="form-input"
                 value={formData.numeroReferencia}
                 onChange={(e) => setFormData(prev => ({ ...prev, numeroReferencia: e.target.value }))}
-                placeholder="Ej. CV-10001"
+                placeholder="Ej. CV-2026-00001"
                 style={{ width: '100%', height: '38px', fontSize: '0.9rem', padding: '0.45rem 0.65rem', borderRadius: '8px', fontWeight: 800, color: themeColor, border: '1.5px solid #cbd5e1' }}
               />
             </div>

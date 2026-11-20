@@ -156,44 +156,43 @@ export function resolveUniqueCodigo(desiredCodigo, tenantId, avaluosList = [], c
 
 /**
  * Genera el siguiente correlativo automático para Certificaciones de Valor.
- * Formato estándar: CV-XXXXX (o LR-XXXXX para Lex Rosam).
- * Examina las certificaciones existentes en avaluosList para encontrar el número más alto y sugerir el siguiente libre.
+ * Nomenclatura obligatoria oficial: XX-YYYY-00000 (Ej: CV-2026-00001, LR-2026-00001)
  */
 export function getNextCertificacionCodigo(tenantId, avaluosList = []) {
   const prefix = getTenantPrefix(tenantId);
-  const baseStart = 10001;
+  const year = getCurrentYear();
+  const baseStart = 1; // Arranca limpio en 1: 00001
 
   if (!Array.isArray(avaluosList) || avaluosList.length === 0) {
-    return `${prefix}-${baseStart}`;
+    return `${prefix}-${year}-${formatCorrelativoNumber(baseStart)}`;
   }
 
   const isTargetCV = prefix === 'CV';
-  const usedNumbers = [];
+  const usedNumbers = new Set();
 
   avaluosList.forEach(item => {
     if (!item) return;
     const isCert = item.tipoAvaluo === 'Certificación de Valor' || 
                    item.tipoAvaluo === 'Certificación' || 
                    item.certificacion ||
-                   (item.codigo && item.codigo.startsWith('CV-'));
+                   (item.codigo && (item.codigo.startsWith('CV-') || item.codigo.startsWith('LR-')));
     
     if (isCert) {
       const isItemCV = item.tenantId === 'cverde' || item.tenantId === 'cv' || (item.codigo && item.codigo.startsWith('CV-'));
       if (isTargetCV === isItemCV) {
         const code = item.codigo || item.numeroReferencia || item.certificacion?.numeroReferencia || '';
         const num = extractCorrelativoNumber(code);
-        if (num >= 1000) {
-          usedNumbers.push(num);
+        if (num > 0) {
+          usedNumbers.add(num);
         }
       }
     }
   });
 
-  if (usedNumbers.length === 0) {
-    return `${prefix}-${baseStart}`;
+  let candidate = baseStart;
+  while (usedNumbers.has(candidate)) {
+    candidate++;
   }
 
-  const maxNum = Math.max(...usedNumbers);
-  const nextNum = Math.max(maxNum + 1, baseStart);
-  return `${prefix}-${nextNum}`;
+  return `${prefix}-${year}-${formatCorrelativoNumber(candidate)}`;
 }
