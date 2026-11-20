@@ -423,7 +423,7 @@ export default function CertificacionPrintView({
               </div>
               <div>
                 <span style={{ fontWeight: 700 }}>NUMERO DE REFERENCIA: </span>
-                <span style={{ fontWeight: 700, color: '#000000' }}>{certificacion?.numeroReferencia || 'CV-10001'}</span>
+                <span style={{ fontWeight: 700, color: '#000000' }}>{certificacion?.numeroReferencia || 'CV-2026-00015'}</span>
               </div>
             </div>
 

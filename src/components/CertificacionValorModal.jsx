@@ -71,7 +71,7 @@ export default function CertificacionValorModal({
         empresaNombre: isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.',
         solicitante: src.solicitante || 'BANCO G&T CONTINENTAL, S.A.',
         tipoSolicitud: 'CERTIFICACIÓN DE VALOR',
-        numeroReferencia: src.numeroReferencia || initialAvaluoBase.codigo || 'CV-10001',
+        numeroReferencia: src.numeroReferencia || initialAvaluoBase.codigo || getNextCertificacionCodigo(isCV ? 'cverde' : 'lex-rosam', allAvaluos),
         direccion: src.direccion || '',
         descripcionInmueble: src.descripcionInmueble || src.descripcionGeneral || '',
         fechaEmision: src.fechaEmision || new Date().toISOString().split('T')[0],
@@ -143,14 +143,16 @@ export default function CertificacionValorModal({
     }
 
     // Caso 3: Nueva Certificación Manual independiente (Formulario en blanco listo para llenar)
-    const initialManualCode = getNextCertificacionCodigo('cverde', allAvaluos);
+    const targetTenant = (initialAvaluoBase?.tenantId === 'lex-rosam' || initialAvaluoBase?.tenantId === 'lexrosam') ? 'lex-rosam' : 'cverde';
+    const isCV = targetTenant === 'cverde';
+    const initialManualCode = getNextCertificacionCodigo(targetTenant, allAvaluos);
     return {
       id: `cert-${Date.now()}`,
       avaluoId: 'manual',
       avaluoCodigo: 'LR-2026-10037',
       mesCitado: 'octubre de 2026',
-      tenantId: 'cverde',
-      empresaNombre: 'CVERDE, S.A.',
+      tenantId: targetTenant,
+      empresaNombre: isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.',
       solicitante: 'BANCO G&T CONTINENTAL, S.A.',
       tipoSolicitud: 'CERTIFICACIÓN DE VALOR',
       numeroReferencia: initialManualCode,

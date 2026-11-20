@@ -1241,7 +1241,7 @@ export default function App() {
       {/* Top Navbar with Multi-Tenant Branding & Role Selector */}
       <Navbar
         onNewAvaluo={() => setIsCreatingNew(true)}
-        onNewCertificacion={() => setCertificandoAvaluo({ id: '__manual__' })}
+        onNewCertificacion={() => setCertificandoAvaluo({ id: '__manual__', tenantId: selectedTenantId === 'lex-rosam' ? 'lex-rosam' : 'cverde' })}
         cloudStatus={cloudStatus}
         currentRole={currentRole}
         onRoleChange={setCurrentRole}
@@ -1524,7 +1524,7 @@ export default function App() {
       {certificandoAvaluo && (
         <CertificacionValorModal
           avaluoBase={certificandoAvaluo}
-          allAvaluos={tenantFilteredAvaluos}
+          allAvaluos={avaluos}
           currentUser={currentUser}
           currentRole={currentRole}
           onClose={() => setCertificandoAvaluo(null)}

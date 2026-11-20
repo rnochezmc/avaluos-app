@@ -171,17 +171,19 @@ export function getNextCertificacionCodigo(tenantId, avaluosList = []) {
   if (Array.isArray(avaluosList)) {
     avaluosList.forEach(item => {
       if (!item) return;
+      // Una certificación de valor es estrictamente un registro de tipo Certificación o que tiene objeto certificacion
+      // NUNCA debe incluir avalúos ordinarios (que usan series independientes 10000+)
       const isCert = item.tipoAvaluo === 'Certificación de Valor' || 
                      item.tipoAvaluo === 'Certificación' || 
-                     item.certificacion ||
-                     (item.codigo && (item.codigo.startsWith('CV-') || item.codigo.startsWith('LR-')));
+                     Boolean(item.certificacion);
       
       if (isCert) {
         const isItemCV = item.tenantId === 'cverde' || item.tenantId === 'cv' || (item.codigo && item.codigo.startsWith('CV-'));
         if (isTargetCV === isItemCV) {
           const code = item.codigo || item.numeroReferencia || item.certificacion?.numeroReferencia || '';
           const num = extractCorrelativoNumber(code);
-          if (num > 0) {
+          // Las series de certificaciones son independientes y no deben mezclarse con números de avalúos (> 5000)
+          if (num > 0 && num < 5000) {
             usedNumbers.add(num);
             if (num > maxNumber) {
               maxNumber = num;
