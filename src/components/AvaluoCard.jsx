@@ -61,7 +61,7 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint, 
 
   const isCertificacion = avaluo.tipoAvaluo === 'Certificación de Valor' || 
                           avaluo.tipoAvaluo === 'Certificación' || 
-                          avaluo.codigo?.startsWith('CV-');
+                          Boolean(avaluo.certificacion);
 
   if (isCertificacion) {
     const isCV = avaluo.tenantId === 'cverde' || avaluo.codigo?.startsWith('CV-');

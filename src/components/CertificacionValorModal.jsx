@@ -43,7 +43,7 @@ export default function CertificacionValorModal({
   const isEditingExistingCert = Boolean(
     initialAvaluoBase && 
     initialAvaluoBase.id !== '__manual__' && 
-    (initialAvaluoBase.tipoAvaluo === 'Certificación de Valor' || initialAvaluoBase.tipoAvaluo === 'Certificación' || initialAvaluoBase.codigo?.startsWith('CV-') || initialAvaluoBase.certificacion)
+    (initialAvaluoBase.tipoAvaluo === 'Certificación de Valor' || initialAvaluoBase.tipoAvaluo === 'Certificación' || Boolean(initialAvaluoBase.certificacion))
   );
 
   // Generador de texto legal estándar para observaciones
@@ -771,7 +771,7 @@ export default function CertificacionValorModal({
                   style={{ width: '100%', height: '36px', fontSize: '0.82rem', padding: '0.4rem' }}
                 >
                   <option value="" disabled>-- Seleccionar avalúo existente para copiar datos --</option>
-                  {allAvaluos.filter(a => a.tipoAvaluo !== 'Certificación de Valor' && !a.codigo?.startsWith('CV-')).map(a => (
+                  {allAvaluos.filter(a => a.tipoAvaluo !== 'Certificación de Valor' && a.tipoAvaluo !== 'Certificación' && !a.certificacion).map(a => (
                     <option key={a.id} value={a.id}>
                       {a.codigo} - {a.propietarioPrincipal || a.direccion || 'Sin titular'} ({a.solicitante})
                     </option>

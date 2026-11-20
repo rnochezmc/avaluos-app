@@ -884,7 +884,7 @@ export default function App() {
   // Enrutadores de acciones unificadas para Avalúos y Certificaciones
   const handlePrintItem = (item) => {
     if (!item) return;
-    const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || item.codigo?.startsWith('CV-');
+    const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || Boolean(item.certificacion);
     if (isCert) {
       setPrintingCertificacion({ certData: item.certificacion || item, baseItem: item });
     } else {
@@ -894,7 +894,7 @@ export default function App() {
 
   const handleEditItem = (item) => {
     if (!item) return;
-    const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || item.codigo?.startsWith('CV-');
+    const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || Boolean(item.certificacion);
     if (isCert) {
       if (item.estado === 'autorizado' && !canUserEditAvaluo(item, currentUser, currentRole)) {
         alert('Esta certificación ya fue autorizada por el Lic. Aroldo Ruiz y se encuentra bloqueada para edición. Solo el autorizador puede modificarla.');
@@ -908,7 +908,7 @@ export default function App() {
 
   const handleViewItem = (item) => {
     if (!item) return;
-    const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || item.codigo?.startsWith('CV-');
+    const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || Boolean(item.certificacion);
     if (isCert) {
       setPrintingCertificacion({ certData: item.certificacion || item, baseItem: item });
     } else {
