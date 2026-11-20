@@ -156,10 +156,12 @@ export default function SearchAndFilters({
             onChange={(e) => setPropertyTypeFilter(e.target.value)}
           >
             <option value="todos">Todos los Tipos</option>
+            <option value="certificaciones">📜 Certificaciones de Valor</option>
+            <option value="avaluos_ordinarios">📋 Solo Avalúos Ordinarios</option>
+            <option disabled>──────────</option>
             <option value="Comercial">Comercial</option>
             <option value="Bancario">Bancario</option>
             <option value="Fiscal">Fiscal</option>
-            <option value="Certificación">Certificación</option>
             <option value="Residencial">Residencial</option>
             <option value="Apartamento / PH">Apartamento / PH</option>
             <option value="Industrial">Industrial</option>

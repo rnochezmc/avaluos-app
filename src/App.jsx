@@ -633,7 +633,9 @@ export default function App() {
           }
         }
 
-        const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || item.codigo?.startsWith('CV-');
+        const isCert = item.tipoAvaluo === 'Certificación de Valor' || 
+                       item.tipoAvaluo === 'Certificación' || 
+                       Boolean(item.certificacion);
 
         // Status filter matching new workflow (si hay un término de búsqueda, busca en todos los estados para no ocultar nada)
         if (!term) {
@@ -652,9 +654,15 @@ export default function App() {
           }
         }
 
-        // Property type filter
-        if (propertyTypeFilter !== 'todos' && !term && item.tipoAvaluo !== propertyTypeFilter) {
-          return false;
+        // Property type filter (soporta "certificaciones" y "avaluos_ordinarios")
+        if (propertyTypeFilter !== 'todos' && !term) {
+          if (propertyTypeFilter === 'certificaciones' || propertyTypeFilter === 'Certificación' || propertyTypeFilter === 'Certificación de Valor') {
+            if (!isCert) return false;
+          } else if (propertyTypeFilter === 'avaluos_ordinarios') {
+            if (isCert) return false;
+          } else if (item.tipoAvaluo !== propertyTypeFilter) {
+            return false;
+          }
         }
 
         // Bank filter (Banco Industrial, BANRURAL, Banco G&T Continental)
