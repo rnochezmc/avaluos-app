@@ -809,7 +809,14 @@ export default function App() {
     try {
       const isCV = certData.empresaNombre?.includes('CVERDE') || certData.tenantId === 'cverde';
       const tenantId = isCV ? 'cverde' : 'lex-rosam';
-      const recordId = certData.id || `cert-${Date.now()}`;
+      const desiredCodigo = certData.numeroReferencia || certData.codigo;
+
+      // Si ya existe un documento con este ID o con este mismo código oficial, reutilizarlo para nunca duplicar
+      const existingByCode = avaluos.find(a => 
+        (certData.id && a.id === certData.id) ||
+        (desiredCodigo && (a.codigo === desiredCodigo || a.numeroReferencia === desiredCodigo))
+      );
+      const recordId = certData.id || existingByCode?.id || `cert-${Date.now()}`;
       
       const isAroldoUser = isAroldoOrAdminUser(currentUser) && currentRole !== 'ingreso';
       // Las certificaciones nuevas no se autorizan automáticamente; requieren aprobación explícita de Aroldo
@@ -827,7 +834,7 @@ export default function App() {
       
       const newRecord = {
         id: recordId,
-        codigo: certData.numeroReferencia || `CV-${Date.now().toString().slice(-4)}`,
+        codigo: certData.numeroReferencia || certData.codigo || `CV-${Date.now().toString().slice(-4)}`,
         tenantId: tenantId,
         empresaNombre: isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.',
         solicitante: certData.solicitante || '',
@@ -876,8 +883,10 @@ export default function App() {
           : 'Certificación de Valor guardada en Revisión (pendiente de autorización).';
         alert(msg);
       }
+      return newRecord;
     } catch (err) {
       console.warn('Error al guardar certificación:', err);
+      return null;
     }
   };
 
@@ -900,7 +909,16 @@ export default function App() {
         alert('Esta certificación ya fue autorizada por el Lic. Aroldo Ruiz y se encuentra bloqueada para edición. Solo el autorizador puede modificarla.');
         return;
       }
-      setCertificandoAvaluo(item.certificacion ? { ...item.certificacion, id: item.id, estado: item.estado } : item);
+      const certObj = item.certificacion || item;
+      setCertificandoAvaluo({
+        ...certObj,
+        id: item.id || certObj.id,
+        codigo: item.codigo || certObj.numeroReferencia || certObj.codigo,
+        numeroReferencia: item.codigo || certObj.numeroReferencia || certObj.codigo,
+        tipoAvaluo: 'Certificación de Valor',
+        estado: item.estado || certObj.estado,
+        certificacion: certObj
+      });
     } else {
       handleStartEdit(item);
     }
@@ -1538,8 +1556,10 @@ export default function App() {
           onClose={() => setCertificandoAvaluo(null)}
           onPreviewPrint={async (certData, baseItem) => {
             // Guardar automáticamente para que el documento nunca se pierda al previsualizar o descargar el PDF
-            await handleSaveCertificacion(certData, true);
-            setPrintingCertificacion({ certData, baseItem });
+            const savedRecord = await handleSaveCertificacion(certData, true);
+            const finalData = savedRecord ? { ...certData, id: savedRecord.id, codigo: savedRecord.codigo } : certData;
+            setPrintingCertificacion({ certData: finalData, baseItem });
+            return savedRecord;
           }}
           onSaveCertificacion={handleSaveCertificacion}
         />

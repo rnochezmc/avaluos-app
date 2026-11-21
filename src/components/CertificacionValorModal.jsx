@@ -42,8 +42,16 @@ export default function CertificacionValorModal({
   // Determinar si estamos editando una certificación existente o creando una nueva
   const isEditingExistingCert = Boolean(
     initialAvaluoBase && 
+    initialAvaluoBase.id &&
     initialAvaluoBase.id !== '__manual__' && 
-    (initialAvaluoBase.tipoAvaluo === 'Certificación de Valor' || initialAvaluoBase.tipoAvaluo === 'Certificación' || Boolean(initialAvaluoBase.certificacion))
+    (
+      initialAvaluoBase.tipoAvaluo === 'Certificación de Valor' || 
+      initialAvaluoBase.tipoAvaluo === 'Certificación' || 
+      Boolean(initialAvaluoBase.certificacion) ||
+      initialAvaluoBase.tipoSolicitud === 'CERTIFICACIÓN DE VALOR' ||
+      String(initialAvaluoBase.id).startsWith('cert-') ||
+      String(initialAvaluoBase.numeroReferencia || initialAvaluoBase.codigo || '').startsWith('CV-')
+    )
   );
 
   // Generador de texto legal estándar para observaciones
@@ -61,24 +69,24 @@ export default function CertificacionValorModal({
     // Caso 1: Editando una certificación existente ya guardada
     if (isEditingExistingCert) {
       const src = initialAvaluoBase.certificacion || initialAvaluoBase;
-      const isCV = src.tenantId === 'cverde' || src.empresaNombre?.includes('CVERDE') || src.codigo?.startsWith('CV-');
+      const isCV = src.tenantId === 'cverde' || src.empresaNombre?.includes('CVERDE') || src.codigo?.startsWith('CV-') || initialAvaluoBase.codigo?.startsWith('CV-');
       return {
-        id: initialAvaluoBase.id || src.id || `cert-${Date.now()}`,
-        avaluoId: src.avaluoId || 'manual',
-        avaluoCodigo: src.avaluoCodigo || 'LR-2026-10037',
-        mesCitado: src.mesCitado || 'octubre de 2026',
+        id: initialAvaluoBase.id || src.id,
+        avaluoId: src.avaluoId || initialAvaluoBase.avaluoId || 'manual',
+        avaluoCodigo: src.avaluoCodigo || initialAvaluoBase.avaluoCodigo || 'LR-2026-10037',
+        mesCitado: src.mesCitado || initialAvaluoBase.mesCitado || 'octubre de 2026',
         tenantId: isCV ? 'cverde' : 'lex-rosam',
         empresaNombre: isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.',
-        solicitante: src.solicitante || 'BANCO G&T CONTINENTAL, S.A.',
+        solicitante: src.solicitante || initialAvaluoBase.solicitante || 'BANCO G&T CONTINENTAL, S.A.',
         tipoSolicitud: 'CERTIFICACIÓN DE VALOR',
-        numeroReferencia: src.numeroReferencia || initialAvaluoBase.codigo || getNextCertificacionCodigo(isCV ? 'cverde' : 'lex-rosam', allAvaluos),
-        direccion: src.direccion || '',
-        descripcionInmueble: src.descripcionInmueble || src.descripcionGeneral || '',
-        fechaEmision: src.fechaEmision || new Date().toISOString().split('T')[0],
-        fincas: Array.isArray(src.fincas) && src.fincas.length > 0 ? src.fincas : [{ finca: '', folio: '', libro: '', areaRegistrada: '', propietario: '', areaValuada: '' }],
-        valores: Array.isArray(src.valores) && src.valores.length > 0 ? src.valores : [{ descripcion: 'APARTAMENTO', area: '0.00', unidad: 'm²', valorUnitario: 0, total: 0 }],
-        observaciones: src.observaciones || generateDefaultObservaciones(src.avaluoCodigo || 'LR-2026-10037', src.mesCitado || 'octubre de 2026', isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.'),
-        consultasPdfs: Array.isArray(src.consultasPdfs) ? src.consultasPdfs : [],
+        numeroReferencia: src.numeroReferencia || initialAvaluoBase.codigo || src.codigo,
+        direccion: src.direccion || initialAvaluoBase.direccion || '',
+        descripcionInmueble: src.descripcionInmueble || src.descripcionGeneral || initialAvaluoBase.descripcionGeneral || '',
+        fechaEmision: src.fechaEmision || initialAvaluoBase.fechaEmision || new Date().toISOString().split('T')[0],
+        fincas: Array.isArray(src.fincas) && src.fincas.length > 0 ? src.fincas : (Array.isArray(initialAvaluoBase.fincas) && initialAvaluoBase.fincas.length > 0 ? initialAvaluoBase.fincas : [{ finca: '', folio: '', libro: '', areaRegistrada: '', propietario: '', areaValuada: '' }]),
+        valores: Array.isArray(src.valores) && src.valores.length > 0 ? src.valores : (Array.isArray(initialAvaluoBase.valores) && initialAvaluoBase.valores.length > 0 ? initialAvaluoBase.valores : [{ descripcion: 'APARTAMENTO', area: '0.00', unidad: 'm²', valorUnitario: 0, total: 0 }]),
+        observaciones: src.observaciones || initialAvaluoBase.observaciones || generateDefaultObservaciones(src.avaluoCodigo || 'LR-2026-10037', src.mesCitado || 'octubre de 2026', isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.'),
+        consultasPdfs: Array.isArray(src.consultasPdfs) ? src.consultasPdfs : (Array.isArray(initialAvaluoBase.consultasPdfs) ? initialAvaluoBase.consultasPdfs : []),
         incluirAnexosRgp: src.incluirAnexosRgp !== false,
         estado: src.estado || initialAvaluoBase.estado || 'en_revision'
       };
@@ -426,9 +434,20 @@ export default function CertificacionValorModal({
   const totalCalculado = formData.valores.reduce((acc, v) => acc + (Number(v.total) || 0), 0);
   const totalRgpPages = (formData.consultasPdfs || []).reduce((acc, d) => acc + (d.pages?.length || 0), 0);
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
+    if (!formData.solicitante) {
+      alert('Por favor especifique el solicitante antes de ver el documento.');
+      return;
+    }
     if (onPreviewPrint) {
-      onPreviewPrint(formData, initialAvaluoBase);
+      const dataToSave = {
+        ...formData,
+        id: formData.id || (isEditingExistingCert ? initialAvaluoBase.id : undefined)
+      };
+      const saved = await onPreviewPrint(dataToSave, initialAvaluoBase);
+      if (saved && saved.id && !formData.id) {
+        setFormData(prev => ({ ...prev, id: saved.id, numeroReferencia: saved.codigo || prev.numeroReferencia }));
+      }
     }
   };
 
@@ -443,6 +462,7 @@ export default function CertificacionValorModal({
     if (onSaveCertificacion) {
       onSaveCertificacion({
         ...formData,
+        id: formData.id || (isEditingExistingCert ? initialAvaluoBase.id : undefined),
         estado: finalEstado,
         autorizadoDirecto: finalEstado === 'autorizado'
       });
