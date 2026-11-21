@@ -77,22 +77,42 @@ export default function CertificacionValorModal({
             ? initialAvaluoBase.fincas 
             : [{ finca: '', folio: '', libro: '', areaRegistrada: '', propietario: '', areaValuada: '' }]);
 
-      const existingValores = (Array.isArray(src.valores) && src.valores.length > 0)
+      const rawValores = (Array.isArray(src.valores) && src.valores.length > 0)
         ? src.valores
         : (Array.isArray(initialAvaluoBase.valores) && initialAvaluoBase.valores.length > 0)
           ? initialAvaluoBase.valores
           : (Array.isArray(initialAvaluoBase.certificacion?.valores) && initialAvaluoBase.certificacion.valores.length > 0)
             ? initialAvaluoBase.certificacion.valores
-            : loadedFincas.map((f, i) => {
-                const cleanArea = (f.areaValuada || f.areaRegistrada || '0').toString().replace(/[^\d.]/g, '');
-                return {
-                  descripcion: f.finca ? `Finca ${f.finca}` : `Renglón ${i + 1}`,
-                  area: cleanArea || '0.00',
-                  unidad: 'm²',
-                  valorUnitario: 0,
-                  total: 0
-                };
-              });
+            : [];
+
+      // Sincronizar de forma que NUNCA falten renglones de fincas en valores
+      const existingValores = loadedFincas.map((f, i) => {
+        const existing = rawValores[i];
+        const cleanArea = (f.areaValuada || f.areaRegistrada || '0').toString().replace(/[^\d.]/g, '');
+        const unitario = existing ? (parseFloat(existing.valorUnitario) || 0) : 0;
+        let desc = existing?.descripcion?.trim();
+        if (!desc || desc === 'APARTAMENTO' || desc.startsWith('Renglón') || desc === `Finca ${i + 1}`) {
+          desc = f.finca ? `Finca ${f.finca}` : `Renglón ${i + 1}`;
+        }
+        const totalNum = (existing?.total && unitario === 0)
+          ? Number(existing.total)
+          : parseFloat(((parseFloat(cleanArea) || 0) * unitario).toFixed(2));
+
+        return {
+          descripcion: desc,
+          area: (existing?.area && existing.area !== '0.00' && existing.area !== '0') ? existing.area : (cleanArea || '0.00'),
+          unidad: existing?.unidad || 'm²',
+          valorUnitario: existing?.valorUnitario ?? unitario,
+          total: totalNum
+        };
+      });
+
+      // Si había renglones adicionales de valores más allá de las fincas, preservarlos
+      if (rawValores.length > loadedFincas.length) {
+        for (let i = loadedFincas.length; i < rawValores.length; i++) {
+          existingValores.push({ ...rawValores[i] });
+        }
+      }
 
       return {
         id: initialAvaluoBase.id || src.id,
@@ -215,7 +235,7 @@ export default function CertificacionValorModal({
       descripcionInmueble: '',
       fechaEmision: new Date().toISOString().split('T')[0],
       fincas: [{ finca: '', folio: '', libro: '', areaRegistrada: '', propietario: '', areaValuada: '' }],
-      valores: [{ descripcion: 'APARTAMENTO', area: '0.00', unidad: 'm²', valorUnitario: 0, total: 0 }],
+      valores: [{ descripcion: '', area: '', unidad: 'm²', valorUnitario: 0, total: 0 }],
       observaciones: generateDefaultObservaciones('LR-2026-10037', 'octubre de 2026', 'CVERDE, S.A.'),
       consultasPdfs: [],
       incluirAnexosRgp: true,
@@ -243,10 +263,17 @@ export default function CertificacionValorModal({
         ...prev.fincas,
         { finca: '', folio: '', libro: '', areaRegistrada: '', propietario: '', areaValuada: '' }
       ];
-      const nextValores = [
-        ...prev.valores,
-        { descripcion: `Finca ${nextFincas.length}`, area: '0.00', unidad: 'm²', valorUnitario: 0, total: 0 }
-      ];
+      const nextValores = [...(prev.valores || [])];
+      while (nextValores.length < nextFincas.length) {
+        const i = nextValores.length;
+        nextValores.push({
+          descripcion: `Finca ${i + 1}`,
+          area: '',
+          unidad: 'm²',
+          valorUnitario: 0,
+          total: 0
+        });
+      }
       return {
         ...prev,
         fincas: nextFincas,
@@ -262,27 +289,37 @@ export default function CertificacionValorModal({
 
       // Sincronizar automáticamente con el renglón correspondiente en la tabla de Valores
       const nextValores = [...(prev.valores || [])];
-      if (nextValores[index]) {
-        const itemVal = { ...nextValores[index] };
-        if (field === 'finca' && value) {
-          // Solo actualizar descripción si era el formato por defecto "Finca X"
-          if (!itemVal.descripcion || /^Finca\s*\d*$/i.test(itemVal.descripcion.trim())) {
-            itemVal.descripcion = `Finca ${value}`;
-          }
-        }
-        if (field === 'areaValuada' || (field === 'areaRegistrada' && !nextFincas[index].areaValuada)) {
-          const clean = (value || '').toString().replace(/[^\d.]/g, '');
-          if (clean) {
-            itemVal.area = clean;
-            const a = parseFloat(clean) || 0;
-            const u = parseFloat(itemVal.valorUnitario || 0) || 0;
-            if (u > 0) {
-              itemVal.total = parseFloat((a * u).toFixed(2));
-            }
-          }
-        }
-        nextValores[index] = itemVal;
+      while (nextValores.length <= index) {
+        const i = nextValores.length;
+        nextValores.push({
+          descripcion: `Finca ${i + 1}`,
+          area: '',
+          unidad: 'm²',
+          valorUnitario: 0,
+          total: 0
+        });
       }
+
+      const itemVal = { ...nextValores[index] };
+      if (field === 'finca' && value) {
+        // Actualizar descripción si está vacía o tiene nombre genérico
+        const d = (itemVal.descripcion || '').trim();
+        if (!d || d === 'APARTAMENTO' || /^Finca\s*\d*$/i.test(d) || /^Rengl[oó]n\s*\d*$/i.test(d)) {
+          itemVal.descripcion = `Finca ${value}`;
+        }
+      }
+      if (field === 'areaValuada' || (field === 'areaRegistrada' && !nextFincas[index].areaValuada)) {
+        const clean = (value || '').toString().replace(/[^\d.]/g, '');
+        if (clean) {
+          itemVal.area = clean;
+          const a = parseFloat(clean) || 0;
+          const u = parseFloat(itemVal.valorUnitario || 0) || 0;
+          if (u > 0) {
+            itemVal.total = parseFloat((a * u).toFixed(2));
+          }
+        }
+      }
+      nextValores[index] = itemVal;
 
       return { ...prev, fincas: nextFincas, valores: nextValores };
     });
@@ -314,8 +351,8 @@ export default function CertificacionValorModal({
         const unitario = existing ? (parseFloat(existing.valorUnitario) || 0) : 0;
 
         let desc = existing?.descripcion?.trim();
-        if (!desc || desc === 'APARTAMENTO' || desc.startsWith('Renglón') || desc === `Finca ${i + 1}`) {
-          desc = f.finca ? `Finca ${f.finca}` : `Renglón ${i + 1}`;
+        if (!desc || desc === 'APARTAMENTO' || desc.startsWith('Renglón') || /^Finca\s*\d*$/i.test(desc)) {
+          desc = f.finca ? `Finca ${f.finca}` : `Finca ${i + 1}`;
         } else if (f.finca && !desc.includes(f.finca)) {
           desc = `Finca ${f.finca} ${desc}`;
         }
@@ -328,7 +365,7 @@ export default function CertificacionValorModal({
           descripcion: desc,
           area: cleanArea || existing?.area || '0',
           unidad: existing?.unidad || 'm²',
-          valorUnitario: unitario,
+          valorUnitario: existing?.valorUnitario ?? unitario,
           total: totalNum
         };
       });

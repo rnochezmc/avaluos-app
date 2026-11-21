@@ -127,13 +127,39 @@ export default function CertificacionPrintView({
     return 'Guatemala ' + formatFechaEnLetras(certificacion.fechaEmision);
   })();
 
-  const printValores = (Array.isArray(certificacion?.valores) && certificacion.valores.length > 0)
+  const printFincas = (certificacion?.fincas && certificacion.fincas.length > 0)
+    ? certificacion.fincas
+    : (avaluoBase?.certificacion?.fincas && avaluoBase.certificacion.fincas.length > 0)
+      ? avaluoBase.certificacion.fincas
+      : (Array.isArray(avaluoBase?.fincas) && avaluoBase.fincas.length > 0)
+        ? avaluoBase.fincas
+        : [{ finca: '-', folio: '-', libro: '-', areaRegistrada: '-', propietario: '-', areaValuada: '-' }];
+
+  const rawValores = (Array.isArray(certificacion?.valores) && certificacion.valores.length > 0)
     ? certificacion.valores
     : (Array.isArray(avaluoBase?.certificacion?.valores) && avaluoBase.certificacion.valores.length > 0)
       ? avaluoBase.certificacion.valores
       : (Array.isArray(avaluoBase?.valores) && avaluoBase.valores.length > 0)
         ? avaluoBase.valores
-        : [{ descripcion: 'Inmueble', area: '0.00', valorUnitario: 0, total: 0 }];
+        : [];
+
+  let printValores = [...rawValores];
+  if (printFincas.length > 0 && printValores.length < printFincas.length && printFincas[0].finca !== '-') {
+    for (let i = printValores.length; i < printFincas.length; i++) {
+      const f = printFincas[i];
+      const cleanArea = (f.areaValuada || f.areaRegistrada || '0').toString().replace(/[^\d.]/g, '');
+      printValores.push({
+        descripcion: f.finca ? `Finca ${f.finca}` : `Renglón ${i + 1}`,
+        area: cleanArea || '0.00',
+        unidad: 'm²',
+        valorUnitario: 0,
+        total: 0
+      });
+    }
+  }
+  if (printValores.length === 0) {
+    printValores = [{ descripcion: 'Inmueble', area: '0.00', valorUnitario: 0, total: 0 }];
+  }
 
   const totalValores = printValores.reduce((acc, it) => acc + (Number(it.total) || 0), 0);
 
@@ -449,7 +475,7 @@ export default function CertificacionPrintView({
                   </tr>
                 </thead>
                 <tbody>
-                  {(certificacion?.fincas && certificacion.fincas.length > 0 ? certificacion.fincas : [{ finca: '-', folio: '-', libro: '-', areaRegistrada: '-', propietario: '-', areaValuada: '-' }]).map((f, i) => (
+                  {printFincas.map((f, i) => (
                     <tr key={i}>
                       <td style={{ border: '1px solid #a6a6a6', padding: '3px 6px', textAlign: 'center', fontWeight: 600 }}>{f.finca || '-'}</td>
                       <td style={{ border: '1px solid #a6a6a6', padding: '3px 6px', textAlign: 'center' }}>{f.folio || '-'}</td>

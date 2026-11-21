@@ -326,6 +326,23 @@ export default function App() {
                   mergedItem.fotos = mergedFotos;
                 }
 
+                // Preservar valores y fincas si en cloud vienen indefinidos o vacíos pero en local o en certificacion existen
+                if ((!mergedItem.valores || mergedItem.valores.length === 0) && (prevItem.valores && prevItem.valores.length > 0)) {
+                  mergedItem.valores = prevItem.valores;
+                } else if ((!mergedItem.valores || mergedItem.valores.length === 0) && (mergedItem.certificacion?.valores && mergedItem.certificacion.valores.length > 0)) {
+                  mergedItem.valores = mergedItem.certificacion.valores;
+                }
+
+                if ((!mergedItem.fincas || mergedItem.fincas.length === 0) && (prevItem.fincas && prevItem.fincas.length > 0)) {
+                  mergedItem.fincas = prevItem.fincas;
+                } else if ((!mergedItem.fincas || mergedItem.fincas.length === 0) && (mergedItem.certificacion?.fincas && mergedItem.certificacion.fincas.length > 0)) {
+                  mergedItem.fincas = mergedItem.certificacion.fincas;
+                }
+
+                if (!mergedItem.totalValorCertificado && (prevItem.totalValorCertificado || mergedItem.valorComercialGTQ)) {
+                  mergedItem.totalValorCertificado = prevItem.totalValorCertificado || mergedItem.valorComercialGTQ;
+                }
+
                 if (Array.isArray(prevItem.consultasPdfs) && prevItem.consultasPdfs.length > 0) {
                   const cloudPdfs = cloudItem.consultasPdfs || [];
                   const mergedPdfs = cloudPdfs.map((cloudDoc) => {
@@ -835,7 +852,23 @@ export default function App() {
         autorizadoPor: null
       };
       
-      const totalCert = (certData.valores || []).reduce((acc, v) => acc + (Number(v.total) || 0), 0);
+      // Asegurar que valores contenga renglones para todas las fincas presentes
+      const incomingFincas = certData.fincas || [];
+      let finalValores = Array.isArray(certData.valores) ? [...certData.valores] : [];
+      if (incomingFincas.length > 0 && finalValores.length < incomingFincas.length) {
+        for (let i = finalValores.length; i < incomingFincas.length; i++) {
+          const f = incomingFincas[i];
+          const cleanArea = (f.areaValuada || f.areaRegistrada || '0').toString().replace(/[^\d.]/g, '');
+          finalValores.push({
+            descripcion: f.finca ? `Finca ${f.finca}` : `Renglón ${i + 1}`,
+            area: cleanArea || '0.00',
+            unidad: 'm²',
+            valorUnitario: 0,
+            total: 0
+          });
+        }
+      }
+      const totalCert = finalValores.reduce((acc, v) => acc + (Number(v.total) || 0), 0);
       const preservedCreatedAt = certData.createdAt || existingByCode?.createdAt || new Date().toISOString();
       const preservedCreadoPor = certData.creadoPor || existingByCode?.creadoPor || currentUser?.email || 'admin';
       const preservedCreadoPorNombre = certData.creadoPorNombre || existingByCode?.creadoPorNombre || currentUser?.nombre || currentUser?.displayName || 'Lic. Aroldo Ruiz';
@@ -849,19 +882,19 @@ export default function App() {
         solicitante: certData.solicitante || '',
         direccion: certData.direccion || '',
         descripcionGeneral: certData.descripcionInmueble || '',
-        fincas: certData.fincas || [],
-        finca: certData.fincas?.[0]?.finca || '',
-        folio: certData.fincas?.[0]?.folio || '',
-        libro: certData.fincas?.[0]?.libro || '',
-        areaValuada: certData.fincas?.[0]?.areaValuada || certData.valores?.[0]?.area || '0',
+        fincas: incomingFincas,
+        finca: incomingFincas?.[0]?.finca || '',
+        folio: incomingFincas?.[0]?.folio || '',
+        libro: incomingFincas?.[0]?.libro || '',
+        areaValuada: incomingFincas?.[0]?.areaValuada || finalValores?.[0]?.area || '0',
         valorComercialGTQ: totalCert,
         valorBancarioGTQ: totalCert,
         totalValorCertificado: totalCert,
-        valores: certData.valores || [],
+        valores: finalValores,
         estado: certStatus,
         ...authorizedFields,
         tipoAvaluo: 'Certificación de Valor',
-        tipoInmueble: certData.valores?.[0]?.descripcion || 'Certificación de Valor',
+        tipoInmueble: finalValores?.[0]?.descripcion || 'Certificación de Valor',
         certificacion: { 
           ...certData, 
           id: recordId, 
@@ -870,7 +903,8 @@ export default function App() {
           creadoPor: preservedCreadoPor,
           creadoPorNombre: preservedCreadoPorNombre,
           createdAt: preservedCreatedAt,
-          valores: certData.valores || [],
+          fincas: incomingFincas,
+          valores: finalValores,
           totalValorCertificado: totalCert,
           valorComercialGTQ: totalCert
         },
