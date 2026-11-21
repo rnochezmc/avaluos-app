@@ -162,7 +162,14 @@ export default function AvaluoCard({ avaluo, onView, onEdit, onDelete, onPrint, 
           <div className="aval-card-financial" style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '8px' }}>
             <div>
               <div className="val-commercial-label" style={{ color: '#0f766e', fontWeight: 700 }}>Total Valor Certificado</div>
-              <div className="val-commercial-amount" style={{ color: isCV ? '#004e3b' : '#0d2847' }}>{formatQ(avaluo.valorComercialGTQ)}</div>
+              <div className="val-commercial-amount" style={{ color: isCV ? '#004e3b' : '#0d2847' }}>
+                {formatQ(
+                  avaluo.valorComercialGTQ ||
+                  avaluo.totalValorCertificado ||
+                  avaluo.certificacion?.totalValorCertificado ||
+                  (avaluo.certificacion?.valores || avaluo.valores || []).reduce((acc, v) => acc + (Number(v.total) || 0), 0)
+                )}
+              </div>
             </div>
             <div style={{ textAlign: 'right' }}>
               {getStatusBadge(avaluo.estado || 'en_revision')}

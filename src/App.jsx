@@ -832,9 +832,12 @@ export default function App() {
         autorizadoPor: null
       };
       
+      const totalCert = (certData.valores || []).reduce((acc, v) => acc + (Number(v.total) || 0), 0);
+
       const newRecord = {
         id: recordId,
         codigo: certData.numeroReferencia || certData.codigo || `CV-${Date.now().toString().slice(-4)}`,
+        numeroReferencia: certData.numeroReferencia || certData.codigo,
         tenantId: tenantId,
         empresaNombre: isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.',
         solicitante: certData.solicitante || '',
@@ -845,13 +848,22 @@ export default function App() {
         folio: certData.fincas?.[0]?.folio || '',
         libro: certData.fincas?.[0]?.libro || '',
         areaValuada: certData.fincas?.[0]?.areaValuada || certData.valores?.[0]?.area || '0',
-        valorComercialGTQ: certData.valores?.reduce((acc, v) => acc + (Number(v.total) || 0), 0) || 0,
-        valorBancarioGTQ: certData.valores?.reduce((acc, v) => acc + (Number(v.total) || 0), 0) || 0,
+        valorComercialGTQ: totalCert,
+        valorBancarioGTQ: totalCert,
+        totalValorCertificado: totalCert,
+        valores: certData.valores || [],
         estado: certStatus,
         ...authorizedFields,
         tipoAvaluo: 'Certificación de Valor',
-        tipoInmueble: certData.valores?.[0]?.descripcion || 'Certificación',
-        certificacion: { ...certData, id: recordId, estado: certStatus },
+        tipoInmueble: certData.valores?.[0]?.descripcion || 'Certificación de Valor',
+        certificacion: { 
+          ...certData, 
+          id: recordId, 
+          estado: certStatus,
+          valores: certData.valores || [],
+          totalValorCertificado: totalCert,
+          valorComercialGTQ: totalCert
+        },
         consultasPdfs: certData.consultasPdfs || [],
         creadoPor: certData.creadoPor || currentUser?.email || 'admin',
         creadoPorNombre: certData.creadoPorNombre || currentUser?.nombre || currentUser?.displayName || 'Lic. Aroldo Ruiz',
@@ -1549,6 +1561,7 @@ export default function App() {
       {/* Formulario de Captura de Certificación de Valor */}
       {certificandoAvaluo && (
         <CertificacionValorModal
+          key={certificandoAvaluo.id || certificandoAvaluo.codigo || 'cert-modal'}
           avaluoBase={certificandoAvaluo}
           allAvaluos={avaluos}
           currentUser={currentUser}

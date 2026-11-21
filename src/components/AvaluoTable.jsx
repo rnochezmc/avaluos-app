@@ -108,10 +108,19 @@ export default function AvaluoTable({ avaluos = [], onView, onEdit, onDelete, on
                   </td>
                   <td>
                     <div style={{ fontWeight: 700, color: 'var(--cverde-primary)' }}>
-                      {formatQ(av.valorComercialGTQ)}
+                      {formatQ(
+                        av.valorComercialGTQ ||
+                        av.totalValorCertificado ||
+                        av.certificacion?.totalValorCertificado ||
+                        (av.certificacion?.valores || av.valores || []).reduce((acc, v) => acc + (Number(v.total) || 0), 0)
+                      )}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--slate-500)' }}>
-                      $ {Number(av.valorComercialUSD || 0).toLocaleString('en-US')}
+                      $ {Number(
+                        av.valorComercialUSD ||
+                        ((av.valorComercialGTQ || av.totalValorCertificado || (av.certificacion?.valores || av.valores || []).reduce((acc, v) => acc + (Number(v.total) || 0), 0)) / (av.tipoCambio || 7.62581)) ||
+                        0
+                      ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </td>
                   <td>
