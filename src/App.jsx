@@ -929,7 +929,9 @@ export default function App() {
         numeroReferencia: item.codigo || certObj.numeroReferencia || certObj.codigo,
         tipoAvaluo: 'Certificación de Valor',
         estado: item.estado || certObj.estado,
-        certificacion: certObj
+        certificacion: certObj,
+        valores: Array.isArray(certObj.valores) && certObj.valores.length > 0 ? certObj.valores : (Array.isArray(item.valores) ? item.valores : []),
+        fincas: Array.isArray(certObj.fincas) && certObj.fincas.length > 0 ? certObj.fincas : (Array.isArray(item.fincas) ? item.fincas : [])
       });
     } else {
       handleStartEdit(item);
