@@ -500,6 +500,9 @@ export default function App() {
           setCurrentRole(isMaster ? 'autorizador' : 'ingreso');
           if (assignedTenantId && assignedTenantId !== 'all') {
             setSelectedTenantId(assignedTenantId);
+          } else if (assignedTenantId === 'all' && !localStorage.getItem('avaluos_active_tenant')) {
+            // En equipos nuevos sin preferencia guardada, mostrar todas las empresas para no ocultar certificaciones/avalúos
+            setSelectedTenantId('todos');
           }
         } else {
           // Ninguna cuenta de Google autenticada
@@ -823,16 +826,19 @@ export default function App() {
       const certStatus = certData.estado || (isAroldoUser ? (certData.autorizadoDirecto ? 'autorizado' : 'en_revision') : 'en_revision');
       
       const authorizedFields = certStatus === 'autorizado' ? {
-        fechaAutorizacion: certData.fechaAutorizacion || new Date().toISOString().slice(0, 10),
-        autorizadoPor: currentUser?.nombre 
+        fechaAutorizacion: certData.fechaAutorizacion || existingByCode?.fechaAutorizacion || new Date().toISOString().slice(0, 10),
+        autorizadoPor: certData.autorizadoPor || existingByCode?.autorizadoPor || (currentUser?.nombre 
           ? `${currentUser.nombre} (Reg. 2572-R-2026)` 
-          : 'Lic. Aroldo Ruiz (Reg. 2572-R-2026)'
+          : 'Lic. Aroldo Ruiz (Reg. 2572-R-2026)')
       } : {
         fechaAutorizacion: null,
         autorizadoPor: null
       };
       
       const totalCert = (certData.valores || []).reduce((acc, v) => acc + (Number(v.total) || 0), 0);
+      const preservedCreatedAt = certData.createdAt || existingByCode?.createdAt || new Date().toISOString();
+      const preservedCreadoPor = certData.creadoPor || existingByCode?.creadoPor || currentUser?.email || 'admin';
+      const preservedCreadoPorNombre = certData.creadoPorNombre || existingByCode?.creadoPorNombre || currentUser?.nombre || currentUser?.displayName || 'Lic. Aroldo Ruiz';
 
       const newRecord = {
         id: recordId,
@@ -860,15 +866,19 @@ export default function App() {
           ...certData, 
           id: recordId, 
           estado: certStatus,
+          ...authorizedFields,
+          creadoPor: preservedCreadoPor,
+          creadoPorNombre: preservedCreadoPorNombre,
+          createdAt: preservedCreatedAt,
           valores: certData.valores || [],
           totalValorCertificado: totalCert,
           valorComercialGTQ: totalCert
         },
         consultasPdfs: certData.consultasPdfs || [],
-        creadoPor: certData.creadoPor || currentUser?.email || 'admin',
-        creadoPorNombre: certData.creadoPorNombre || currentUser?.nombre || currentUser?.displayName || 'Lic. Aroldo Ruiz',
+        creadoPor: preservedCreadoPor,
+        creadoPorNombre: preservedCreadoPorNombre,
         fechaEmision: certData.fechaEmision || new Date().toISOString().split('T')[0],
-        createdAt: certData.createdAt || new Date().toISOString(),
+        createdAt: preservedCreatedAt,
         updatedAt: new Date().toISOString()
       };
 
@@ -929,6 +939,11 @@ export default function App() {
         numeroReferencia: item.codigo || certObj.numeroReferencia || certObj.codigo,
         tipoAvaluo: 'Certificación de Valor',
         estado: item.estado || certObj.estado,
+        createdAt: item.createdAt || certObj.createdAt,
+        creadoPor: item.creadoPor || certObj.creadoPor,
+        creadoPorNombre: item.creadoPorNombre || certObj.creadoPorNombre,
+        fechaAutorizacion: item.fechaAutorizacion || certObj.fechaAutorizacion,
+        autorizadoPor: item.autorizadoPor || certObj.autorizadoPor,
         certificacion: certObj,
         valores: Array.isArray(certObj.valores) && certObj.valores.length > 0 ? certObj.valores : (Array.isArray(item.valores) ? item.valores : []),
         fincas: Array.isArray(certObj.fincas) && certObj.fincas.length > 0 ? certObj.fincas : (Array.isArray(item.fincas) ? item.fincas : [])
@@ -1321,14 +1336,37 @@ export default function App() {
         />
 
         {/* Expedientes Results Section */}
-        {filteredAvaluos.length === 0 ? (
+        {filteredAvaluos.length === 0 ? (() => {
+          const canSwitchCompanies = currentUser?.rol === 'admin' || currentUser?.rol === 'soporte' || currentUser?.tenantId === 'all';
+          const isCertFilterActive = activeFilter === 'certificaciones' || propertyTypeFilter === 'certificaciones';
+          const otherTenantCertsCount = (canSwitchCompanies && selectedTenantId !== 'todos' && isCertFilterActive)
+            ? avaluos.filter((item) => {
+                const rawTenant = item.tenantId === 'lexrosam' ? 'lex-rosam' : item.tenantId;
+                const itemTenant = rawTenant || (item.codigo?.startsWith('CV-') ? 'cverde' : 'lex-rosam');
+                const isCert = item.tipoAvaluo === 'Certificación de Valor' || item.tipoAvaluo === 'Certificación' || Boolean(item.certificacion);
+                return isCert && itemTenant !== selectedTenantId;
+              }).length
+            : 0;
+          return (
           <div style={{ textAlign: 'center', padding: '3.5rem 1rem', background: 'var(--white)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--slate-200)', marginTop: '1rem' }}>
             <SearchX size={48} style={{ color: 'var(--slate-400)', margin: '0 auto 1rem auto' }} />
             <h3 style={{ fontSize: '1.15rem', color: 'var(--slate-800)' }}>No se encontraron expedientes</h3>
-            <p style={{ color: 'var(--slate-500)', fontSize: '0.88rem', maxWidth: '420px', margin: '0.4rem auto 1.5rem auto' }}>
-              No existen avalúos que coincidan con "{searchTerm}" o los filtros seleccionados.
+            <p style={{ color: 'var(--slate-500)', fontSize: '0.88rem', maxWidth: '460px', margin: '0.4rem auto 1.5rem auto' }}>
+              {otherTenantCertsCount > 0
+                ? `No hay certificaciones en ${selectedTenantId === 'cverde' ? 'C VERDE' : 'LEX ROSAM'}, pero existen ${otherTenantCertsCount} certificación(es) en ${selectedTenantId === 'cverde' ? 'LEX ROSAM' : 'C VERDE'}.`
+                : `No existen avalúos que coincidan con "${searchTerm}" o los filtros seleccionados.`}
             </p>
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {otherTenantCertsCount > 0 && (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => handleSelectTenant('todos')}
+                  style={{ background: '#0f766e' }}
+                >
+                  Ver en Todas las Empresas ({otherTenantCertsCount})
+                </button>
+              )}
               <button
                 type="button"
                 className="btn-secondary"
@@ -1347,7 +1385,8 @@ export default function App() {
               </button>
             </div>
           </div>
-        ) : viewMode === 'grid' ? (
+          );
+        })() : viewMode === 'grid' ? (
           <div className="cards-grid">
             {filteredAvaluos.map((av) => (
               <AvaluoCard

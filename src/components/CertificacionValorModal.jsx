@@ -112,7 +112,12 @@ export default function CertificacionValorModal({
         observaciones: src.observaciones || initialAvaluoBase.observaciones || generateDefaultObservaciones(src.avaluoCodigo || 'LR-2026-10037', src.mesCitado || 'octubre de 2026', isCV ? 'CVERDE, S.A.' : 'LEX ROSAM, S.A.'),
         consultasPdfs: Array.isArray(src.consultasPdfs) ? src.consultasPdfs : (Array.isArray(initialAvaluoBase.consultasPdfs) ? initialAvaluoBase.consultasPdfs : []),
         incluirAnexosRgp: src.incluirAnexosRgp !== false,
-        estado: src.estado || initialAvaluoBase.estado || 'en_revision'
+        estado: src.estado || initialAvaluoBase.estado || 'en_revision',
+        createdAt: src.createdAt || initialAvaluoBase.createdAt || undefined,
+        creadoPor: src.creadoPor || initialAvaluoBase.creadoPor || undefined,
+        creadoPorNombre: src.creadoPorNombre || initialAvaluoBase.creadoPorNombre || undefined,
+        fechaAutorizacion: src.fechaAutorizacion || initialAvaluoBase.fechaAutorizacion || undefined,
+        autorizadoPor: src.autorizadoPor || initialAvaluoBase.autorizadoPor || undefined
       };
     }
 
