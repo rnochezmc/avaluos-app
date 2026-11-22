@@ -650,8 +650,7 @@ export default function CertificacionPrintView({
                   width: 'auto',
                   height: 'auto',
                   objectFit: 'contain',
-                  display: 'block',
-                  border: '1px solid #cbd5e1'
+                  display: 'block'
                 }}
                 loading="eager"
                 decoding="sync"
