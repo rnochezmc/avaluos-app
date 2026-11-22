@@ -375,9 +375,11 @@ export default function CertificacionPrintView({
           className="pdf-page-sheet cert-sheet-page1"
           style={{
             background: '#ffffff',
-            width: '216mm',
-            minHeight: '279mm',
-            maxHeight: '279mm',
+            width: '215.9mm',
+            maxWidth: '215.9mm',
+            minHeight: 0,
+            height: '279.4mm',
+            maxHeight: '279.4mm',
             padding: '10mm 16mm 8mm 16mm',
             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
             boxSizing: 'border-box',
@@ -607,10 +609,12 @@ export default function CertificacionPrintView({
             className="pdf-page-sheet"
             style={{
               background: '#ffffff',
-              width: '216mm',
-              minHeight: '279mm',
-              maxHeight: '279mm',
-              padding: '12mm 15mm',
+              width: '215.9mm',
+              maxWidth: '215.9mm',
+              minHeight: 0,
+              height: '279.4mm',
+              maxHeight: '279.4mm',
+              padding: '8mm 14mm 8mm 14mm',
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
               boxSizing: 'border-box',
               fontFamily: '"Calibri", "Segoe UI", Arial, sans-serif',
@@ -618,37 +622,44 @@ export default function CertificacionPrintView({
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              pageBreakAfter: 'always',
+              breakAfter: 'page',
+              pageBreakInside: 'avoid',
+              breakInside: 'avoid'
             }}
           >
-            <div>
-              {/* Encabezado superior de Anexo RGP */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid #538135`, paddingBottom: '0.35rem', marginBottom: '0.65rem' }}>
-                <span style={{ fontWeight: 800, fontSize: '0.8rem', color: '#538135', textTransform: 'uppercase' }}>
-                  Anexo: Consulta Registral RGP · Certificación {certificacion?.numeroReferencia || ''}
-                </span>
-                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
-                  Hoja {pIdx + 1} de {rgpPages.length}
-                </span>
-              </div>
-
-              {/* Imagen nítida de la página RGP */}
-              <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                <img 
-                  src={page.dataUrl} 
-                  alt={`Página RGP ${pIdx + 1}`}
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '235mm',
-                    objectFit: 'contain',
-                    border: '1px solid #cbd5e1'
-                  }}
-                />
-              </div>
+            {/* Encabezado superior de Anexo RGP (Altura fija compacta) */}
+            <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid #538135`, paddingBottom: '3px', marginBottom: '6px' }}>
+              <span style={{ fontWeight: 800, fontSize: '0.78rem', color: '#538135', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                Anexo: Consulta Registral RGP · Certificación {certificacion?.numeroReferencia || ''}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
+                Hoja {pIdx + 1} de {rgpPages.length}
+              </span>
             </div>
 
-            {/* Pie inferior de Anexo */}
-            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.3rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#64748b' }}>
+            {/* Imagen nítida de la página RGP en contenedor calibrado milimétricamente para evitar saltos */}
+            <div style={{ flex: '1 1 auto', height: '232mm', maxHeight: '232mm', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#ffffff' }}>
+              <img 
+                src={page.dataUrl} 
+                alt={`Página RGP ${pIdx + 1}`}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  width: 'auto',
+                  height: 'auto',
+                  objectFit: 'contain',
+                  display: 'block',
+                  border: '1px solid #cbd5e1'
+                }}
+                loading="eager"
+                decoding="sync"
+              />
+            </div>
+
+            {/* Pie inferior de Anexo (Altura fija compacta) */}
+            <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', paddingTop: '3px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', fontSize: '0.66rem', color: '#64748b' }}>
               <span>{certificacion?.empresaNombre || 'C VERDE, S.A.'} · Certificación de Valor</span>
               <span>Documento Registral Electrónico Digitalizado</span>
             </div>
@@ -687,19 +698,35 @@ export default function CertificacionPrintView({
           .pdf-print-wrapper {
             gap: 0 !important;
             padding: 0 !important;
+            display: block !important;
+            width: 100% !important;
           }
           .pdf-page-sheet {
             box-shadow: none !important;
             border: none !important;
-            width: 216mm !important;
-            height: 279mm !important;
-            max-height: 279mm !important;
-            margin: 0 !important;
-            padding: 12mm 16mm 10mm 16mm !important;
+            width: 215.9mm !important;
+            max-width: 215.9mm !important;
+            min-height: 0 !important;
+            height: 279.4mm !important;
+            max-height: 279.4mm !important;
+            box-sizing: border-box !important;
+            margin: 0 auto !important;
+            padding: 8mm 14mm 8mm 14mm !important;
             page-break-after: always !important;
             break-after: page !important;
             page-break-inside: avoid !important;
+            break-inside: avoid !important;
             overflow: hidden !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .cert-sheet-page1 {
+            padding: 10mm 16mm 8mm 16mm !important;
+          }
+          .pdf-page-sheet:last-child,
+          .pdf-page-sheet:last-of-type {
+            page-break-after: auto !important;
+            break-after: auto !important;
           }
           .cert-th-green {
             background-color: #70AD47 !important;
